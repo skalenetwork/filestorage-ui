@@ -1,5 +1,6 @@
 ## UI Components - Overview
 
+- [ ] Wallet mulit-connect
 - [ ] Uploader
 - [ ] Space reservation 
 - [ ] Total usage metrics
