@@ -8,6 +8,38 @@ import { FileStorage } from '@skalenetwork/filestorage.js';
  * we start without file handles
  */
 
+type FileStorageDirectory = {
+  name: string;
+  storagePath: string;
+  isFile: string;
+}
+
+type FileStorageFile = {
+  name: string;
+  storagePath: string;
+  isFile: string;
+  size: BigInt;
+  status: number;
+  uploadingProgress: number;
+}
+
+// @todo confirm  and set return type where void
+type FileStorageSDK = {
+  uploadFile(): string;
+  downloadToFile(): void;
+  downloadToBuffer(): Buffer;
+  deleteFile(): void;
+  ceateDirectory(): { storagePath: string };
+  deleteDirectory(): void;
+  listDirectory(): Array<FileStorageDirectory | FileStorageFile>;
+  reserveSpace(): void;
+  grantAllocatorRole(): void;
+  getReservedSpace(): { reservedSpace: BigInt };
+  getOccupiedSpace(): { occupiedSpace: BigInt };
+  getTotalReservedSpace(): { reservedSpace: BigInt };
+  getTotalSpace(): { space: BigInt };
+}
+
 interface DeDirectory {
   kind: string;
   name: string;
@@ -27,12 +59,18 @@ interface DeFile {
 interface IDeFileManager {
   address: string;
   rpcEndpoint: string;
+  isAllocator: boolean;
+
   w3: Object;
-  fs: Object;
+  fs: FileStorageSDK;
+
   totalSpace(): BigInt;
   reservedSpace(): BigInt;
+  totalReservedSpace(): BigInt;
   occupiedSpace(): BigInt;
+
   rootDirectory(): DeDirectory;
+
   downloadFile(filepath: string): void;
   search(query: string): Array<DeFile | DeDirectory>;
 }
@@ -48,7 +86,7 @@ class DeFileManager implements IDeFileManager {
 
   rpcEndpoint: string;
   w3: Object;
-  fs: Object;
+  fs: FileStorageSDK;
 
   constructor(rpcEndpoint: string) {
     this.rpcEndpoint = rpcEndpoint;
@@ -59,6 +97,10 @@ class DeFileManager implements IDeFileManager {
 
   rootDirectory() {
     return;
+  }
+
+  async totalSpace() {
+    return await this.fs.getTotalSpace();
   }
 }
 
