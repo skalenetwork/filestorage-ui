@@ -9,16 +9,23 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@skalenetwork/filestorage.js": "^1.0.0",
     "next": "12.1.6",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "react-table": "^7.8.0",
+    "web3": "^1.7.4"
   },
   "devDependencies": {
     "@types/node": "18.0.0",
     "@types/react": "18.0.14",
     "@types/react-dom": "18.0.5",
+    "autoprefixer": "^10.4.7",
+    "chromatic": "^6.6.4",
     "eslint": "8.18.0",
     "eslint-config-next": "12.1.6",
+    "postcss": "^8.4.14",
+    "tailwindcss": "^3.1.4",
     "typescript": "4.7.4"
   }
 }
