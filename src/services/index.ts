@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * @module
  * On-chain file manager for containerizing file management against users / chains

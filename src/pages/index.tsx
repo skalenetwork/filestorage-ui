@@ -17,7 +17,7 @@ const Home: NextPage = () => {
         <title>SKALE Filestorage</title>
         <meta name="description" content="SKALE filestorage Dapp" />
         <link rel="icon" href="/favicon.ico" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500&display=swap" rel="stylesheet" />
       </Head>
 
@@ -45,8 +45,8 @@ const Home: NextPage = () => {
             <input className="py-2 px-4 w-full border border-gray-500 rounded" type="text" placeholder="Search files..." />
           </div>
           <div className="flex-none">
-            <Button spaced onClick={() => setModalOpen(true)}>+ Upload file</Button>
-            <Button spaced onClick={() => setModalOpen(true)}>+ Create directory</Button>
+            <Button>+ Upload file</Button>
+            <Button>+ Create directory</Button>
           </div>
         </div>
         <div className="my-6 h-96 bg-gray-100 rounded flex justify-center items-center">
@@ -60,7 +60,7 @@ const Home: NextPage = () => {
       <footer className="p-4 text-center text-slate-400 text-sm">
         ⚬ SKALE Filesystem [WIP] ⚬
       </footer>
-    </div>
+    </div >
   )
 }
 
