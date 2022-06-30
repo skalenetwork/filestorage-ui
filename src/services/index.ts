@@ -9,6 +9,11 @@
 import Web3 from 'web3';
 import { FileStorage } from '@skalenetwork/filestorage.js';
 
+const KIND = {
+  FILE: "file",
+  DIRECTORY: "directory"
+}
+
 /**
  * Interfacing based on simpified form of web FileSystem and FileSystem Access API
  * we start without file handles
@@ -91,7 +96,7 @@ class DeDirectory implements IDeDirectory {
   path: string;
   entriesGenerator: Function;
   constructor(data: FileStorageDirectory, entriesGenerator: Function) {
-    this.kind = "directory";
+    this.kind = KIND.DIRECTORY;
     this.name = data.name;
     this.path = data.storagePath;
     this.entriesGenerator = entriesGenerator;
@@ -109,7 +114,7 @@ class DeFile implements IDeFile {
   size: number;
 
   constructor(data: FileStorageFile) {
-    this.kind = "file";
+    this.kind = KIND.FILE;
     this.name = data.name;
     this.path = data.storagePath;
     this.size = data.size;
@@ -159,14 +164,12 @@ class DeFileManager implements IDeFileManager {
       // make DeFile
       if (item.isFile) {
         item = <FileStorageFile>item;
-        yield item; // build DeFile here
+        yield new DeFile(item);
       }
       // recursive: make DeDirectory with entries()
       else {
         item = <FileStorageDirectory>item;
-        yield new DeDirectory(item, this.entriesGenerator)
-        yield item; // build DeDirectory here
-        yield* await this.entriesGenerator(item.storagePath);
+        yield new DeDirectory(item, this.entriesGenerator);
       }
     }
   }
