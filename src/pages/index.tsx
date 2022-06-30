@@ -5,72 +5,60 @@ import styles from '../styles/Base.module.css'
 
 import { useState } from 'react';
 
+import { Button } from '@/components/common';
+
 const Home: NextPage = () => {
 
   const [modalOpen, setModalOpen] = useState(false);
 
   return (
-    <div className={styles.container}>
+    <div className="container mx-auto">
       <Head>
         <title>SKALE Filestorage</title>
         <meta name="description" content="SKALE filestorage Dapp" />
         <link rel="icon" href="/favicon.ico" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500&display=swap" rel="stylesheet" />
       </Head>
 
-      <main className={styles.main}>
-
-        <div className="modal">
-
-        </div>
-
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.tsx</code>
+      <header className="header py-4 flex justify-between items-center">
+        <p>
+          <img src="/logo.png" className="h-12" style={{ filter: "revert" }} alt="" />
+          <small className="text-gray-500 font-mono">File System</small>
         </p>
+        <input
+          className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
+          type="text"
+          placeholder="0x..."
+        />
+      </header>
 
-        <button className="p-2 bg-black text-orange-100" onClick={() => setModalOpen(true)}>Modal Open</button>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h2>Documentation &rarr;</h2>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h2>Learn &rarr;</h2>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className="m-4 p-6
-              text-left decoration-none
-              border border-grey rounded-xl
-              hover:active:border-blue
-              "
-          >
-            <h2>Examples &rarr;</h2>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h2>Deploy &rarr;</h2>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+      <main>
+        <div className="status-bar flex flex-row justify-between items-center">
+          <h1 className="text-3xl font-semibold">Filestorage</h1>
+          <div>
+            Status
+          </div>
+        </div>
+        <div className="action-bar my-4 gap-4 flex flex-row justify-between items-center">
+          <div className="grow">
+            <input className="py-2 px-4 w-full border border-gray-500 rounded" type="text" placeholder="Search files..." />
+          </div>
+          <div className="flex-none">
+            <Button spaced onClick={() => setModalOpen(true)}>+ Upload file</Button>
+            <Button spaced onClick={() => setModalOpen(true)}>+ Create directory</Button>
+          </div>
+        </div>
+        <div className="my-6 h-96 bg-gray-100 rounded flex justify-center items-center">
+          <p className="text-gray-500 font-mono">⌛ Data Table</p>
         </div>
       </main>
 
-      <footer className={styles.footer}>
+      <div className="modal">
+      </div>
 
+      <footer className="p-4 text-center text-slate-400 text-sm">
+        ⚬ SKALE Filesystem [WIP] ⚬
       </footer>
     </div>
   )
