@@ -1,15 +1,58 @@
-import type { NextPage } from 'next'
-import Head from 'next/head'
-import Image from 'next/image'
-import styles from '../styles/Base.module.css'
+import type { NextPage } from 'next';
+import Head from 'next/head';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useMount, useAsync } from 'react-use';
 
-import { Button } from '@/components/common';
+import { Button, Modal, Progress } from '@/components/common';
+import Web3Modal from 'web3modal';
+
+import { DeFileManager, DeFile, DeDirectory } from '@/services/filesystem';
 
 const Home: NextPage = () => {
 
-  const [modalOpen, setModalOpen] = useState(false);
+  // @todo move these to contexts
+
+  const [reserveSpaceModal, setReserveSpaceModal] = useState(false);
+  const [uploadModal, setUploadModal] = useState(false);
+
+  const [address, setAddress] = useState("");
+  const [rpcEndpoint, setRpcEndpoint] = useState("");
+
+  const [fileManager, setFileManager] = useState<DeFileManager | undefined>(undefined);
+
+  const [currentDirectory, setCurrentDirectory] = useState<DeDirectory | undefined>(undefined);
+  const [currentListing, setCurrentListing] = useState<Array<DeDirectory | DeFile>>([]);
+
+  // makeshift placeholder for wallet flow
+  useMount(() => {
+    setAddress(String(localStorage.getItem("SKALE_TEST_ADDRESS")));
+    setRpcEndpoint(String(localStorage.getItem("SKALE_TEST_ADDRESS")))
+  });
+
+  // initialize file manager constructs
+  useEffect(() => {
+    if (address.length && rpcEndpoint.length) {
+      setFileManager(new DeFileManager(address, rpcEndpoint));
+    }
+  }, [address, rpcEndpoint]);
+
+  // update file manager current listing
+  useAsync(async () => {
+    if (!currentDirectory) return;
+    const listing = await currentDirectory.entries();
+    setCurrentListing(Array.from(listing))
+  }, [currentDirectory]);
+
+  const handleCreateDirectory = async () => {
+    if (!currentDirectory) return;
+    return await fileManager?.createDirectory(currentDirectory);
+  }
+
+  const handleUploadFile = async (file: File) => {
+    if (!currentDirectory) return;
+    fileManager?.uploadFile(file, currentDirectory);
+  }
 
   return (
     <div className="container mx-auto">
@@ -37,14 +80,16 @@ const Home: NextPage = () => {
         <div className="status-bar flex flex-row justify-between items-center">
           <h1 className="text-3xl font-semibold">Filestorage</h1>
           <div>
-            Status
+            <p className="font-bold">25.32 GB used</p>
+            <p>79% used - 6.64 GB free</p>
+            <Progress className="w-48" value={70} color="accent" />
           </div>
         </div>
         <div className="action-bar my-4 gap-4 flex flex-row justify-between items-center">
           <div className="grow">
             <input className="py-2 px-4 w-full border border-gray-500 rounded" type="text" placeholder="Search files..." />
           </div>
-          <div className="flex-none">
+          <div className="flex-none flex flex-row gap-4">
             <Button>+ Upload file</Button>
             <Button>+ Create directory</Button>
           </div>
@@ -54,8 +99,25 @@ const Home: NextPage = () => {
         </div>
       </main>
 
-      <div className="modal">
-      </div>
+      <Modal className="gap-4 flex flex-col justify-center items-center" open={reserveSpaceModal}>
+        <Modal.Header className="text-center font-bold">
+          Reserve Space - to-be-modal : daisyUI not so daisy
+        </Modal.Header>
+
+        <Modal.Body className="flex flex-col justify-center items-center">
+          <p>
+            Enter the address to which the space will be allocated.
+          </p>
+          <input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
+            type="text"
+            placeholder="0x..."
+          />
+        </Modal.Body>
+
+        <Modal.Actions>
+          <Button onClick={() => setReserveSpaceModal(!reserveSpaceModal)}>Kharasho</Button>
+        </Modal.Actions>
+      </Modal>
 
       <footer className="p-4 text-center text-slate-400 text-sm">
         ⚬ SKALE Filesystem [WIP] ⚬

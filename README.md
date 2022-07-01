@@ -25,3 +25,10 @@ yarn dev
 ```
 
 View entry point: `pages/index.tsx`
+
+## Batching UX : relevant - future above water
+
+[EIP-2255](https://eips.ethereum.org/EIPS/eip-2255)
+
+projection by MM
+![](https://pbs.twimg.com/media/EIKULr5XsAASISn?format=jpg)
