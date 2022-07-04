@@ -10,6 +10,8 @@ import Web3Modal from 'web3modal';
 
 import { DeFileManager, DeFile, DeDirectory } from '@/services/filesystem';
 
+import { useTable } from 'react-table';
+
 const Home: NextPage = () => {
 
   // @todo move these to contexts
@@ -27,6 +29,8 @@ const Home: NextPage = () => {
 
   const [currentDirectory, setCurrentDirectory] = useState<DeDirectory | undefined>(undefined);
   const [currentListing, setCurrentListing] = useState<Array<DeDirectory | DeFile>>([]);
+
+  const table = useReactTable();
 
   // makeshift placeholder for wallet flow
   useMount(() => {
@@ -93,8 +97,9 @@ const Home: NextPage = () => {
           <h1 className="text-3xl font-semibold">Filestorage</h1>
           <div>
             <p className="font-bold">25.32 GB used</p>
-            <p>79% used - 6.64 GB free</p>
-            <Progress className="w-48" value={70} max={100} color="accent" />
+            <p className="text-sm">79% used - 6.64 GB free</p>
+            <Progress className="w-48" value={70} max={100} />
+            <Button onClick={() => setReserveSpaceModal(true)} color="ghost">+ Reserve Space</Button>
           </div>
         </div>
         <div className="action-bar my-4 gap-4 flex flex-row justify-between items-center">
@@ -102,14 +107,44 @@ const Home: NextPage = () => {
             <Input className="py-2 px-4 w-full border border-gray-500 rounded" type="text" placeholder="Search files..." />
           </div>
           <div className="flex-none flex flex-row gap-4">
-            <Button onClick={() => setReserveSpaceModal(true)} >+ Upload file</Button>
-            <Button>+ Create directory</Button>
+            <Button onClick={() => setUploadModal(true)} >+ Upload file</Button>
+            <form className="input-group">
+              <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
+                type="text"
+                placeholder="New directory name"
+                required
+              />
+              <Button type="submit">+ Create directory</Button>
+            </form>
           </div>
         </div>
         <div className="my-6 h-96 bg-gray-100 rounded flex justify-center items-center">
+          <table></table>
           <p className="text-gray-500 font-mono">⌛ Data Table</p>
         </div>
       </main>
+
+      <Modal
+        className="gap-4 flex flex-col justify-center items-center"
+        open={uploadModal}
+        onClickBackdrop={() => setUploadModal(false)}
+      >
+        <Modal.Header className="text-center font-bold">
+          Upload File
+        </Modal.Header>
+        <Modal.Body className="flex flex-col gap-4 justify-center items-center">
+          <p>
+            Give your file or folder a name.
+          </p>
+          <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
+            type="file"
+          />
+        </Modal.Body>
+        <Modal.Actions>
+          <Button onClick={handleUploadFile}>Upload</Button>
+          <a className="underline" onClick={() => setUploadModal(false)}>Cancel</a>
+        </Modal.Actions>
+      </Modal>
 
       <Modal
         className="gap-4 flex flex-col justify-center items-center"
@@ -133,7 +168,8 @@ const Home: NextPage = () => {
           />
         </Modal.Body>
         <Modal.Actions>
-          <Button onClick={handleReserveSpace}>Kharasho</Button>
+          <Button onClick={handleReserveSpace}>Reserve</Button>
+          <a className="underline" onClick={handleReserveSpace}>Cancel</a>
         </Modal.Actions>
       </Modal>
 

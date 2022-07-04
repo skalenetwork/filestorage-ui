@@ -22,6 +22,12 @@ const ROLE = {
   CHAIN_OWNER: 'CHAIN_OWNER'
 }
 
+const OPERATON = {
+  UPLOAD_FILE: 'UPLOAD_FILE',
+  DELETE_FILE: 'DELETE_FILE',
+  DELETE_DIRECTORY: 'DELETE_DIRECTORY'
+}
+
 /**
  * Interfacing based on simpified form of web FileSystem and FileSystem Access API
  * we start without file handles
@@ -203,14 +209,17 @@ class DeFileManager implements IDeFileManager {
     return this.rootDir;
   }
 
+  // @todo: implement
   async ownerIsAdmin() {
     // chain owner?
   }
 
+  // @todo: implement
   async ownerIsAllocator() {
     await this.contract.methods.ALLOCATOR_ROLE().call();
   }
 
+  // @todo: implement
   async reserveSpace(address: Address, amount: number) {
     return;
   }
@@ -227,6 +236,7 @@ class DeFileManager implements IDeFileManager {
     return await this.fs.ceateDirectory(this.address, destDirectory.path);
   }
 
+  // @todo: implement
   async deleteDirectory(directory: DeDirectory) {
     // to make this possible: in generator, set first entry as parent directory
     // use that reference to remove from iterator
@@ -240,6 +250,30 @@ class DeFileManager implements IDeFileManager {
 
   async downloadFile(path: string) {
     return this.fs.downloadToFile(filepath);
+  }
+
+  private async iterateDirectory(directory: DeDirectory, onEntry: DeDirectory | DeFile) {
+    for await (const entry of directory.entries()) {
+      if (entry.kind === KIND.FILE) {
+        onEntry(entry);
+      }
+      if (entry.kind === KIND.DIRECTORY) {
+        onEntry(entry);
+        await this.iterateDirectory(entry, onEntry);
+      }
+    }
+  }
+
+  // @todo: test and implement fuzzy query
+  async search(inDirectory: DeDirectory, query: string) {
+    const results = [];
+    const handleMatch = (fileOrDir: DeFile | DeDirectory) => {
+      if (fileOrDir.name === query) {
+        results.push(fileOrDir);
+      }
+    }
+    await this.iterateDirectory(inDirectory, handleMatch);
+    return [];
   }
 
   async occupiedSpace() {
