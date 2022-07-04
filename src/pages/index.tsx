@@ -1,10 +1,11 @@
+import Web3 from 'web3';
 import type { NextPage } from 'next';
 import Head from 'next/head';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useMount, useAsync } from 'react-use';
 
-import { Button, Modal, Progress } from '@/components/common';
+import { Button, Modal, Progress, Input } from '@/components/common';
 import Web3Modal from 'web3modal';
 
 import { DeFileManager, DeFile, DeDirectory } from '@/services/filesystem';
@@ -16,6 +17,9 @@ const Home: NextPage = () => {
   const [reserveSpaceModal, setReserveSpaceModal] = useState(false);
   const [uploadModal, setUploadModal] = useState(false);
 
+  const reserveAddrField = useRef("");
+  const reserveSpaceField = useRef("");
+
   const [address, setAddress] = useState("");
   const [rpcEndpoint, setRpcEndpoint] = useState("");
 
@@ -26,8 +30,8 @@ const Home: NextPage = () => {
 
   // makeshift placeholder for wallet flow
   useMount(() => {
-    setAddress(String(localStorage.getItem("SKALE_TEST_ADDRESS")));
-    setRpcEndpoint(String(localStorage.getItem("SKALE_TEST_ADDRESS")))
+    // setAddress(String(localStorage.getItem("SKALE_TEST_ADDRESS")));
+    // setRpcEndpoint(String(localStorage.getItem("SKALE_TEST_ADDRESS")));
   });
 
   // initialize file manager constructs
@@ -51,7 +55,15 @@ const Home: NextPage = () => {
 
   const handleUploadFile = async (file: File) => {
     if (!currentDirectory) return;
-    fileManager?.uploadFile(file, currentDirectory);
+    fileManager?.uploadFile(currentDirectory, file);
+  }
+
+  const handleReserveSpace = async (event) => {
+    return fileManager?.fs.reserveSpace(
+      address,
+      reserveAddrField.current,
+      reserveSpaceField.current
+    );
   }
 
   return (
@@ -69,7 +81,7 @@ const Home: NextPage = () => {
           <img src="/logo.png" className="h-12" style={{ filter: "revert" }} alt="" />
           <small className="text-gray-500 font-mono">File System</small>
         </p>
-        <input
+        <Input
           className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
           type="text"
           placeholder="0x..."
@@ -82,15 +94,15 @@ const Home: NextPage = () => {
           <div>
             <p className="font-bold">25.32 GB used</p>
             <p>79% used - 6.64 GB free</p>
-            <Progress className="w-48" value={70} color="accent" />
+            <Progress className="w-48" value={70} max={100} color="accent" />
           </div>
         </div>
         <div className="action-bar my-4 gap-4 flex flex-row justify-between items-center">
           <div className="grow">
-            <input className="py-2 px-4 w-full border border-gray-500 rounded" type="text" placeholder="Search files..." />
+            <Input className="py-2 px-4 w-full border border-gray-500 rounded" type="text" placeholder="Search files..." />
           </div>
           <div className="flex-none flex flex-row gap-4">
-            <Button>+ Upload file</Button>
+            <Button onClick={() => setReserveSpaceModal(true)} >+ Upload file</Button>
             <Button>+ Create directory</Button>
           </div>
         </div>
@@ -99,23 +111,29 @@ const Home: NextPage = () => {
         </div>
       </main>
 
-      <Modal className="gap-4 flex flex-col justify-center items-center" open={reserveSpaceModal}>
+      <Modal
+        className="gap-4 flex flex-col justify-center items-center"
+        open={reserveSpaceModal}
+        onClickBackdrop={() => setReserveSpaceModal(false)}
+      >
         <Modal.Header className="text-center font-bold">
-          Reserve Space - to-be-modal : daisyUI not so daisy
+          📦<br />Reserve Space
         </Modal.Header>
-
-        <Modal.Body className="flex flex-col justify-center items-center">
+        <Modal.Body className="flex flex-col gap-4 justify-center items-center">
           <p>
             Enter the address to which the space will be allocated.
           </p>
-          <input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
+          <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
             type="text"
             placeholder="0x..."
           />
+          <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
+            type="number"
+            placeholder="Space to reserve"
+          />
         </Modal.Body>
-
         <Modal.Actions>
-          <Button onClick={() => setReserveSpaceModal(!reserveSpaceModal)}>Kharasho</Button>
+          <Button onClick={handleReserveSpace}>Kharasho</Button>
         </Modal.Actions>
       </Modal>
 

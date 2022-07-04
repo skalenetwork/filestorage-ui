@@ -9,8 +9,7 @@
  */
 
 import Web3 from 'web3';
-import { FileStorage } from '@skalenetwork/filestorage.js';
-import { PathLike } from 'fs';
+import FileStorage from '@skalenetwork/filestorage.js';
 import { Buffer } from 'buffer';
 
 const KIND = {
@@ -45,18 +44,24 @@ type FileStorageFile = {
 
 type PrivateKey = string;
 type Address = string;
-type FilePath = PathLike;
+type FilePath = string;
+
+type FileStorageContract = {
+  contract: Object
+}
 
 // @todo confirm and set return type where void
 type FileStorageClient = {
+  contract: FileStorageContract;
   // core-actions
   uploadFile(address: Address, filePath: FilePath, fileBuffer: Buffer, privateKey?: PrivateKey): Promise<string>;
-  downloadToFile(storagePath: string): Promise<void>;
-  downloadToBuffer(storagePath: string): Promise<Buffer>;
   deleteFile(address: Address, filePath: string, privateKey?: PrivateKey): Promise<void>;
   ceateDirectory(address: Address, directoryPath: string, privateKey?: PrivateKey): Promise<{ storagePath: string }>;
   deleteDirectory(address: Address, directoryPath: string, privateKey?: PrivateKey): Promise<void>;
+  // core-actions:public
   listDirectory(storagePath: string): Promise<Array<FileStorageDirectory | FileStorageFile>>;
+  downloadToFile(storagePath: string): Promise<void>;
+  downloadToBuffer(storagePath: string): Promise<Buffer>;
   // meta-actions
   reserveSpace(allocatorAddress: Address, addressToReserve: Address, reservedSpace: string, privateKey?: PrivateKey): Promise<void>;
   grantAllocatorRole(adminAddress: Address, allocatorAddress: Address, adminPrivateKey?: PrivateKey): Promise<void>;
@@ -79,27 +84,33 @@ interface IDeFile {
   name: string;
   path: string;
   size: number;
-  arrayBuffer(): ArrayBuffer;
+  buffer(): ArrayBuffer;
 }
 
 // @todo bring in web3 types
 interface IDeFileManager {
   address: string;
-  rpcEndpoint: string;
   isAllocator: boolean;
 
   w3: Object;
   fs: FileStorageClient;
+  contract: Object;
+
+  rootDirectory(): DeDirectory;
+  ownerIsAdmin(): boolean;
+  ownerIsAllocator(): boolean;
 
   totalSpace(): Promise<BigInt>;
   reservedSpace(): Promise<BigInt>;
   totalReservedSpace(): Promise<BigInt>;
   occupiedSpace(): Promise<BigInt>;
 
-  rootDirectory(): DeDirectory;
+  createDirectory(destDirectory: DeDirectory): Promise<DeDirectory>;
+  deleteDirectory(directory: DeDirectory): Promise<boolean>;
+  uploadFile(destDirectory: DeDirectory): Promise<DeFile>;
 
-  downloadFile(filepath: FilePath): void;
-  search(query: string): Array<DeFile | DeDirectory>;
+  downloadFile(file: File): Promise<void>;
+  search(inDirectory: DeDirectory, query: string): Array<DeFile | DeDirectory>;
 }
 
 class DeDirectory implements IDeDirectory {
@@ -125,12 +136,14 @@ class DeFile implements IDeFile {
   name: string;
   path: string;
   size: number;
+  buffer: Function;
 
-  constructor(data: FileStorageFile) {
+  constructor(data: FileStorageFile, buffer) {
     this.kind = KIND.FILE;
     this.name = data.name;
     this.path = data.storagePath;
     this.size = data.size;
+    this.buffer = buffer;
   }
 }
 
@@ -144,18 +157,16 @@ class DeFile implements IDeFile {
 class DeFileManager implements IDeFileManager {
 
   address: Address;
-  rpcEndpoint: string;
   w3: Object;
   fs: FileStorageClient;
+  contract: Object;
   private rootDir: DeDirectory;
 
-  constructor(rpcEndpoint: string, address: Address) {
-    this.rpcEndpoint = rpcEndpoint;
+  constructor(w3: Object, address: Address) {
     this.address = address;
-
-    const { w3, fs } = getConnection(rpcEndpoint);
     this.w3 = w3;
-    this.fs = fs;
+    this.fs = new FileStorage(w3, true);
+    this.contract = this.fs.contract.contract;
 
     this.rootDir = new DeDirectory({
       name: this.address,
@@ -192,6 +203,18 @@ class DeFileManager implements IDeFileManager {
     return this.rootDir;
   }
 
+  async ownerIsAdmin() {
+    // chain owner?
+  }
+
+  async ownerIsAllocator() {
+    await this.contract.methods.ALLOCATOR_ROLE().call();
+  }
+
+  async reserveSpace(address: Address, amount: number) {
+    return;
+  }
+
   /**
    * @todo memoization w/ stale check
    */
@@ -204,7 +227,12 @@ class DeFileManager implements IDeFileManager {
     return await this.fs.ceateDirectory(this.address, destDirectory.path);
   }
 
-  async uploadFile(file: File, destDirectory: DeDirectory) {
+  async deleteDirectory(directory: DeDirectory) {
+    // to make this possible: in generator, set first entry as parent directory
+    // use that reference to remove from iterator
+  }
+
+  async uploadFile(destDirectory: DeDirectory, file: File) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer(arrayBuffer);
     return await this.fs.uploadFile(this.address, destDirectory.path, buffer);

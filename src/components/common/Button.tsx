@@ -1,7 +1,8 @@
 
-const Button = ({ children, ...rest }: { children: string }) => {
+const Button = (props) => {
   return (
-    <button className={"py-2 px-8 rounded bg-gray-700 text-white hover:bg-gray-600"} {...rest}>{children}</button>
+    <button
+      className={"py-2 px-8 rounded bg-gray-700 text-white hover:bg-gray-600"}>{props.children}</button>
   );
 }
 
