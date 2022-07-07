@@ -10,6 +10,7 @@
 
 import Web3 from 'web3';
 import FileStorage from '@skalenetwork/filestorage.js';
+
 import { Buffer } from 'buffer';
 
 const KIND = {
@@ -153,6 +154,12 @@ class DeFile implements IDeFile {
   }
 }
 
+type OperatonQueueItem = {
+  operation: string;
+  inDirectory: DeDirectory;
+  file: DeFile;
+}
+
 /**
  * Decentralized File Manager: Main high-level construct
  * @todo add path builder using this.address
@@ -167,6 +174,8 @@ class DeFileManager implements IDeFileManager {
   fs: FileStorageClient;
   contract: Object;
   private rootDir: DeDirectory;
+
+  private uploadQueue = [];
 
   constructor(w3: Object, address: Address) {
     this.address = address;
@@ -214,14 +223,13 @@ class DeFileManager implements IDeFileManager {
     // chain owner?
   }
 
-  // @todo: implement
+  // @todo: confirm response
   async ownerIsAllocator() {
     await this.contract.methods.ALLOCATOR_ROLE().call();
   }
 
-  // @todo: implement
   async reserveSpace(address: Address, amount: number) {
-    return;
+    return this.fs.reserveSpace(this.address, address, amount);
   }
 
   /**
@@ -232,8 +240,14 @@ class DeFileManager implements IDeFileManager {
     return entries;
   }
 
-  async createDirectory(destDirectory: DeDirectory) {
-    return await this.fs.ceateDirectory(this.address, destDirectory.path);
+  async createDirectory(destDirectory: DeDirectory, name: string) {
+    return await this.fs.ceateDirectory(this.address, destDirectory.path + name);
+  }
+
+  // @todo: adjust entries
+  // later indexing can make this file-input only
+  async deleteFile(destDirectory: DeDirectory, file: DeFile) {
+    await this.fs.deleteFile(this.address, file.path);
   }
 
   // @todo: implement
@@ -273,7 +287,7 @@ class DeFileManager implements IDeFileManager {
       }
     }
     await this.iterateDirectory(inDirectory, handleMatch);
-    return [];
+    return results;
   }
 
   async occupiedSpace() {
@@ -291,43 +305,6 @@ class DeFileManager implements IDeFileManager {
   async reservedSpace() {
     return (await this.fs.getReservedSpace()).reservedSpace;
   }
-}
-
-// copy from earlier prototype
-// @todo refactor to well-supported APIs
-// likely move to own provider, then made available in action components
-const localFs = {
-  traverseDirectoryFiles: async function (dirHandle) {
-    // console.log(dirHandle);
-    let files = [];
-    let totalSize = 0;
-    for await (let fileLike of dirHandle) {
-      if (fileLike[1].kind !== "file") continue;
-
-      const file = await fileLike[1].getFile();
-      const buffer = new Uint8Array(await file.arrayBuffer());
-      files.push({
-        name: file.name,
-        lastModified: file.lastModified,
-        size: file.size,
-        type: file.type,
-        buffer
-      });
-      totalSize += file.size;
-    }
-    return [totalSize, files];
-  },
-  loadDirectory: async function () {
-    const dirHandle = await window.showDirectoryPicker();
-    console.log(dirHandle);
-    return dirHandle;
-  }
-}
-
-function getConnection(nodeEndpoint: string) {
-  const w3 = new Web3.providers.HttpProvider(nodeEndpoint);
-  const fs = new FileStorage(w3, true);
-  return { w3, fs }
 }
 
 export {

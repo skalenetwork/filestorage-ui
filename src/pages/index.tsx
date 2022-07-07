@@ -1,4 +1,3 @@
-import Web3 from 'web3';
 import type { NextPage } from 'next';
 import Head from 'next/head';
 
@@ -6,65 +5,48 @@ import { useState, useEffect, useRef } from 'react';
 import { useMount, useAsync } from 'react-use';
 
 import { Button, Modal, Progress, Input } from '@/components/common';
-import Web3Modal from 'web3modal';
+import FileManagerView from '@/components/FileManagerView';
 
-import { DeFileManager, DeFile, DeDirectory } from '@/services/filesystem';
-
-import { useTable } from 'react-table';
+import { useFileManagerContext } from '../store';
 
 const Home: NextPage = () => {
 
-  // @todo move these to contexts
-
+  // modals
   const [reserveSpaceModal, setReserveSpaceModal] = useState(false);
   const [uploadModal, setUploadModal] = useState(false);
 
+  // field refs
   const reserveAddrField = useRef("");
   const reserveSpaceField = useRef("");
 
-  const [address, setAddress] = useState("");
-  const [rpcEndpoint, setRpcEndpoint] = useState("");
+  const uploadFileField = useRef(null);
+  const [uploadFile, setUploadFile] = useState(null);
 
-  const [fileManager, setFileManager] = useState<DeFileManager | undefined>(undefined);
+  const newDirectoryField = useRef("");
 
-  const [currentDirectory, setCurrentDirectory] = useState<DeDirectory | undefined>(undefined);
-  const [currentListing, setCurrentListing] = useState<Array<DeDirectory | DeFile>>([]);
+  const { fm, currentDirectory, totalSpace } = useFileManagerContext();
 
-  const table = useReactTable();
-
-  // makeshift placeholder for wallet flow
-  useMount(() => {
-    // setAddress(String(localStorage.getItem("SKALE_TEST_ADDRESS")));
-    // setRpcEndpoint(String(localStorage.getItem("SKALE_TEST_ADDRESS")));
-  });
-
-  // initialize file manager constructs
-  useEffect(() => {
-    if (address.length && rpcEndpoint.length) {
-      setFileManager(new DeFileManager(address, rpcEndpoint));
-    }
-  }, [address, rpcEndpoint]);
-
-  // update file manager current listing
-  useAsync(async () => {
+  const handleCreateDirectory = async (event) => {
+    event.preventDefault();
+    console.log("handleCreateDirectory", currentDirectory, newDirectoryField.current.value);
     if (!currentDirectory) return;
-    const listing = await currentDirectory.entries();
-    setCurrentListing(Array.from(listing))
-  }, [currentDirectory]);
-
-  const handleCreateDirectory = async () => {
-    if (!currentDirectory) return;
-    return await fileManager?.createDirectory(currentDirectory);
+    return await fm?.createDirectory(currentDirectory, newDirectoryField.current.value);
   }
 
-  const handleUploadFile = async (file: File) => {
-    if (!currentDirectory) return;
-    fileManager?.uploadFile(currentDirectory, file);
+  const handleUploadFileField = async (event) => {
+    console.log("handle upload file field change", event.target.files[0]);
+    setUploadFile(event.target.files[0]);
+  }
+
+  const handleUploadFile = async (event) => {
+    console.log("file to upload", uploadFile);
+    if (!currentDirectory || !uploadFile) return;
+    fm?.uploadFile(currentDirectory, uploadFile);
   }
 
   const handleReserveSpace = async (event) => {
-    return fileManager?.fs.reserveSpace(
-      address,
+    return fm?.fs.reserveSpace(
+      fm.address,
       reserveAddrField.current,
       reserveSpaceField.current
     );
@@ -96,6 +78,7 @@ const Home: NextPage = () => {
         <div className="status-bar flex flex-row justify-between items-center">
           <h1 className="text-3xl font-semibold">Filestorage</h1>
           <div>
+            <p>{totalSpace}</p>
             <p className="font-bold">25.32 GB used</p>
             <p className="text-sm">79% used - 6.64 GB free</p>
             <Progress className="w-48" value={70} max={100} />
@@ -113,15 +96,13 @@ const Home: NextPage = () => {
                 type="text"
                 placeholder="New directory name"
                 required
+                ref={newDirectoryField}
               />
-              <Button type="submit">+ Create directory</Button>
+              <Button onClick={handleCreateDirectory}>+ Create directory</Button>
             </form>
           </div>
         </div>
-        <div className="my-6 h-96 bg-gray-100 rounded flex justify-center items-center">
-          <table></table>
-          <p className="text-gray-500 font-mono">⌛ Data Table</p>
-        </div>
+        <FileManagerView />
       </main>
 
       <Modal
@@ -136,8 +117,11 @@ const Home: NextPage = () => {
           <p>
             Give your file or folder a name.
           </p>
-          <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
+          <Input
+            className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
             type="file"
+            ref={uploadFileField}
+            onChange={handleUploadFileField}
           />
         </Modal.Body>
         <Modal.Actions>
