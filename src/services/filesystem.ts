@@ -63,7 +63,7 @@ type FileStorageClient = {
   // core-actions
   uploadFile(address: Address, filePath: FilePath, fileBuffer: Buffer, privateKey?: PrivateKey): Promise<string>;
   deleteFile(address: Address, filePath: string, privateKey?: PrivateKey): Promise<void>;
-  ceateDirectory(address: Address, directoryPath: string, privateKey?: PrivateKey): Promise<{ storagePath: string }>;
+  createDirectory(address: Address, directoryPath: string, privateKey?: PrivateKey): Promise<{ storagePath: string }>;
   deleteDirectory(address: Address, directoryPath: string, privateKey?: PrivateKey): Promise<void>;
   // core-actions:public
   listDirectory(storagePath: string): Promise<Array<FileStorageDirectory | FileStorageFile>>;
@@ -72,9 +72,10 @@ type FileStorageClient = {
   // meta-actions
   reserveSpace(allocatorAddress: Address, addressToReserve: Address, reservedSpace: string, privateKey?: PrivateKey): Promise<void>;
   grantAllocatorRole(adminAddress: Address, allocatorAddress: Address, adminPrivateKey?: PrivateKey): Promise<void>;
-  // state
+  // state::address
   getReservedSpace(address: Address): Promise<{ reservedSpace: number }>;
-  getOccupiedSpace(): Promise<{ occupiedSpace: number }>;
+  getOccupiedSpace(address: Address): Promise<{ occupiedSpace: number }>;
+  // state::global
   getTotalReservedSpace(): Promise<{ reservedSpace: number }>;
   getTotalSpace(): Promise<{ space: number }>;
 }
@@ -103,6 +104,8 @@ interface IDeFileManager {
   fs: FileStorageClient;
   contract: Object;
 
+  privateKey?: string;
+
   rootDirectory(): DeDirectory;
   ownerIsAdmin(): boolean;
   ownerIsAllocator(): boolean;
@@ -124,17 +127,19 @@ class DeDirectory implements IDeDirectory {
   kind: string;
   name: string;
   path: string;
-  entriesGenerator: Function;
+  manager: DeFileManager;
+  parent: DeDirectory;
 
-  constructor(data: FileStorageDirectory, entriesGenerator: Function) {
+  constructor(data: FileStorageDirectory, manager: DeFileManager, parent?: DeDirectory) {
     this.kind = KIND.DIRECTORY;
     this.name = data.name;
     this.path = data.storagePath;
-    this.entriesGenerator = entriesGenerator;
+    this.manager = manager;
+    this.parent = parent;
   }
 
   entries() {
-    return this.entriesGenerator(this.path);
+    return this.manager.entriesGenerator(this);
   }
 }
 
@@ -174,29 +179,36 @@ class DeFileManager implements IDeFileManager {
   fs: FileStorageClient;
   contract: Object;
   private rootDir: DeDirectory;
+  uploads: Object;
+  dirLastAction: Object;
 
-  private uploadQueue = [];
-
-  constructor(w3: Object, address: Address) {
+  constructor(w3: Object, address: Address, privateKey?: Address) {
     this.address = address;
     this.w3 = w3;
     this.fs = new FileStorage(w3, true);
     this.contract = this.fs.contract.contract;
+    this.privateKey = privateKey;
+
+    this.dirLastAction = "";
+    this.uploads = {};
+
+    const addrWithoutPrefix = this.address.slice(2);
 
     this.rootDir = new DeDirectory({
-      name: this.address,
-      storagePath: `${this.address}/`,
-      isFile: "false"
-    }, this.entriesGenerator);
+      name: addrWithoutPrefix,
+      storagePath: addrWithoutPrefix,
+      isFile: 'false',
+    }, this);
   }
 
   /**
    * File Manager maintains generatin
    * @param dirPath 
    */
-  private async * entriesGenerator(dirPath: FilePath): Promise<Iterable<DeDirectory | DeFile>> {
+  async * entriesGenerator(directory: DeDirectory): Promise<Iterable<DeDirectory | DeFile>> {
+    console.log("* entriesGenerator::", directory.path, this);
     // hit remote
-    const entries = await this.loadDirectory(dirPath);
+    const entries = await this.loadDirectory(directory.path);
 
     // map to iterable files & directories
     for (let i in entries) {
@@ -209,7 +221,7 @@ class DeFileManager implements IDeFileManager {
       // recursive: make DeDirectory with entries()
       else {
         item = <FileStorageDirectory>item;
-        yield new DeDirectory(item, this.entriesGenerator);
+        yield new DeDirectory(item, this, directory);
       }
     }
   }
@@ -236,18 +248,19 @@ class DeFileManager implements IDeFileManager {
    * @todo memoization w/ stale check
    */
   private async loadDirectory(path: string): Promise<Array<FileStorageFile | FileStorageDirectory>> {
-    const entries = await this.fs.listDirectory(`${this.address}${path}`);
+    const entries = await this.fs.listDirectory(`${path}`);
     return entries;
   }
 
   async createDirectory(destDirectory: DeDirectory, name: string) {
-    return await this.fs.ceateDirectory(this.address, destDirectory.path + name);
+    const path = (destDirectory.path === this.rootDir.path) ? name : `${destDirectory.path}/${name}`;
+    return await this.fs.createDirectory(this.address, path, this.privateKey);
   }
 
   // @todo: adjust entries
   // later indexing can make this file-input only
   async deleteFile(destDirectory: DeDirectory, file: DeFile) {
-    await this.fs.deleteFile(this.address, file.path);
+    await this.fs.deleteFile(this.address, file.path, this.privateKey);
   }
 
   // @todo: implement
@@ -259,7 +272,17 @@ class DeFileManager implements IDeFileManager {
   async uploadFile(destDirectory: DeDirectory, file: File) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer(arrayBuffer);
-    return await this.fs.uploadFile(this.address, destDirectory.path, buffer);
+    const uploadPath = (destDirectory.path === this.rootDir.path) ? file.name : `${destDirectory.path}/${file.name}`;
+    const path = await this.fs.uploadFile(this.address, uploadPath, buffer, this.privateKey);
+    // @todo implement this gracefully
+    if (this.uploads[destDirectory.path]) {
+      this.uploads[destDirectory.path].push(path);
+    } else {
+      this.uploads[destDirectory.path] = [path];
+    }
+    // makeshift - for outside watchers
+    this.dirLastAction = `${OPERATON.UPLOAD_FILE}:${path}`;
+    return path;
   }
 
   async downloadFile(path: string) {
@@ -291,19 +314,19 @@ class DeFileManager implements IDeFileManager {
   }
 
   async occupiedSpace() {
-    return (await this.fs.getOccupiedSpace()).occupiedSpace;
+    return (await this.fs.getOccupiedSpace(this.address));
   }
 
   async totalReservedSpace() {
-    return (await this.fs.getTotalReservedSpace()).reservedSpace;
+    return (await this.fs.getTotalReservedSpace());
   }
 
   async totalSpace() {
-    return (await this.fs.getTotalSpace()).space;
+    return (await this.fs.getTotalSpace());
   }
 
   async reservedSpace() {
-    return (await this.fs.getReservedSpace()).reservedSpace;
+    return (await this.fs.getReservedSpace(this.address));
   }
 }
 

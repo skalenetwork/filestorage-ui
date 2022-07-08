@@ -1,3 +1,5 @@
+//@ts-ignore
+
 import type { NextPage } from 'next';
 import Head from 'next/head';
 
@@ -24,7 +26,7 @@ const Home: NextPage = () => {
 
   const newDirectoryField = useRef("");
 
-  const { fm, currentDirectory, totalSpace } = useFileManagerContext();
+  const { fm, currentDirectory, reservedSpace, occupiedSpace } = useFileManagerContext();
 
   const handleCreateDirectory = async (event) => {
     event.preventDefault();
@@ -50,6 +52,10 @@ const Home: NextPage = () => {
       reserveAddrField.current,
       reserveSpaceField.current
     );
+  }
+
+  const bytesToGiga = (value: number) => {
+    return (value / 1024 / 1024 / 1024).toFixed(3);
   }
 
   return (
@@ -78,10 +84,9 @@ const Home: NextPage = () => {
         <div className="status-bar flex flex-row justify-between items-center">
           <h1 className="text-3xl font-semibold">Filestorage</h1>
           <div>
-            <p>{totalSpace}</p>
-            <p className="font-bold">25.32 GB used</p>
-            <p className="text-sm">79% used - 6.64 GB free</p>
-            <Progress className="w-48" value={70} max={100} />
+            <p className="font-bold">{bytesToGiga(occupiedSpace)} GB used</p>
+            <p className="text-sm">{(occupiedSpace / reservedSpace).toFixed(2)}% used - {bytesToGiga(reservedSpace - occupiedSpace)} GB free</p>
+            <Progress className="w-48" value={occupiedSpace / reservedSpace} max={100} />
             <Button onClick={() => setReserveSpaceModal(true)} color="ghost">+ Reserve Space</Button>
           </div>
         </div>

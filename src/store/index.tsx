@@ -1,48 +1,67 @@
-// @ts-ignore
+//@ts-ignore
 
 import Web3 from 'web3';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { useMount, useAsync } from 'react-use';
+import { useMount, useAsync, useAsyncFn } from 'react-use';
 import { DeFileManager, DeDirectory, DeFile } from '../services/filesystem';
+import { local } from 'web3modal';
 
-const FileManagerContext = createContext<{ fm: DeFileManager, currentDirectory: DeDirectory } | null>(null);
+type Context = {
+  currentDirectory: DeDirectory;
+  reservedSpace: number;
+  occupiedSpace: number;
+}
+
+const FileManagerContext = createContext<Context & { fm: DeFileManager, setCurrentDirectory: Function } | null>(null);
 
 export function ContextWrapper({ children }) {
 
   // local params
-  const [address, setAddress] = useState('0x5A4AB05FBB140eb6A51e7D13a528A6Aa35a5ef4A');
-  const [rpcEndpoint, setRpcEndpoint] = useState('https://staging-v2.skalenodes.com/v1/roasted-thankful-unukalhai');
+  const [address, setAddress] = useState<string>("");
+  const [rpcEndpoint, setRpcEndpoint] = useState<string>("");
 
   const [fm, setFm] = useState<DeFileManager | undefined>(undefined);
-  const [fmContext, setFmContext] = useState<{
-    currentDirectory: DeDirectory,
-    totalSpace: number
-  } | undefined>(undefined);
+  const [fmContext, setFmContext] = useState<Context | undefined>(undefined);
+
+  useMount(() => {
+    console.log("mount");
+    setAddress('0x5A4AB05FBB140eb6A51e7D13a528A6Aa35a5ef4A');
+    setRpcEndpoint('https://staging-v2.skalenodes.com/v1/roasted-thankful-unukalhai');
+  });
 
   // set file manager initial context
   useEffect(() => {
     if (!(address.length && rpcEndpoint.length)) return;
+    console.log("set fm");
     const w3 = new Web3.providers.HttpProvider(rpcEndpoint);
-    const filemanager = new DeFileManager(w3, address);
+    const filemanager = new DeFileManager(w3, address, localStorage.getItem("SKL_pvtKey") || undefined);
     setFm(filemanager);
   }, [address, rpcEndpoint]);
 
   // explicit reactivity on tree changes within fm
   // @todo shady dependency-check: should instead tie to stale flag within fm
-  useAsync(async () => {
+  useEffect(() => {
     if (!fm) return;
-    setFmContext({
-      currentDirectory: fm.rootDirectory(),
-      totalSpace: await fm.totalSpace()
-    });
+    (async () => {
+      console.log("set fmContext");
+      setFmContext({
+        currentDirectory: fm.rootDirectory(),
+        reservedSpace: await fm.reservedSpace(),
+        occupiedSpace: await fm.occupiedSpace()
+      });
+    })();
   }, [fm]);
 
-  return (fmContext && fm) ? (
-    <FileManagerContext.Provider value={{ fm, ...fmContext }}>
+  return (fm && fmContext) ? (
+    <FileManagerContext.Provider value={{
+      fm, ...fmContext, setCurrentDirectory: (dir: DeDirectory) => {
+        setFmContext({ ...fmContext, currentDirectory: dir })
+      },
+    }}>
       { children}
     </FileManagerContext.Provider>
-  ) : null;
+  ) : <p>...</p>;
 }
 
 export function useFileManagerContext() {
