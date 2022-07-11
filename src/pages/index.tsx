@@ -1,14 +1,15 @@
-//@ts-nocheck
+
 
 import prettyBytes from 'pretty-bytes';
 import type { NextPage } from 'next';
 import Head from 'next/head';
 import { useState, useEffect, useRef } from 'react';
-import { useMount, useAsync } from 'react-use';
 
 import { useFileManagerContext } from '@/context/index';
 
-import { DocumentAddIcon, FolderAddIcon } from '@heroicons/react/solid';
+
+import FolderAddIcon from '@heroicons/react/solid/FolderAddIcon';
+import DocumentAddIcon from '@heroicons/react/solid/DocumentAddIcon';
 import { Button, Modal, Progress, Input } from '@/components/common';
 import FileNavigator from '@/components/FileNavigator';
 
@@ -27,7 +28,7 @@ const Home: NextPage = () => {
 
   const newDirectoryField = useRef("");
 
-  const { fm, currentDirectory, reservedSpace, occupiedSpace } = useFileManagerContext();
+  const { fm, directory: currentDirectory, reservedSpace, occupiedSpace } = useFileManagerContext();
 
   const handleCreateDirectory = async (event) => {
     event.preventDefault();
@@ -89,8 +90,8 @@ const Home: NextPage = () => {
         <div className="status-bar flex flex-row justify-between items-center">
           <h1 className="text-3xl font-semibold">Filestorage</h1>
           <div className="w-72">
-            <p className="font-bold">{prettyBytes(occupiedSpace)} used</p>
-            <p className="text-sm">{(occupiedSpace / reservedSpace).toFixed(2)}% used - {prettyBytes(reservedSpace - occupiedSpace)} free</p>
+            <p className="font-bold">{prettyBytes(occupiedSpace || 0)} used</p>
+            <p className="text-sm">{(occupiedSpace / reservedSpace).toFixed(2)}% used - {prettyBytes((reservedSpace - occupiedSpace) || 0)} free</p>
             <Progress className="w-full" value={occupiedSpace / reservedSpace} max={100} />
             <br />
             <Button

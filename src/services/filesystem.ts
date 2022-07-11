@@ -119,9 +119,9 @@ interface IDeFileManager {
 
   createDirectory(destDirectory: DeDirectory): Promise<DeDirectory>;
   deleteDirectory(directory: DeDirectory): Promise<boolean>;
-  uploadFile(destDirectory: DeDirectory): Promise<DeFile>;
+  uploadFile(destDirectory: DeDirectory): Promise<string>;
 
-  downloadFile(file: File): Promise<void>;
+  downloadFile(file: DeFile): Promise<void>;
   search(inDirectory: DeDirectory, query: string): Array<DeFile | DeDirectory>;
 }
 
@@ -183,8 +183,6 @@ class DeFileManager implements IDeFileManager {
 
   private rootDir: DeDirectory;
 
-
-  uploads: Object;
   dirLastAction: Object;
 
   constructor(w3: Object, address: Address, privateKey?: Address) {
@@ -195,7 +193,6 @@ class DeFileManager implements IDeFileManager {
     this.privateKey = privateKey;
 
     this.dirLastAction = "";
-    this.uploads = {};
 
     const addrWithoutPrefix = this.address.slice(2);
 
@@ -282,13 +279,16 @@ class DeFileManager implements IDeFileManager {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer(arrayBuffer);
     const uploadPath = (destDirectory.path === this.rootDir.path) ? file.name : `${destDirectory.path}/${file.name}`;
-    const path = await this.fs.uploadFile(this.address, uploadPath, buffer, this.privateKey);
-    // @todo implement this gracefully
-    if (this.uploads[destDirectory.path]) {
-      this.uploads[destDirectory.path].push(path);
-    } else {
-      this.uploads[destDirectory.path] = [path];
+    let path;
+    try {
+      path = await this.fs.uploadFile(this.address, uploadPath, buffer, this.privateKey);
+    } catch (e) {
+      throw {
+        file,
+        error: e
+      }
     }
+
     // makeshift - for outside watchers
     this.dirLastAction = `${OPERATON.UPLOAD_FILE}:${path}`;
     return path;

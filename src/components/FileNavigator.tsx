@@ -1,14 +1,12 @@
 //@ts-nocheck
 
-import { useState, useContext, useEffect, useMemo } from 'react';
-import { useAsync } from 'react-use';
+import { useState, useEffect } from 'react';
 
 import { useFileManagerContext } from '../context';
-
 import { DeFile, DeDirectory, DeFileManager } from '@/services/filesystem';
 
-import { FolderIcon } from '@heroicons/react/solid';
-import { DocumentTextIcon } from '@heroicons/react/outline';
+import FolderIcon from '@heroicons/react/solid/FolderIcon';
+import DocumentTextIcon from '@heroicons/react/outline/DocumentTextIcon';
 
 import prettyBytes from 'pretty-bytes';
 
@@ -16,7 +14,7 @@ import prettyBytes from 'pretty-bytes';
 
 const FileManagerView = () => {
 
-  const { fm, currentDirectory, setCurrentDirectory } = useFileManagerContext();
+  const { fm, directory: currentDirectory, changeDirectory } = useFileManagerContext();
 
   // file manager references
   const [listing, setListing] = useState<Array<DeDirectory | DeFile>>([]);
@@ -36,7 +34,7 @@ const FileManagerView = () => {
   }, [currentDirectory]);
 
   const handleRowClick = (directory: DeDirectory) => {
-    setCurrentDirectory(directory);
+    changeDirectory(directory);
   }
 
   return (

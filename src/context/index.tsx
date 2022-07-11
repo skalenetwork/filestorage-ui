@@ -5,26 +5,19 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { useMount, useKey, useLocalStorage } from 'react-use';
 
 import { DeFileManager, DeDirectory, DeFile } from '@/services/filesystem';
-import useDeFileManager from '@/context/useDeFileManager';
+import useDeFileManager, { State } from '@/context/useDeFileManager';
 
 // import { local } from 'web3modal';
 
-type Context = {
-  currentDirectory: DeDirectory;
-  reservedSpace: number;
-  occupiedSpace: number;
-}
+export type ContextType = State;
 
-const FileManagerContext = createContext<Context & { fm: DeFileManager, setCurrentDirectory: Function } | null>(null);
+const FileManagerContext = createContext<ContextType>(undefined);
 
 export function ContextWrapper({ children }) {
 
-  // local params
+  // local params, w3 later to come from wallet-provider
   const [w3, setW3] = useState<Object | undefined>();
   const [address, setAddress] = useState<string>("");
-
-  // const [fm, setFm] = useState<DeFileManager | undefined>(undefined);
-  const [fmContext, setFmContext] = useState<Context | undefined>(undefined);
 
   useMount(() => {
     const RPC_ENDPOINT = 'https://staging-v2.skalenodes.com/v1/roasted-thankful-unukalhai';
@@ -32,41 +25,24 @@ export function ContextWrapper({ children }) {
     setW3(new Web3.providers.HttpProvider(RPC_ENDPOINT));
   });
 
-  // shadowy key management
+  // shadowy key management.. DTTAH
   const [pk, setPk] = useLocalStorage("SKL_pvtKey", undefined);
   useKey((e) => (e.ctrlKey && e.key === '.'), () => {
     let k = window.prompt("🙈");
-    if (k) {
-      setPk(k);
-    }
+    k && setPk(k);
   });
 
-  const [fm] = useDeFileManager(w3, address, pk);
+  const [fm, fmState, fmAction]: [DeFileManager, State, any] = useDeFileManager(w3, address, pk);
 
-  // explicit reactivity on tree changes within fm
-  // @todo shady dependency-check: should instead tie to stale flag within fm
-  useEffect(() => {
-    if (!fm) return;
-    console.log("fm changed", fm);
-    (async () => {
-      console.log("set fmContext");
-      setFmContext({
-        currentDirectory: fm.rootDirectory(),
-        reservedSpace: await fm.reservedSpace(),
-        occupiedSpace: await fm.occupiedSpace()
-      });
-    })();
-  }, [fm]);
+  console.log("abay!?", fm, fmState, fmAction);
 
-  return (fm && fmContext) ? (
+  return (fmState && fmState.fm && fmState.directory) ? (
     <FileManagerContext.Provider value={{
-      fm, ...fmContext, setCurrentDirectory: (dir: DeDirectory) => {
-        setFmContext({ ...fmContext, currentDirectory: dir })
-      },
+      ...fmState, ...fmAction
     }}>
       { children}
     </FileManagerContext.Provider>
-  ) : <p>...</p>;
+  ) : <p className="flex justify-center items-center">Oi</p>;
 }
 
 export function useFileManagerContext() {
