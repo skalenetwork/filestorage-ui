@@ -25,6 +25,8 @@ module.exports = {
       {
         light: {
           ...require("daisyui/src/colors/themes")["[data-theme=light]"],
+          primary: "#363A41",
+          secondary: "#D9D9D9",
           "--rounded-btn": "0.25rem",
           "--btn-text-case": "default",
           "--btn-focus-scale": "0.98"

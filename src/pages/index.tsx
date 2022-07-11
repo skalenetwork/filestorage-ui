@@ -1,15 +1,16 @@
-//@ts-ignore
+//@ts-nocheck
 
+import prettyBytes from 'pretty-bytes';
 import type { NextPage } from 'next';
 import Head from 'next/head';
-
 import { useState, useEffect, useRef } from 'react';
 import { useMount, useAsync } from 'react-use';
 
-import { Button, Modal, Progress, Input } from '@/components/common';
-import FileManagerView from '@/components/FileManagerView';
+import { useFileManagerContext } from '@/context/index';
 
-import { useFileManagerContext } from '../store';
+import { DocumentAddIcon, FolderAddIcon } from '@heroicons/react/solid';
+import { Button, Modal, Progress, Input } from '@/components/common';
+import FileNavigator from '@/components/FileNavigator';
 
 const Home: NextPage = () => {
 
@@ -22,7 +23,7 @@ const Home: NextPage = () => {
   const reserveSpaceField = useRef("");
 
   const uploadFileField = useRef(null);
-  const [uploadFile, setUploadFile] = useState(null);
+  const [filesToUpload, setFilesToUpload] = useState([]);
 
   const newDirectoryField = useRef("");
 
@@ -37,13 +38,15 @@ const Home: NextPage = () => {
 
   const handleUploadFileField = async (event) => {
     console.log("handle upload file field change", event.target.files[0]);
-    setUploadFile(event.target.files[0]);
+    setFilesToUpload(event.target.files);
   }
 
-  const handleUploadFile = async (event) => {
-    console.log("file to upload", uploadFile);
-    if (!currentDirectory || !uploadFile) return;
-    fm?.uploadFile(currentDirectory, uploadFile);
+  const handleConfirmUpload = async (event) => {
+    console.log("file to upload", filesToUpload);
+    if (!currentDirectory || !filesToUpload.length) return;
+    filesToUpload.forEach(file => {
+      fm?.uploadFile(currentDirectory, file);
+    });
   }
 
   const handleReserveSpace = async (event) => {
@@ -54,12 +57,12 @@ const Home: NextPage = () => {
     );
   }
 
-  const bytesToGiga = (value: number) => {
-    return (value / 1024 / 1024 / 1024).toFixed(3);
+  const cancelUpload = () => {
+    setUploadModal(false);
   }
 
   return (
-    <div className="container mx-auto">
+    <div className="container mx-auto px-16">
       <Head>
         <title>SKALE Filestorage</title>
         <meta name="description" content="SKALE filestorage Dapp" />
@@ -77,17 +80,23 @@ const Home: NextPage = () => {
           className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
           type="text"
           placeholder="0x..."
+          readOnly
+          value={fm.address}
         />
       </header>
 
       <main>
         <div className="status-bar flex flex-row justify-between items-center">
           <h1 className="text-3xl font-semibold">Filestorage</h1>
-          <div>
-            <p className="font-bold">{bytesToGiga(occupiedSpace)} GB used</p>
-            <p className="text-sm">{(occupiedSpace / reservedSpace).toFixed(2)}% used - {bytesToGiga(reservedSpace - occupiedSpace)} GB free</p>
-            <Progress className="w-48" value={occupiedSpace / reservedSpace} max={100} />
-            <Button onClick={() => setReserveSpaceModal(true)} color="ghost">+ Reserve Space</Button>
+          <div className="w-72">
+            <p className="font-bold">{prettyBytes(occupiedSpace)} used</p>
+            <p className="text-sm">{(occupiedSpace / reservedSpace).toFixed(2)}% used - {prettyBytes(reservedSpace - occupiedSpace)} free</p>
+            <Progress className="w-full" value={occupiedSpace / reservedSpace} max={100} />
+            <br />
+            <Button
+              className="w-full bg-gray-200 text-black"
+              onClick={() => setReserveSpaceModal(true)}
+              color="secondary">+ Reserve space</Button>
           </div>
         </div>
         <div className="action-bar my-4 gap-4 flex flex-row justify-between items-center">
@@ -95,7 +104,13 @@ const Home: NextPage = () => {
             <Input className="py-2 px-4 w-full border border-gray-500 rounded" type="text" placeholder="Search files..." />
           </div>
           <div className="flex-none flex flex-row gap-4">
-            <Button onClick={() => setUploadModal(true)} >+ Upload file</Button>
+            <>
+              <label className="btn btn-wide flex" htmlFor="file-upload">
+                <DocumentAddIcon className="h-5 w-5 mr-4" /> Upload file
+              </label>
+              <input type="file" id="file-upload" className="hidden" ref={uploadFileField}
+                onChange={handleUploadFileField} multiple />
+            </>
             <form className="input-group">
               <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
                 type="text"
@@ -103,17 +118,18 @@ const Home: NextPage = () => {
                 required
                 ref={newDirectoryField}
               />
-              <Button onClick={handleCreateDirectory}>+ Create directory</Button>
+              <Button className="btn-wide" onClick={handleCreateDirectory}>
+                <FolderAddIcon className="h-5 w-5 mr-4" /> Create directory
+              </Button>
             </form>
           </div>
         </div>
-        <FileManagerView />
+        <FileNavigator />
       </main>
 
       <Modal
         className="gap-4 flex flex-col justify-center items-center"
         open={uploadModal}
-        onClickBackdrop={() => setUploadModal(false)}
       >
         <Modal.Header className="text-center font-bold">
           Upload File
@@ -123,15 +139,13 @@ const Home: NextPage = () => {
             Give your file or folder a name.
           </p>
           <Input
-            className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
-            type="file"
-            ref={uploadFileField}
-            onChange={handleUploadFileField}
+            className="px-4 py-2 m-0 rounded bg-gray-100 cursor-pointer focus:border-0 focus:outline-none"
+            type="text"
           />
         </Modal.Body>
-        <Modal.Actions>
-          <Button onClick={handleUploadFile}>Upload</Button>
-          <a className="underline" onClick={() => setUploadModal(false)}>Cancel</a>
+        <Modal.Actions className="flex justify-center items-center gap-8">
+          <Button onClick={handleConfirmUpload}>Upload</Button>
+          <a className="underline cursor-pointer" onClick={cancelUpload}>Cancel</a>
         </Modal.Actions>
       </Modal>
 
@@ -156,14 +170,15 @@ const Home: NextPage = () => {
             placeholder="Space to reserve"
           />
         </Modal.Body>
-        <Modal.Actions>
+        <Modal.Actions className="flex justify-center items-center gap-8">
           <Button onClick={handleReserveSpace}>Reserve</Button>
-          <a className="underline" onClick={handleReserveSpace}>Cancel</a>
+          <a className="underline cursor-pointer" onClick={() => setReserveSpaceModal(false)}>Cancel</a>
         </Modal.Actions>
       </Modal>
 
-      <footer className="p-4 text-center text-slate-400 text-sm">
-        ⚬ SKALE Filesystem [WIP] ⚬
+      <footer className="p-4 text-center text-slate-500 text-sm">
+        ⚬ SKALE FileManager ⚬ <br />
+        ✔️ Navigate ✔ Upload files ✔️ Create dir ✔️ Stats —— ⌛ Reactivity
       </footer>
     </div >
   )

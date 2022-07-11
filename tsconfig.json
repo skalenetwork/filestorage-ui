@@ -7,6 +7,7 @@
       "esnext"
     ],
     "allowJs": true,
+    "noImplicitAny": false,
     "skipLibCheck": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
@@ -25,6 +26,9 @@
       ],
       "@/services/*": [
         "services/*"
+      ],
+      "@/context/*": [
+        "context/*"
       ]
     }
   },

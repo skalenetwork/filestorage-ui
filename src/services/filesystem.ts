@@ -1,17 +1,18 @@
-// @ts-nocheck
+//@ts-nocheck
 
 /**
  * @module
  * On-chain file manager for containerizing file management against users / chains
  * wrapping fs.js to serve as better isolation, type safety, reliability and intuitiveness
  * extendability to multi-fs and multi-contracts
- * consumable of FileManagerView stateful component in a similar manner as browser native APIs
+ * consumable of stateful components in a similar manner as browser native APIs
+ * @todo: rate limiting, cache management
  */
 
 import Web3 from 'web3';
 import FileStorage from '@skalenetwork/filestorage.js';
-
 import { Buffer } from 'buffer';
+import sortBy from 'lodash/sortBy';
 
 const KIND = {
   FILE: "file",
@@ -26,7 +27,8 @@ const ROLE = {
 const OPERATON = {
   UPLOAD_FILE: 'UPLOAD_FILE',
   DELETE_FILE: 'DELETE_FILE',
-  DELETE_DIRECTORY: 'DELETE_DIRECTORY'
+  DELETE_DIRECTORY: 'DELETE_DIRECTORY',
+  CREATE_DIRECTORY: 'CREATE_DIRECTORY'
 }
 
 /**
@@ -70,7 +72,7 @@ type FileStorageClient = {
   downloadToFile(storagePath: string): Promise<void>;
   downloadToBuffer(storagePath: string): Promise<Buffer>;
   // meta-actions
-  reserveSpace(allocatorAddress: Address, addressToReserve: Address, reservedSpace: string, privateKey?: PrivateKey): Promise<void>;
+  reserveSpace(allocatorAddress: Address, addressToReserve: Address, reservedSpace: number, privateKey?: PrivateKey): Promise<void>;
   grantAllocatorRole(adminAddress: Address, allocatorAddress: Address, adminPrivateKey?: PrivateKey): Promise<void>;
   // state::address
   getReservedSpace(address: Address): Promise<{ reservedSpace: number }>;
@@ -84,15 +86,15 @@ interface IDeDirectory {
   kind: string;
   name: string;
   path: string;
-  entries(): Iterable<DeFile | DeDirectory>;
+  entries(): Promise<Iterable<DeFile | DeDirectory>>;
 }
 
 interface IDeFile {
   kind: string;
   name: string;
   path: string;
+  timestamp?: string;
   size: number;
-  buffer(): ArrayBuffer;
 }
 
 // @todo bring in web3 types
@@ -128,7 +130,7 @@ class DeDirectory implements IDeDirectory {
   name: string;
   path: string;
   manager: DeFileManager;
-  parent: DeDirectory;
+  parent?: DeDirectory;
 
   constructor(data: FileStorageDirectory, manager: DeFileManager, parent?: DeDirectory) {
     this.kind = KIND.DIRECTORY;
@@ -143,19 +145,18 @@ class DeDirectory implements IDeDirectory {
   }
 }
 
+// @todo enclose manager like DeDirectory to handle buffer
 class DeFile implements IDeFile {
   kind: string;
   name: string;
   path: string;
   size: number;
-  buffer: Function;
 
-  constructor(data: FileStorageFile, buffer) {
+  constructor(data: FileStorageFile) {
     this.kind = KIND.FILE;
     this.name = data.name;
     this.path = data.storagePath;
     this.size = data.size;
-    this.buffer = buffer;
   }
 }
 
@@ -175,10 +176,14 @@ type OperatonQueueItem = {
 class DeFileManager implements IDeFileManager {
 
   address: Address;
+  privateKey?: string;
   w3: Object;
   fs: FileStorageClient;
-  contract: Object;
+  contract: { methods: {} };
+
   private rootDir: DeDirectory;
+
+
   uploads: Object;
   dirLastAction: Object;
 
@@ -241,7 +246,7 @@ class DeFileManager implements IDeFileManager {
   }
 
   async reserveSpace(address: Address, amount: number) {
-    return this.fs.reserveSpace(this.address, address, amount);
+    return this.fs.reserveSpace(this.address, address, amount, this.privateKey);
   }
 
   /**
@@ -249,12 +254,16 @@ class DeFileManager implements IDeFileManager {
    */
   private async loadDirectory(path: string): Promise<Array<FileStorageFile | FileStorageDirectory>> {
     const entries = await this.fs.listDirectory(`${path}`);
-    return entries;
+    console.log("fm:loadDirectory", entries);
+    return sortBy(entries, (o => o.isFile === true));
   }
 
   async createDirectory(destDirectory: DeDirectory, name: string) {
     const path = (destDirectory.path === this.rootDir.path) ? name : `${destDirectory.path}/${name}`;
-    return await this.fs.createDirectory(this.address, path, this.privateKey);
+    console.log("path", path)
+    const returnPath = await this.fs.createDirectory(this.address, path, this.privateKey);
+    this.dirLastAction = `${OPERATON.CREATE_DIRECTORY}:${returnPath}`;
+    return returnPath;
   }
 
   // @todo: adjust entries
