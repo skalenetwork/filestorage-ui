@@ -48,7 +48,7 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
   }
 }
 
-function useDeFileManager(web3: Object, address: string, privateKey?: string) {
+function useDeFileManager(w3Provider: Object, address: string, privateKey?: string) {
   const [state, dispatch]: [State, Function] = useReducer(reducer, initialState);
 
   const { fm, directory: cwd } = state;
@@ -65,15 +65,15 @@ function useDeFileManager(web3: Object, address: string, privateKey?: string) {
   }
 
   useEffect(() => {
-    if (!(web3 && address)) return;
-    const fm = new DeFileManager(web3, address, privateKey);
+    if (!(w3Provider && address)) return;
+    const fm = new DeFileManager(w3Provider, address, privateKey);
     dispatch({
       type: ACTION.INITIALIZE, payload: {
         fm,
         directory: fm.rootDirectory()
       }
     });
-  }, [web3, address, privateKey]);
+  }, [w3Provider, address, privateKey]);
 
   useEffect(() => {
     updateCapacity();

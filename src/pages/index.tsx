@@ -7,7 +7,6 @@ import { useState, useEffect, useRef } from 'react';
 
 import { useFileManagerContext } from '@/context/index';
 
-
 import FolderAddIcon from '@heroicons/react/solid/FolderAddIcon';
 import DocumentAddIcon from '@heroicons/react/solid/DocumentAddIcon';
 import { Button, Modal, Progress, Input } from '@/components/common';
@@ -28,7 +27,7 @@ const Home: NextPage = () => {
 
   const newDirectoryField = useRef("");
 
-  const { fm, directory: currentDirectory, reservedSpace, occupiedSpace } = useFileManagerContext();
+  const { fm, directory: currentDirectory, reservedSpace, occupiedSpace, walletMode, connectedAddress } = useFileManagerContext();
 
   const handleCreateDirectory = async (event) => {
     event.preventDefault();
@@ -77,13 +76,10 @@ const Home: NextPage = () => {
           <img src="/logo.png" className="h-12" style={{ filter: "revert" }} alt="" />
           <small className="text-gray-500 font-mono">File System</small>
         </p>
-        <Input
-          className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
-          type="text"
-          placeholder="0x..."
-          readOnly
-          value={fm.address}
-        />
+        <p className="px-4 py-2 w-72 rounded bg-gray-100 overflow-hidden">
+          {connectedAddress}
+        </p>
+
       </header>
 
       <main>
@@ -113,7 +109,7 @@ const Home: NextPage = () => {
                 onChange={handleUploadFileField} multiple />
             </>
             <form className="input-group">
-              <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
+              <Input className="px-4 py-2 m-0 rounded focus:border-0 focus:outline-none"
                 type="text"
                 placeholder="New directory name"
                 required
