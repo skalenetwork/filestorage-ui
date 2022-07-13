@@ -9,7 +9,6 @@
  * @todo: rate limiting, cache management
  */
 
-import Web3 from 'web3';
 import FileStorage from '@skalenetwork/filestorage.js';
 import { Buffer } from 'buffer';
 import sortBy from 'lodash/sortBy';

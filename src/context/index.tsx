@@ -1,6 +1,6 @@
 //@ts-nocheck
 
-import Web3 from 'web3';
+import Web3 from 'web3/dist/web3.min.js';
 import Web3Modal from 'web3modal';
 
 import { createContext, useContext, useEffect, useState } from 'react';
@@ -8,7 +8,6 @@ import { useMount, useKey, useLocalStorage } from 'react-use';
 
 import { DeFileManager, DeDirectory, DeFile } from '@/services/filesystem';
 import useDeFileManager, { State } from '@/context/useDeFileManager';
-import { setPriority } from 'os';
 
 export type ContextType = State & {
   connectedAddress: string;
@@ -64,6 +63,7 @@ export function ContextWrapper({ children }) {
     if (!walletMode) {
       setW3Provider(new Web3.providers.HttpProvider(RPC_ENDPOINT));
       setConnectedAddress(TEST_ADDRESS);
+      return;
     }
     setW3Modal(new Web3Modal({
       network: "testnet", // optional

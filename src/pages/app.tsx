@@ -1,8 +1,6 @@
 
 
 import prettyBytes from 'pretty-bytes';
-import type { NextPage } from 'next';
-import Head from 'next/head';
 import { useState, useEffect, useRef } from 'react';
 
 import { useFileManagerContext } from '@/context/index';
@@ -11,50 +9,43 @@ import FolderAddIcon from '@heroicons/react/solid/FolderAddIcon';
 import DocumentAddIcon from '@heroicons/react/solid/DocumentAddIcon';
 import { Button, Modal, Progress, Input } from '@/components/common';
 import FileNavigator from '@/components/FileNavigator';
+import { AppPropsType } from 'next/dist/shared/lib/utils';
 
-const Home: NextPage = () => {
+const App = () => {
 
   // modals
   const [reserveSpaceModal, setReserveSpaceModal] = useState(false);
   const [uploadModal, setUploadModal] = useState(false);
+  const [directoryModal, setDirectoryModal] = useState(false);
 
   // field refs
-  const reserveAddrField = useRef("");
-  const reserveSpaceField = useRef("");
+  const reserveAddrField = useRef<HTMLInputElement>();
+  const reserveSpaceField = useRef<HTMLInputElement>();
+  const uploadFileField = useRef<HTMLInputElement>();
+  const newDirectoryField = useRef<HTMLInputElement>();
 
-  const uploadFileField = useRef(null);
   const [filesToUpload, setFilesToUpload] = useState([]);
-
-  const newDirectoryField = useRef("");
 
   const { fm, directory: currentDirectory, reservedSpace, occupiedSpace, walletMode, connectedAddress } = useFileManagerContext();
 
   const handleCreateDirectory = async (event) => {
     event.preventDefault();
-    console.log("handleCreateDirectory", currentDirectory, newDirectoryField.current.value);
-    if (!currentDirectory) return;
-    return await fm?.createDirectory(currentDirectory, newDirectoryField.current.value);
-  }
-
-  const handleUploadFileField = async (event) => {
-    console.log("handle upload file field change", event.target.files[0]);
-    setFilesToUpload(event.target.files);
+    const name = newDirectoryField.current?.value;
+    console.log("handleCreateDirectory", currentDirectory, name);
+    if (!(currentDirectory && name)) return;
+    return await fm?.createDirectory(currentDirectory, name);
   }
 
   const handleConfirmUpload = async (event) => {
-    console.log("file to upload", filesToUpload);
-    if (!currentDirectory || !filesToUpload.length) return;
-    filesToUpload.forEach(file => {
-      fm?.uploadFile(currentDirectory, file);
-    });
+    const files = uploadFileField.current?.files;
+    console.log("file to upload", files);
+    if (!(currentDirectory && files && files.length)) return;
   }
 
   const handleReserveSpace = async (event) => {
-    return fm?.fs.reserveSpace(
-      fm.address,
-      reserveAddrField.current,
-      reserveSpaceField.current
-    );
+    const address = reserveAddrField.current?.value;
+    const space = reserveSpaceField.current?.value;
+    return address && space && fm?.fs.reserveSpace(fm.address, address, Number(space));
   }
 
   const cancelUpload = () => {
@@ -63,13 +54,6 @@ const Home: NextPage = () => {
 
   return (
     <div className="container mx-auto px-16">
-      <Head>
-        <title>SKALE Filestorage</title>
-        <meta name="description" content="SKALE filestorage Dapp" />
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500&display=swap" rel="stylesheet" />
-      </Head>
 
       <header className="header py-4 flex justify-between items-center">
         <p>
@@ -93,7 +77,7 @@ const Home: NextPage = () => {
             <Button
               className="w-full bg-gray-200 text-black"
               onClick={() => setReserveSpaceModal(true)}
-              color="secondary">+ Reserve space</Button>
+              color="secondary">+ Reserve spacewee</Button>
           </div>
         </div>
         <div className="action-bar my-4 gap-4 flex flex-row justify-between items-center">
@@ -102,23 +86,15 @@ const Home: NextPage = () => {
           </div>
           <div className="flex-none flex flex-row gap-4">
             <>
-              <label className="btn btn-wide flex" htmlFor="file-upload">
+              <label className="btn w-72 flex" htmlFor="file-upload">
                 <DocumentAddIcon className="h-5 w-5 mr-4" /> Upload file
               </label>
               <input type="file" id="file-upload" className="hidden" ref={uploadFileField}
-                onChange={handleUploadFileField} multiple />
+                onChange={() => { setUploadModal(true) }} multiple />
             </>
-            <form className="input-group">
-              <Input className="px-4 py-2 m-0 rounded focus:border-0 focus:outline-none"
-                type="text"
-                placeholder="New directory name"
-                required
-                ref={newDirectoryField}
-              />
-              <Button className="btn-wide" onClick={handleCreateDirectory}>
-                <FolderAddIcon className="h-5 w-5 mr-4" /> Create directory
-              </Button>
-            </form>
+            <Button className="btn w-72" onClick={() => setDirectoryModal(true)}>
+              <FolderAddIcon className="h-5 w-5 mr-4" /> Create directory
+            </Button>
           </div>
         </div>
         <FileNavigator />
@@ -133,16 +109,46 @@ const Home: NextPage = () => {
         </Modal.Header>
         <Modal.Body className="flex flex-col gap-4 justify-center items-center">
           <p>
-            Give your file or folder a name.
+            Give your files a name.
           </p>
-          <Input
-            className="px-4 py-2 m-0 rounded bg-gray-100 cursor-pointer focus:border-0 focus:outline-none"
+          {
+            Array.from(uploadFileField.current?.files || [])
+              .map(file => (
+                <Input
+                  className="px-4 py-0 m-0 rounded bg-gray-100 cursor-pointer focus:border-0 focus:outline-none"
+                  type="text"
+                  value={file.name}
+                />
+              ))
+          }
+        </Modal.Body>
+        <Modal.Actions className="flex justify-center items-center gap-8">
+          <Button onClick={handleConfirmUpload}>Confirm Upload</Button>
+          <a className="underline cursor-pointer" onClick={cancelUpload}>Cancel</a>
+        </Modal.Actions>
+      </Modal>
+
+      <Modal
+        className="gap-4 flex flex-col justify-center items-center"
+        open={directoryModal}
+      >
+        <Modal.Header className="text-center font-bold">
+          Create new directory
+        </Modal.Header>
+        <Modal.Body className="flex flex-col gap-4 justify-center items-center">
+          <p>
+            Give your folder a name.
+          </p>
+          <Input className="px-4 py-2 m-0 rounded bg-gray-100 cursor-pointer focus:border-0 focus:outline-none"
             type="text"
+            placeholder="New directory name"
+            required
+            ref={newDirectoryField}
           />
         </Modal.Body>
         <Modal.Actions className="flex justify-center items-center gap-8">
-          <Button onClick={handleConfirmUpload}>Upload</Button>
-          <a className="underline cursor-pointer" onClick={cancelUpload}>Cancel</a>
+          <Button onClick={handleCreateDirectory}>Create</Button>
+          <a className="underline cursor-pointer" onClick={() => { setDirectoryModal(false) }}>Cancel</a>
         </Modal.Actions>
       </Modal>
 
@@ -181,4 +187,4 @@ const Home: NextPage = () => {
   )
 }
 
-export default Home
+export default App
