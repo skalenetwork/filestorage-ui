@@ -63,7 +63,7 @@ type FileStorageClient = {
   contract: FileStorageContract;
   // core-actions
   uploadFile(address: Address, filePath: FilePath, fileBuffer: Buffer, privateKey?: PrivateKey): Promise<string>;
-  deleteFile(address: Address, filePath: string, privateKey?: PrivateKey): Promise<void>;
+  deleteFile(address: Address, filePath: string, privateKey?: PrivateKey): Promise<void>; // confirmed
   createDirectory(address: Address, directoryPath: string, privateKey?: PrivateKey): Promise<{ storagePath: string }>;
   deleteDirectory(address: Address, directoryPath: string, privateKey?: PrivateKey): Promise<void>;
   // core-actions:public
@@ -119,10 +119,19 @@ interface IDeFileManager {
   createDirectory(destDirectory: DeDirectory): Promise<DeDirectory>;
   deleteDirectory(directory: DeDirectory): Promise<boolean>;
   uploadFile(destDirectory: DeDirectory): Promise<string>;
+  deleteFile(destDirectory: DeDirectory, file: DeFile): Promise<void>;
 
   downloadFile(file: DeFile): Promise<void>;
   search(inDirectory: DeDirectory, query: string): Array<DeFile | DeDirectory>;
 }
+
+function pathToRelative(storagePath: DePath) {
+
+  const relative = storagePath.split("/").slice(1).join('/');
+  console.log("pathToRelative::", storagePath, relative);
+  return relative;
+}
+
 
 class DeDirectory implements IDeDirectory {
   kind: string;
@@ -134,7 +143,7 @@ class DeDirectory implements IDeDirectory {
   constructor(data: FileStorageDirectory, manager: DeFileManager, parent?: DeDirectory) {
     this.kind = KIND.DIRECTORY;
     this.name = data.name;
-    this.path = data.storagePath;
+    this.path = pathToRelative(data.storagePath);
     this.manager = manager;
     this.parent = parent;
   }
@@ -154,15 +163,9 @@ class DeFile implements IDeFile {
   constructor(data: FileStorageFile) {
     this.kind = KIND.FILE;
     this.name = data.name;
-    this.path = data.storagePath;
+    this.path = pathToRelative(data.storagePath);
     this.size = data.size;
   }
-}
-
-type OperatonQueueItem = {
-  operation: string;
-  inDirectory: DeDirectory;
-  file: DeFile;
 }
 
 /**
@@ -196,7 +199,7 @@ class DeFileManager implements IDeFileManager {
     const addrWithoutPrefix = this.address.slice(2);
 
     this.rootDir = new DeDirectory({
-      name: addrWithoutPrefix,
+      name: addrWithoutPrefix, // do-not-change
       storagePath: addrWithoutPrefix,
       isFile: 'false',
     }, this);
@@ -207,9 +210,10 @@ class DeFileManager implements IDeFileManager {
    * @param dirPath 
    */
   async * entriesGenerator(directory: DeDirectory): Promise<Iterable<DeDirectory | DeFile>> {
-    console.log("* entriesGenerator::", directory.path, this);
+    let path = (directory.parent) ? this.rootDir.name + "/" + directory.path : this.rootDir.name;
+    console.log("* entriesGenerator::", path, this);
     // hit remote
-    const entries = await this.loadDirectory(directory.path);
+    const entries = await this.loadDirectory(path);
 
     // map to iterable files & directories
     for (let i in entries) {
@@ -248,7 +252,7 @@ class DeFileManager implements IDeFileManager {
   /**
    * @todo memoization w/ stale check
    */
-  private async loadDirectory(path: string): Promise<Array<FileStorageFile | FileStorageDirectory>> {
+  async loadDirectory(path: string): Promise<Array<FileStorageFile | FileStorageDirectory>> {
     const entries = await this.fs.listDirectory(`${path}`);
     console.log("fm:loadDirectory", entries);
     return sortBy(entries, (o => o.isFile === true));
@@ -258,20 +262,18 @@ class DeFileManager implements IDeFileManager {
     const path = (destDirectory.path === this.rootDir.path) ? name : `${destDirectory.path}/${name}`;
     console.log("path", path)
     const returnPath = await this.fs.createDirectory(this.address, path, this.privateKey);
+    console.log("fm::createDirectory", returnPath);
     this.dirLastAction = `${OPERATON.CREATE_DIRECTORY}:${returnPath}`;
     return returnPath;
   }
 
-  // @todo: adjust entries
-  // later indexing can make this file-input only
   async deleteFile(destDirectory: DeDirectory, file: DeFile) {
     await this.fs.deleteFile(this.address, file.path, this.privateKey);
+    return true;
   }
 
-  // @todo: implement
   async deleteDirectory(directory: DeDirectory) {
-    // to make this possible: in generator, set first entry as parent directory
-    // use that reference to remove from iterator
+    await this.fs.deleteDirectory(this.address, directory.path, this.privateKey);
   }
 
   async uploadFile(destDirectory: DeDirectory, file: File) {
@@ -280,6 +282,7 @@ class DeFileManager implements IDeFileManager {
     const uploadPath = (destDirectory.path === this.rootDir.path) ? file.name : `${destDirectory.path}/${file.name}`;
     let path;
     try {
+      ;
       path = await this.fs.uploadFile(this.address, uploadPath, buffer, this.privateKey);
     } catch (e) {
       throw {
@@ -287,16 +290,17 @@ class DeFileManager implements IDeFileManager {
         error: e
       }
     }
-
+    console.log("fm::uploadFile:", path);
     // makeshift - for outside watchers
     this.dirLastAction = `${OPERATON.UPLOAD_FILE}:${path}`;
     return path;
   }
 
-  async downloadFile(path: string) {
-    return this.fs.downloadToFile(filepath);
+  async downloadFile(file: DeFile) {
+    return this.fs.downloadToFile(this.rootDir.name + "/" + file.path);
   }
 
+  // depth-first
   private async iterateDirectory(directory: DeDirectory, onEntry: DeDirectory | DeFile) {
     for await (const entry of directory.entries()) {
       if (entry.kind === KIND.FILE) {

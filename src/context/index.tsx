@@ -7,15 +7,14 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { useMount, useKey, useLocalStorage } from 'react-use';
 
 import { DeFileManager, DeDirectory, DeFile } from '@/services/filesystem';
-import useDeFileManager, { State } from '@/context/useDeFileManager';
+import useDeFileManager, { Action, State } from '@/context/useDeFileManager';
 
-export type ContextType = State & {
+export type ContextType = State & Action & {
   connectedAddress: string;
 };
 
 const FileManagerContext = createContext<ContextType>(undefined);
 
-const USE_WALLET = true;
 const RPC_ENDPOINT = 'https://staging-v2.skalenodes.com/v1/roasted-thankful-unukalhai';
 const CHAIN_ID = '0x1dc0981d';
 const TEST_ADDRESS = '0x5A4AB05FBB140eb6A51e7D13a528A6Aa35a5ef4A';
@@ -106,7 +105,7 @@ export function ContextWrapper({ children }) {
 
   return (fmState && fmState.fm && fmState.directory) ? (
     <FileManagerContext.Provider value={{
-      ...fmState, ...fmAction, connectedAddress, walletMode
+      fm, ...fmState, ...fmAction, connectedAddress, walletMode
     }}>
       { children}
     </FileManagerContext.Provider>

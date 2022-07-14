@@ -1,20 +1,22 @@
 
 
 import prettyBytes from 'pretty-bytes';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, SyntheticEvent, useEffect } from 'react';
 
 import { useFileManagerContext } from '@/context/index';
 
 import FolderAddIcon from '@heroicons/react/solid/FolderAddIcon';
 import DocumentAddIcon from '@heroicons/react/solid/DocumentAddIcon';
+import UploadIcon from '@heroicons/react/outline/UploadIcon';
 import { Button, Modal, Progress, Input } from '@/components/common';
 import FileNavigator from '@/components/FileNavigator';
-import { AppPropsType } from 'next/dist/shared/lib/utils';
 
 const App = () => {
 
   // modals
+
   const [reserveSpaceModal, setReserveSpaceModal] = useState(false);
+  const [activeUploadsModal, setActiveUploadsModal] = useState(false);
   const [uploadModal, setUploadModal] = useState(false);
   const [directoryModal, setDirectoryModal] = useState(false);
 
@@ -26,23 +28,36 @@ const App = () => {
 
   const [filesToUpload, setFilesToUpload] = useState([]);
 
-  const { fm, directory: currentDirectory, reservedSpace, occupiedSpace, walletMode, connectedAddress } = useFileManagerContext();
+  const {
+    fm, directory: currentDirectory, reservedSpace, occupiedSpace,
+    isAuthorized, connectedAddress, activeUploads,
+    uploadFiles, createDirectory
+  } = useFileManagerContext();
 
-  const handleCreateDirectory = async (event) => {
+  const [uploadingFiles, setUploadingFiles] = useState<any[]>([]);
+
+  useEffect(() => {
+    setUploadingFiles(Array.from(activeUploads.values()).flat());
+  }, [activeUploads]);
+
+  const handleCreateDirectory = async (event: SyntheticEvent) => {
     event.preventDefault();
     const name = newDirectoryField.current?.value;
     console.log("handleCreateDirectory", currentDirectory, name);
     if (!(currentDirectory && name)) return;
-    return await fm?.createDirectory(currentDirectory, name);
+    await createDirectory(name);
   }
 
-  const handleConfirmUpload = async (event) => {
-    const files = uploadFileField.current?.files;
+  const handleConfirmUpload = async (event: SyntheticEvent) => {
+    const files = Array.from(uploadFileField.current?.files || []);
     console.log("file to upload", files);
     if (!(currentDirectory && files && files.length)) return;
+    setUploadModal(false);
+    setActiveUploadsModal(true);
+    await uploadFiles(files);
   }
 
-  const handleReserveSpace = async (event) => {
+  const handleReserveSpace = async (event: SyntheticEvent) => {
     const address = reserveAddrField.current?.value;
     const space = reserveSpaceField.current?.value;
     return address && space && fm?.fs.reserveSpace(fm.address, address, Number(space));
@@ -60,10 +75,21 @@ const App = () => {
           <img src="/logo.png" className="h-12" style={{ filter: "revert" }} alt="" />
           <small className="text-gray-500 font-mono">File System</small>
         </p>
-        <p className="px-4 py-2 w-72 rounded bg-gray-100 overflow-hidden">
-          {connectedAddress}
-        </p>
+        <div className="flex flex-row">
+          {
+            (uploadingFiles.length) ?
+              <p className="px-4 py-2 cursor-pointer rounded bg-yellow-50 border border-yellow-500"
+                onClick={(e) => setActiveUploadsModal(true)}
+              >
+                Uploading {uploadingFiles.length} files..
+              </p>
+              : null
+          }
 
+          <p className="px-4 py-2 w-72 rounded bg-gray-100 overflow-hidden">
+            {connectedAddress}
+          </p>
+        </div>
       </header>
 
       <main>
@@ -74,28 +100,36 @@ const App = () => {
             <p className="text-sm">{(occupiedSpace / reservedSpace).toFixed(2)}% used - {prettyBytes((reservedSpace - occupiedSpace) || 0)} free</p>
             <Progress className="w-full" value={occupiedSpace / reservedSpace} max={100} />
             <br />
-            <Button
-              className="w-full bg-gray-200 text-black"
-              onClick={() => setReserveSpaceModal(true)}
-              color="secondary">+ Reserve spacewee</Button>
+            {
+              (isAuthorized) ?
+                <Button
+                  className="w-full bg-gray-200 text-black"
+                  onClick={() => setReserveSpaceModal(true)}
+                  color="secondary">+ Reserve space</Button>
+                : null
+            }
           </div>
         </div>
         <div className="action-bar my-4 gap-4 flex flex-row justify-between items-center">
           <div className="grow">
             <Input className="py-2 px-4 w-full border border-gray-500 rounded" type="text" placeholder="Search files..." />
           </div>
-          <div className="flex-none flex flex-row gap-4">
-            <>
-              <label className="btn w-72 flex" htmlFor="file-upload">
-                <DocumentAddIcon className="h-5 w-5 mr-4" /> Upload file
-              </label>
-              <input type="file" id="file-upload" className="hidden" ref={uploadFileField}
-                onChange={() => { setUploadModal(true) }} multiple />
-            </>
-            <Button className="btn w-72" onClick={() => setDirectoryModal(true)}>
-              <FolderAddIcon className="h-5 w-5 mr-4" /> Create directory
-            </Button>
-          </div>
+          {
+            (isAuthorized) ?
+              <div className="flex-none flex flex-row gap-4">
+                <>
+                  <label className="btn w-72 flex" htmlFor="file-upload">
+                    <DocumentAddIcon className="h-5 w-5 mr-4" /> Upload file
+                  </label>
+                  <input type="file" id="file-upload" className="hidden" ref={uploadFileField}
+                    onChange={() => { uploadFileField.current?.files?.length && setUploadModal(true) }} multiple />
+                </>
+                <Button className="btn w-72" onClick={() => setDirectoryModal(true)}>
+                  <FolderAddIcon className="h-5 w-5 mr-4" /> Create directory
+                </Button>
+              </div>
+              : null
+          }
         </div>
         <FileNavigator />
       </main>
@@ -105,20 +139,16 @@ const App = () => {
         open={uploadModal}
       >
         <Modal.Header className="text-center font-bold">
-          Upload File
+          Upload Files
         </Modal.Header>
-        <Modal.Body className="flex flex-col gap-4 justify-center items-center">
-          <p>
-            Give your files a name.
-          </p>
+        <Modal.Body className="flex flex-col gap-1.5 justify-center items-center">
           {
             Array.from(uploadFileField.current?.files || [])
               .map(file => (
-                <Input
-                  className="px-4 py-0 m-0 rounded bg-gray-100 cursor-pointer focus:border-0 focus:outline-none"
-                  type="text"
-                  value={file.name}
-                />
+                <div key={file.name} className="flex flex-row justify-between w-72">
+                  <p>{file.name}</p>
+                  <p>{prettyBytes(file.size)}</p>
+                </div>
               ))
           }
         </Modal.Body>
@@ -126,6 +156,38 @@ const App = () => {
           <Button onClick={handleConfirmUpload}>Confirm Upload</Button>
           <a className="underline cursor-pointer" onClick={cancelUpload}>Cancel</a>
         </Modal.Actions>
+      </Modal>
+
+      <Modal
+        className="gap-4 flex flex-col justify-center items-center"
+        open={activeUploadsModal}
+        onClickBackdrop={() => setActiveUploadsModal(false)}
+      >
+        <Modal.Header className="text-center font-bold">
+          Uploading
+        </Modal.Header>
+        <Modal.Body className="flex flex-col gap-1.5 justify-center items-center">
+          {
+            (uploadingFiles.length) ?
+              <>
+                <p>This process may take some time.</p>
+                <UploadIcon className="h-24 w-24 my-4" />
+                {
+                  Array.from(activeUploads.values()).flat().map(upload => (upload) ? (
+                    <div key={upload.dePath} className="flex flex-row justify-between gap-2">
+                      <p>{upload.file.name}</p>
+                      <p>{prettyBytes(upload.file.size)}</p>
+                      <Progress className="w-24" value={upload.progress} max={100} />
+                    </div>
+                  ) : null)
+                }
+              </>
+              :
+              <>
+                <p>All files are uploaded.</p>
+              </>
+          }
+        </Modal.Body>
       </Modal>
 
       <Modal
@@ -181,7 +243,7 @@ const App = () => {
 
       <footer className="p-4 text-center text-slate-500 text-sm">
         ⚬ SKALE FileManager ⚬ <br />
-        ✔️ Navigate ✔ Upload files ✔️ Create dir ✔️ Stats —— ⌛ Reactivity
+        ✔️ Navigate ✔️ Download files ✔ Upload files ✔️ Watch progress ✔️ Create dir ✔️ Stats
       </footer>
     </div >
   )
