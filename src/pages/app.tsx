@@ -45,6 +45,7 @@ const App = () => {
     const name = newDirectoryField.current?.value;
     console.log("handleCreateDirectory", currentDirectory, name);
     if (!(currentDirectory && name)) return;
+    setDirectoryModal(false);
     await createDirectory(name);
   }
 
@@ -60,6 +61,7 @@ const App = () => {
   const handleReserveSpace = async (event: SyntheticEvent) => {
     const address = reserveAddrField.current?.value;
     const space = reserveSpaceField.current?.value;
+    setReserveSpaceModal(false);
     return address && space && fm?.fs.reserveSpace(fm.address, address, Number(space));
   }
 
@@ -174,7 +176,7 @@ const App = () => {
                 <UploadIcon className="h-24 w-24 my-4" />
                 {
                   Array.from(activeUploads.values()).flat().map(upload => (upload) ? (
-                    <div key={upload.dePath} className="flex flex-row justify-between gap-2">
+                    <div key={upload.dePath} className="flex flex-row justify-between items-center gap-2">
                       <p>{upload.file.name}</p>
                       <p>{prettyBytes(upload.file.size)}</p>
                       <Progress className="w-24" value={upload.progress} max={100} />

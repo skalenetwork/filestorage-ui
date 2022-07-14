@@ -19,17 +19,59 @@ const FileManagerView = () => {
 
   const {
     fm, directory: currentDirectory, listing,
-    changeDirectory, deleteFile, deleteDirectory
+    changeDirectory, deleteFile, deleteDirectory,
+    setAddress
   } = useFileManagerContext<ContextType>();
 
   const handleRowClick = (directory: DeDirectory) => {
     changeDirectory(directory);
   }
 
+  const [trail, setTrail] = useState<any[]>([]);
+
+  useEffect(() => {
+    let trail = [];
+    let item = currentDirectory;
+    while (item.parent) {
+      trail.push(item);
+      item = item.parent;
+    }
+    setTrail(trail.reverse());
+  }, [currentDirectory?.path]);
+
   const tableElement = useRef<HTMLTableElement>();
 
   return (
     <div className="p-2">
+      <div className="flex flex-row gap-2 items-center border-y border-slate-800 py-4">
+        <input
+          type="text" value={fm?.rootDirectory().name}
+          onInput={(e) => {
+            let { value } = e.target;
+            console.log(value);
+            if (value && value.length < 40) {
+              return;
+              //@todo more to sanity and more validation
+            }
+            setAddress("0x" + value);
+          }}
+        /> /
+        <div class="text-sm breadcrumbs">
+          <ul>
+            {
+              trail.map(item => (
+                <li className="" key={item.path}>
+                  <a onClick={() => changeDirectory(item)}>
+                    {item.kind === "directory"
+                      ? <FolderIcon className="h-5 w-5 text-blue-500" />
+                      : <DocumentTextIcon className="h-5 w-5 text-blue-500" />} {item.name}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
       <table className="table w-full select-none" ref={tableElement}>
         <thead className="bg-white">
           <tr>

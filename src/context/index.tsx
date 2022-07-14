@@ -11,6 +11,7 @@ import useDeFileManager, { Action, State } from '@/context/useDeFileManager';
 
 export type ContextType = State & Action & {
   connectedAddress: string;
+  setAddress: React.Dispatch<React.SetStateAction<string>>;
 };
 
 const FileManagerContext = createContext<ContextType>(undefined);
@@ -105,11 +106,11 @@ export function ContextWrapper({ children }) {
 
   return (fmState && fmState.fm && fmState.directory) ? (
     <FileManagerContext.Provider value={{
-      fm, ...fmState, ...fmAction, connectedAddress, walletMode
+      fm, ...fmState, ...fmAction, connectedAddress, walletMode, setAddress
     }}>
       { children}
     </FileManagerContext.Provider>
-  ) : <p className="flex justify-center items-center">Oi</p>;
+  ) : <p className="flex justify-center items-center">Ouch...</p>;
 }
 
 export function useFileManagerContext() {
