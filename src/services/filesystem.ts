@@ -316,12 +316,15 @@ class DeFileManager implements IDeFileManager {
   // @todo: test and implement fuzzy query
   async search(inDirectory: DeDirectory, query: string) {
     const results = [];
+    console.log("filemanager::query", query);
+    if (!query) return results;
     const handleMatch = (fileOrDir: DeFile | DeDirectory) => {
-      if (fileOrDir.name === query) {
+      if (fileOrDir.name.includes(query.trim())) {
         results.push(fileOrDir);
       }
     }
     await this.iterateDirectory(inDirectory, handleMatch);
+    console.log("filemanager::search_results", results);
     return results;
   }
 

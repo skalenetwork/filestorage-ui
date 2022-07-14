@@ -2,6 +2,7 @@
 
 import prettyBytes from 'pretty-bytes';
 import { useState, useRef, SyntheticEvent, useEffect } from 'react';
+import { useDebounce } from 'react-use';
 
 import { useFileManagerContext } from '@/context/index';
 
@@ -29,12 +30,18 @@ const App = () => {
   const [filesToUpload, setFilesToUpload] = useState([]);
 
   const {
-    fm, directory: currentDirectory, reservedSpace, occupiedSpace,
+    fm, directory: currentDirectory, reservedSpace, occupiedSpace, searchListing,
     isAuthorized, connectedAddress, activeUploads,
-    uploadFiles, createDirectory
+    uploadFiles, createDirectory, search
   } = useFileManagerContext();
 
   const [uploadingFiles, setUploadingFiles] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  useEffect(() => {
+    search(debouncedSearchTerm);
+  }, [debouncedSearchTerm]);
 
   useEffect(() => {
     setUploadingFiles(Array.from(activeUploads.values()).flat());
@@ -114,7 +121,12 @@ const App = () => {
         </div>
         <div className="action-bar my-4 gap-4 flex flex-row justify-between items-center">
           <div className="grow">
-            <Input className="py-2 px-4 w-full border border-gray-500 rounded" type="text" placeholder="Search files..." />
+            <Input
+              onChange={(e) => { setSearchTerm(e.target.value) }}
+              className="py-2 px-4 w-full border border-gray-500 rounded"
+              type="text"
+              placeholder="Search files..."
+            />
           </div>
           {
             (isAuthorized) ?

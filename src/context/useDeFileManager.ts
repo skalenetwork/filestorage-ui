@@ -29,6 +29,7 @@ const initialState: State = {
   fm: undefined,
   directory: undefined,
   listing: [],
+  searchListing: [],
   reservedSpace: 0,
   occupiedSpace: 0,
   activeUploads: new Map(),
@@ -40,6 +41,7 @@ const ACTION = {
   SET_AUTHORITY: 'SET_AUTHORITY',
   CHANGE_DIRECTORY: 'CHANGE_DIRECTORY',
   SET_LISTING: 'SET_LISTING',
+  SET_SEARCH_LISTING: 'SET_SEARCH_LISTING',
   ADD_UPLOADS: 'ADD_UPLOADS',
   ADD_TO_UPLOADS: 'ADD_TO_UPLOADS',
   REMOVE_FROM_UPLOADS: 'REMOVE_FROM_UPLOADS',
@@ -57,6 +59,8 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
       return { ...state, directory: action.payload }
     case ACTION.SET_LISTING:
       return { ...state, listing: action.payload }
+    case ACTION.SET_SEARCH_LISTING:
+      return { ...state, searchListing: action.payload }
     case ACTION.ADD_UPLOADS:
       {
         let { directory, activeFiles } = action.payload;
@@ -257,11 +261,28 @@ function useDeFileManager(w3Provider: Object, address: string, privateKey?: stri
     });
   });
 
+  const search = async (query) => {
+    if (!query) {
+      dispatch({
+        type: ACTION.SET_SEARCH_LISTING,
+        payload: []
+      });
+      return;
+    }
+
+    const results = await fm?.search(cwd, query);
+    dispatch({
+      type: ACTION.SET_SEARCH_LISTING,
+      payload: results
+    })
+  }
+
   const actions = {
     uploadFiles,
     deleteFile,
     createDirectory,
     deleteDirectory,
+    search,
     changeDirectory: (directory: DeDirectory) => dispatch({
       type: ACTION.CHANGE_DIRECTORY,
       payload: directory
