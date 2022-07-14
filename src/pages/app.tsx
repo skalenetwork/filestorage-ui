@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 
 import prettyBytes from 'pretty-bytes';
 import { useState, useRef, SyntheticEvent, useEffect } from 'react';

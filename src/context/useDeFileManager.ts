@@ -1,7 +1,8 @@
+// @ts-nocheck
+
 import { useEffect, useReducer, useState } from 'react';
 import { useInterval } from 'react-use';
 import { DeFileManager, DeDirectory, DeFile } from '@/services/filesystem';
-import { clvwallet } from 'web3modal/dist/providers/connectors';
 
 type FileStatus = {
   file: File;
