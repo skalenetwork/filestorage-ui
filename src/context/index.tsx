@@ -1,5 +1,7 @@
 //@ts-nocheck
 
+import config, { ConfigType } from '../config';
+
 import Web3 from 'web3/dist/web3.min.js';
 import Web3Modal from 'web3modal';
 
@@ -16,9 +18,35 @@ export type ContextType = State & Action & {
 
 const FileManagerContext = createContext<ContextType>(undefined);
 
-const RPC_ENDPOINT = 'https://staging-v2.skalenodes.com/v1/roasted-thankful-unukalhai';
-const CHAIN_ID = '0x1dc0981d';
+const getRpcEndpoint = (data: ConfigType['chains'][0]) => {
+  return `${data.protocol}://${data.nodeDomain}/${data.version}/${data.sChainName}`
+}
+
+const getFsEndpoint = (data: ConfigType['chains'][0], address: string = "", path: string = "") => {
+  let root = address.toLowerCase();
+  if (root.slice(0, 2) === "0x") {
+    root = root.slice(2);
+  }
+  return `${data.protocol}://${data.nodeDomain}/fs/${data.sChainName}${(root) ? "/" + address : ""}${(path) ? "/" + path : ""}`
+}
+
+const RPC_ENDPOINT = getRpcEndpoint(config.chains[0]);
+const CHAIN_ID = config.chains[0].chainId;
 const TEST_ADDRESS = '0x5A4AB05FBB140eb6A51e7D13a528A6Aa35a5ef4A';
+
+const addNetwork = (web3, chain: ConfigType['chains'][0]) => {
+  return web3.currentProvider.request({
+    method: "wallet_addEthereumChain",
+    params: [
+      {
+        chainId: chain.chainId,
+        chainName: `sChain ${chain.sChainName}`,
+        rpcUrls: [getRpcEndpoint(chain)],
+        blockExplorerUrls: [`${chain.protocol}://${chain.sChainName}.explorer.${chain.nodeDomain}/`],
+      },
+    ],
+  })
+}
 
 export function ContextWrapper({ children }) {
 
@@ -35,19 +63,8 @@ export function ContextWrapper({ children }) {
       const web3Provider = await w3Modal.connect();
       const web3 = new Web3(web3Provider);
       setConnectedAddress(web3Provider.selectedAddress);
-
-      const addChainResponse = await web3.currentProvider.request({
-        method: "wallet_addEthereumChain",
-        params: [
-          {
-            chainId: CHAIN_ID,
-            chainName: "SKALE::roasted-thankful-unukalhai",
-            rpcUrls: [RPC_ENDPOINT],
-            blockExplorerUrls: ["https://roasted-thankful-unukalhai.explorer.staging-v2.skalenodes.com/"],
-          },
-        ],
-      });
-      console.log(addChainResponse);
+      const chain = config.chains[0];
+      await addNetwork(web3, chain);
       setW3Provider(web3Provider);
     } catch (e) {
       console.log("Connecting Wallet", e);
@@ -104,7 +121,7 @@ export function ContextWrapper({ children }) {
 
   const [fm, fmState, fmAction]: [DeFileManager, State, any] = useDeFileManager(w3Provider, address, pk);
 
-  return (fmState && fmState.fm && fmState.directory) ? (
+  return (fm && fmState && fmState.fm && fmState.directory) ? (
     <FileManagerContext.Provider value={{
       fm, ...fmState, ...fmAction, connectedAddress, walletMode, setAddress
     }}>

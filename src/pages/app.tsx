@@ -36,12 +36,13 @@ const App = () => {
   } = useFileManagerContext();
 
   const [uploadingFiles, setUploadingFiles] = useState<any[]>([]);
+  const searchField = useRef<HTMLInputElement>();
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  useEffect(() => {
-    search(debouncedSearchTerm);
-  }, [debouncedSearchTerm]);
+  useDebounce(() => {
+    console.log("debounce:search", searchTerm);
+    search(searchTerm);
+  }, 500, [searchTerm]);
 
   useEffect(() => {
     setUploadingFiles(Array.from(activeUploads.values()).flat());
@@ -96,7 +97,7 @@ const App = () => {
                     onClick={(e) => setActiveUploadsModal(true)}
                   >
                     Uploading {uploadingFiles.length} files..
-              </p>
+                  </p>
                   : null
               }
 
@@ -125,7 +126,8 @@ const App = () => {
           <div className="action-bar my-4 gap-4 flex flex-row justify-between items-center">
             <div className="grow">
               <Input
-                onChange={(e) => { setSearchTerm(e.target.value) }}
+                ref={searchField}
+                onChange={(e) => setSearchTerm(searchField.current.value)}
                 className="py-2 px-4 w-full border border-gray-500 rounded"
                 type="text"
                 placeholder="Search files..."

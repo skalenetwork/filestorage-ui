@@ -79,10 +79,10 @@ const FileManagerView = (props) => {
 
   const ItemActions = ({ item }) => (
     <div className="dropdown dropdown-left">
-      <label tabIndex="0" class="cursor-pointer">
+      <label tabIndex="0" className="cursor-pointer">
         <DotsVerticalIcon className="h-5 w-5" />
       </label>
-      <ul tabIndex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
+      <ul tabIndex="0" className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
         <li
           onClick={(e) => fm?.downloadFile(item) && tableElement.current?.querySelector(":focus").blur()}
         >
@@ -109,7 +109,7 @@ const FileManagerView = (props) => {
   );
 
   const Item = ({ item }) => (
-    <tr key={item.path} className="focus:bg-slate-100 hover:bg-slate-50" onClick={
+    <tr className="focus:bg-slate-100 hover:bg-slate-50" onClick={
       (e) => {
         item.kind === "directory" && e.detail === 2 && handleRowClick(item) && e.stopPropagation();
       }
@@ -166,7 +166,7 @@ const FileManagerView = (props) => {
         <tbody>
           <BackItem />
           {
-            listing.length ? listing.map((item) => <Item item={item} />) : null
+            listing.length ? listing.map((item) => <Item item={item} key={item.path} />) : null
           }
         </tbody>
       </table>
