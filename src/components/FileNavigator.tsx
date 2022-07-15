@@ -1,4 +1,4 @@
-
+//@ts-nocheck
 
 import { useState, useEffect, useRef, createRef, SyntheticEvent } from 'react';
 

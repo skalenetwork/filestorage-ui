@@ -85,9 +85,9 @@ const App = () => {
       <main>
         <section style={{ gridArea: 'frame' }}>
           <header className="header py-4 flex justify-between items-center">
-            <p>
-              <img src="/logo.png" className="h-12" style={{ filter: "revert" }} alt="" />
-              <small className="text-gray-500 font-mono">File System</small>
+            <p className="flex flex-row items-center gap-2">
+              <img src="/logo.png" className="h-10 rounded-[14px]" style={{ filter: "revert" }} alt="" />
+              <span className="text-xl font-bold">SKALE<sup className="font-medium">fs</sup></span>
             </p>
             <div className="flex flex-row gap-4">
               {

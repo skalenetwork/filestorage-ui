@@ -34,6 +34,10 @@ main {
     "mgr";
 }
 
+img {
+  image-rendering: -webkit-optimize-contrast !important;
+}
+
 .btn {
   @apply font-medium;
   @apply text-base;
