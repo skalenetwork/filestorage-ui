@@ -82,9 +82,9 @@ const App = () => {
   }
 
   return (
-    <div className="container mx-auto px-16 max-h-[100vh] h-[100vh] overflow-hidden">
+    <div className="mx-auto max-h-[100vh] h-[100vh] overflow-hidden">
       <main>
-        <section style={{ gridArea: 'frame' }}>
+        <section className="px-24" style={{ gridArea: 'frame' }}>
           <header className="header py-4 flex justify-between items-center">
             <p className="flex flex-row items-center gap-2">
               <img src="/logo.png" className="h-10 rounded-[14px]" style={{ filter: "revert" }} alt="" />
@@ -116,9 +116,9 @@ const App = () => {
               {
                 (isAuthorized) ?
                   <Button
-                    className="w-full bg-gray-200 text-black"
+                    className="w-full bg-gray-200 text-black border-none"
                     onClick={() => setReserveSpaceModal(true)}
-                    color="secondary">+ Reserve space</Button>
+                    color="secondary">Reserve space</Button>
                   : null
               }
             </div>
@@ -151,7 +151,7 @@ const App = () => {
             }
           </div>
         </section>
-        <section style={{ gridArea: 'mgr' }} className="overflow-y-scroll">
+        <section style={{ gridArea: 'mgr' }} className="overflow-y-scroll px-20">
           <FileNavigator />
         </section>
       </main>

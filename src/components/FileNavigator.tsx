@@ -64,12 +64,10 @@ const FileManagerView = (props) => {
     currentDirectory.parent ?
       <tr
         className="focus:bg-slate-100 hover:bg-slate-50"
-        onClick={(e) => {
-          e.detail === 2 && handleRowClick(currentDirectory.parent) && e.stopPropagation();
-        }}
+        onClick={(e) => { handleRowClick(currentDirectory.parent) && e.stopPropagation(); }}
       >
         <td className="border-slate-800 bg-transparent">
-          {renderFormattedName(currentDirectory?.parent)}
+          {renderFormattedName({ kind: "directory", name: ".." })}
         </td>
         <td className="border-slate-800 bg-transparent"></td>
         <td className="border-slate-800 bg-transparent"></td>
@@ -78,7 +76,7 @@ const FileManagerView = (props) => {
   );
 
   const ItemActions = ({ item }) => (
-    <div className="dropdown dropdown-left">
+    <div className="dropdown dropdown-left" onClick={(e) => e.stopPropagation()}>
       <label tabIndex="0" className="cursor-pointer">
         <DotsVerticalIcon className="h-5 w-5" />
       </label>
@@ -111,7 +109,7 @@ const FileManagerView = (props) => {
   const Item = ({ item }) => (
     <tr className="focus:bg-slate-100 hover:bg-slate-50" onClick={
       (e) => {
-        item.kind === "directory" && e.detail === 2 && handleRowClick(item) && e.stopPropagation();
+        item.kind === "directory" && handleRowClick(item) && e.stopPropagation();
       }
     }>
       <td className="border-slate-800 bg-transparent">{renderFormattedName(item)}</td>
@@ -137,8 +135,8 @@ const FileManagerView = (props) => {
   )
 
   return (
-    <div className="p-2">
-      <div className="flex flex-row gap-2 items-center border-y border-slate-800 py-4">
+    <div>
+      <div className="flex flex-row gap-2 items-center border-y border-slate-800 py-4 sticky top-0 bg-white z-[1000]">
         <AddressSelect /> /
         <div className="breadcrumbs m-0 p-0">
           <ul>
@@ -154,8 +152,8 @@ const FileManagerView = (props) => {
           </ul>
         </div>
       </div>
-      <table className="table w-full select-none" ref={tableElement}>
-        <thead className="bg-white">
+      <table className="table w-full select-none relative" ref={tableElement}>
+        <thead>
           <tr>
             <th className="border-b border-slate-800 bg-inherit normal-case font-medium text-base">Name</th>
             <th className="border-b border-slate-800 bg-inherit normal-case font-medium text-base">Timestamp</th>
