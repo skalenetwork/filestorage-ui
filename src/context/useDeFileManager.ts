@@ -231,6 +231,7 @@ function useDeFileManager(w3Provider: Object, address: string, privateKey?: stri
       fm.uploadFile(directory, file)
         .then(path => {
           remove();
+          loadCurrentDirectory();
         })
         .catch(err => {
           console.error(err);

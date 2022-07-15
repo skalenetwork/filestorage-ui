@@ -47,6 +47,10 @@ const App = () => {
     setUploadingFiles(Array.from(activeUploads.values()).flat());
   }, [activeUploads]);
 
+  const shortAddress = (address: string) => {
+    return address.substring(0, 6) + "...." + address.substring(address.length - 4);
+  }
+
   const handleCreateDirectory = async (event: SyntheticEvent) => {
     event.preventDefault();
     const name = newDirectoryField.current?.value;
@@ -77,75 +81,77 @@ const App = () => {
   }
 
   return (
-    <div className="container mx-auto px-16">
-
-      <header className="header py-4 flex justify-between items-center">
-        <p>
-          <img src="/logo.png" className="h-12" style={{ filter: "revert" }} alt="" />
-          <small className="text-gray-500 font-mono">File System</small>
-        </p>
-        <div className="flex flex-row">
-          {
-            (uploadingFiles.length) ?
-              <p className="px-4 py-2 cursor-pointer rounded bg-yellow-50 border border-yellow-500"
-                onClick={(e) => setActiveUploadsModal(true)}
-              >
-                Uploading {uploadingFiles.length} files..
-              </p>
-              : null
-          }
-
-          <p className="px-4 py-2 w-72 rounded bg-gray-100 overflow-hidden">
-            {connectedAddress}
-          </p>
-        </div>
-      </header>
-
+    <div className="container mx-auto px-16 max-h-[100vh] h-[100vh] overflow-hidden">
       <main>
-        <div className="status-bar flex flex-row justify-between items-center">
-          <h1 className="text-3xl font-semibold">Filestorage</h1>
-          <div className="w-72">
-            <p className="font-bold">{prettyBytes(occupiedSpace || 0)} used</p>
-            <p className="text-sm">{(occupiedSpace / reservedSpace).toFixed(2)}% used - {prettyBytes((reservedSpace - occupiedSpace) || 0)} free</p>
-            <Progress className="w-full" value={occupiedSpace / reservedSpace} max={100} />
-            <br />
+        <section style={{ gridArea: 'frame' }}>
+          <header className="header py-4 flex justify-between items-center">
+            <p>
+              <img src="/logo.png" className="h-12" style={{ filter: "revert" }} alt="" />
+              <small className="text-gray-500 font-mono">File System</small>
+            </p>
+            <div className="flex flex-row gap-4">
+              {
+                (uploadingFiles.length) ?
+                  <p className="px-4 py-2 cursor-pointer rounded bg-yellow-50 border border-yellow-500"
+                    onClick={(e) => setActiveUploadsModal(true)}
+                  >
+                    Uploading {uploadingFiles.length} files..
+              </p>
+                  : null
+              }
+
+              <p className="px-4 py-2 rounded bg-gray-100 overflow-hidden">
+                {shortAddress(connectedAddress)}
+              </p>
+            </div>
+          </header>
+          <div className="status-bar flex flex-row justify-between items-center">
+            <h1 className="text-3xl font-semibold">Filestorage</h1>
+            <div className="w-72">
+              <p className="font-bold">{prettyBytes(occupiedSpace || 0)} used</p>
+              <p className="text-sm">{(occupiedSpace / reservedSpace).toFixed(6)}% used - {prettyBytes((reservedSpace - occupiedSpace) || 0)} free</p>
+              <Progress className="w-full" value={occupiedSpace / reservedSpace} max={100} />
+              <br />
+              {
+                (isAuthorized) ?
+                  <Button
+                    className="w-full bg-gray-200 text-black"
+                    onClick={() => setReserveSpaceModal(true)}
+                    color="secondary">+ Reserve space</Button>
+                  : null
+              }
+            </div>
+          </div>
+          <div className="action-bar my-4 gap-4 flex flex-row justify-between items-center">
+            <div className="grow">
+              <Input
+                onChange={(e) => { setSearchTerm(e.target.value) }}
+                className="py-2 px-4 w-full border border-gray-500 rounded"
+                type="text"
+                placeholder="Search files..."
+              />
+            </div>
             {
               (isAuthorized) ?
-                <Button
-                  className="w-full bg-gray-200 text-black"
-                  onClick={() => setReserveSpaceModal(true)}
-                  color="secondary">+ Reserve space</Button>
+                <div className="flex-none flex flex-row gap-4">
+                  <>
+                    <label className="btn w-72 flex" htmlFor="file-upload">
+                      <DocumentAddIcon className="h-5 w-5 mr-4" /> Upload file
+                  </label>
+                    <input type="file" id="file-upload" className="hidden" ref={uploadFileField}
+                      onChange={() => { uploadFileField.current?.files?.length && setUploadModal(true) }} multiple />
+                  </>
+                  <Button className="btn w-72" onClick={() => setDirectoryModal(true)}>
+                    <FolderAddIcon className="h-5 w-5 mr-4" /> Create directory
+                </Button>
+                </div>
                 : null
             }
           </div>
-        </div>
-        <div className="action-bar my-4 gap-4 flex flex-row justify-between items-center">
-          <div className="grow">
-            <Input
-              onChange={(e) => { setSearchTerm(e.target.value) }}
-              className="py-2 px-4 w-full border border-gray-500 rounded"
-              type="text"
-              placeholder="Search files..."
-            />
-          </div>
-          {
-            (isAuthorized) ?
-              <div className="flex-none flex flex-row gap-4">
-                <>
-                  <label className="btn w-72 flex" htmlFor="file-upload">
-                    <DocumentAddIcon className="h-5 w-5 mr-4" /> Upload file
-                  </label>
-                  <input type="file" id="file-upload" className="hidden" ref={uploadFileField}
-                    onChange={() => { uploadFileField.current?.files?.length && setUploadModal(true) }} multiple />
-                </>
-                <Button className="btn w-72" onClick={() => setDirectoryModal(true)}>
-                  <FolderAddIcon className="h-5 w-5 mr-4" /> Create directory
-                </Button>
-              </div>
-              : null
-          }
-        </div>
-        <FileNavigator />
+        </section>
+        <section style={{ gridArea: 'mgr' }} className="overflow-y-scroll">
+          <FileNavigator />
+        </section>
       </main>
 
       <Modal
@@ -254,12 +260,7 @@ const App = () => {
           <a className="underline cursor-pointer" onClick={() => setReserveSpaceModal(false)}>Cancel</a>
         </Modal.Actions>
       </Modal>
-
-      <footer className="p-4 text-center text-slate-500 text-sm">
-        ⚬ SKALE FileManager ⚬ <br />
-        ✔️ Navigate ✔️ Download files ✔ Upload files ✔️ Watch progress ✔️ Create dir ✔️ Stats
-      </footer>
-    </div >
+    </div>
   )
 }
 

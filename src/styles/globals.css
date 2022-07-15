@@ -10,6 +10,10 @@ body {
     Droid Sans, Helvetica Neue, sans-serif;
 }
 
+body {
+  overflow-y: hidden;
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -17,6 +21,17 @@ a {
 
 * {
   box-sizing: border-box;
+}
+
+main {
+  height: 100%;
+  display: grid;
+  grid-gap: 0.5rem;
+  grid-template-rows: auto 1fr;
+  grid-auto-rows: max-content;
+  grid-template-areas:
+    "frame"
+    "mgr";
 }
 
 .btn {
