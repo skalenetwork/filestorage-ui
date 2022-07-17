@@ -2,7 +2,7 @@
 
 import config, { ConfigType } from '../config';
 
-import Web3 from 'web3/dist/web3.min.js';
+import Web3 from 'web3';
 import Web3Modal from 'web3modal';
 
 import { createContext, useContext, useEffect, useState } from 'react';
