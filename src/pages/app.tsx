@@ -199,10 +199,10 @@ const App = () => {
                     <div key={upload.dePath} className="flex flex-row justify-between items-center gap-2">
                       <p>{upload.file.name}</p>
                       <p>{prettyBytes(upload.file.size)}</p>
-                      <Progress className="w-24" value={upload.progress} max={100} />
                     </div>
                   ) : null)
                 }
+                <Progress className="w-72" value={upload.progress} max={100} />
               </>
               :
               <>

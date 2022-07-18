@@ -10,17 +10,21 @@ Entry point: `pages/-app.tsx`
 ## UI Components - Overview
 
 - [ ] Wallet multi-connect
-- [ ] Uploader
-- [ ] Space reservation 
+- [x] Uploader
+- [x] Space reservation 
 - [x] Total usage metrics
 - [x] Navigable datatable
-- [ ] Breadcrumb + Address switch
+- [x] Breadcrumb + Address switch
 - [ ] Search
 
 ## To locate
 
 - [ ] Chain owner
 - [ ] Timestamps not found in contracts
+
+## Codebase: heads up for templating
+
+- Project uses tailwind class-based styling.. for those not familiar but seasoned with CSS, you can pick pace in ~3h, after that it's intuitive with occasional doc-check. For backend devs doing minor template updates, come with a temporary counter-DRY mindset and you'll find less friction.
 
 ----
 

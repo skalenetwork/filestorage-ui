@@ -1,6 +1,7 @@
 //@ts-nocheck
 
 import { useState, useEffect, useRef, createRef, SyntheticEvent } from 'react';
+import { useAsyncFn, useMount } from 'react-use';
 
 import { useFileManagerContext, ContextType } from '../context';
 import { DeFile, DeDirectory, DeFileManager } from '@/services/filesystem';
@@ -10,8 +11,11 @@ import DocumentTextIcon from '@heroicons/react/outline/DocumentTextIcon';
 import DocumentRemoveIcon from '@heroicons/react/solid/DocumentRemoveIcon';
 import DocumentDownloadIcon from '@heroicons/react/solid/DocumentDownloadIcon';
 import DotsVerticalIcon from '@heroicons/react/solid/DotsVerticalIcon';
+import ArrowSmUpIcon from '@heroicons/react/solid/ArrowSmUpIcon';
+import ArrowSmDownIcon from '@heroicons/react/solid/ArrowSmDownIcon';
 
 import prettyBytes from 'pretty-bytes';
+import orderBy from 'lodash/orderBy';
 
 const FileManagerView = (props) => {
 
@@ -39,11 +43,24 @@ const FileManagerView = (props) => {
   }
 
   const [trail, setTrail] = useState<any[]>([]);
+  const [sortByKey, setSortByKey] = useState<string>("");
+  const [sortByOrder, setSortByOrder] = useState<string>("");
+  const [sortedListing, setSortedListing] = useState<Array<DeFile | DeDirectory>>([]);
+
+  useMount(() => {
+    setSortByKey("name");
+    setSortByOrder("asc");
+  });
 
   useEffect(() => {
     setTrail(makeItemTrail(currentDirectory));
   }, [currentDirectory?.path]);
 
+  useEffect(() => {
+    if (!(listing && sortByKey && sortByOrder)) return;
+    const newListing = orderBy(listing, [(o => o.isFile === true), sortByKey], ['asc', sortByOrder]);
+    setSortedListing(newListing);
+  }, [listing, sortByKey, sortByOrder]);
 
   const renderFormattedName = (item: DeFile | DeDirectory) => (
     <span className="gap-x-2 flex flex-row items-center">
@@ -58,6 +75,25 @@ const FileManagerView = (props) => {
 
   const renderFormattedSize = (item: DeFile | DeDirectory) => (
     (item.kind === "file") ? prettyBytes(item.size || 0) : "--"
+  );
+
+  const renderSortElement = (key) => (
+    <span>
+      {(key !== sortByKey) ? "·" : ((sortByOrder === "asc") ?
+        <ArrowSmUpIcon className="h-5 w-5 inline-block" /> :
+        <ArrowSmDownIcon className="h-5 w-5 inline-block" />
+      )}
+    </span>
+  );
+
+  const ColumnLabel = (props) => (
+    <p className="p-0 cursor-pointer" onClick={
+      (e) => {
+        setSortByKey(props.columnKey);
+        setSortByOrder((sortByOrder === "asc") ? "desc" : "asc");
+      }}>
+      {props.children} {props.columnKey ? renderSortElement(props.columnKey) : null}
+    </p>
   );
 
   const BackItem = () => (
@@ -81,11 +117,15 @@ const FileManagerView = (props) => {
         <DotsVerticalIcon className="h-5 w-5" />
       </label>
       <ul tabIndex="0" className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
-        <li
-          onClick={(e) => fm?.downloadFile(item) && tableElement.current?.querySelector(":focus").blur()}
-        >
-          <a><DocumentDownloadIcon className="h-5 w-5 text-blue-500" /> Download</a>
-        </li>
+        {
+          (item.kind === "file") ?
+            <li
+              onClick={(e) => fm?.downloadFile(item) && tableElement.current?.querySelector(":focus").blur()}
+            >
+              <a><DocumentDownloadIcon className="h-5 w-5 text-blue-500" /> Download</a>
+            </li>
+            : <></>
+        }
         {
           (item.kind === "file" ? deleteFile : deleteDirectory) ?
             <li
@@ -136,7 +176,7 @@ const FileManagerView = (props) => {
 
   return (
     <div>
-      <div className="flex flex-row gap-2 items-center border-y border-slate-800 py-4 sticky top-0 bg-white z-[1000]">
+      <div className="flex flex-row gap-2 items-center border-y border-slate-800 py-4 sticky top-0 bg-white z-[998]">
         <AddressSelect /> /
         <div className="breadcrumbs m-0 p-0">
           <ul>
@@ -155,16 +195,22 @@ const FileManagerView = (props) => {
       <table className="table w-full select-none relative" ref={tableElement}>
         <thead>
           <tr>
-            <th className="border-b border-slate-800 bg-inherit normal-case font-medium text-base">Name</th>
-            <th className="border-b border-slate-800 bg-inherit normal-case font-medium text-base">Timestamp</th>
-            <th className="border-b border-slate-800 bg-inherit normal-case font-medium text-base">File Size</th>
+            <th className="w-[30%] border-b border-slate-800 bg-inherit normal-case font-medium text-base">
+              <ColumnLabel columnKey="name">Name</ColumnLabel>
+            </th>
+            <th className="w-[30%] border-b border-slate-800 bg-inherit normal-case font-medium text-base">
+              <ColumnLabel columnKey="timestamp">Timestamp</ColumnLabel>
+            </th>
+            <th className="w-[30%] border-b border-slate-800 bg-inherit normal-case font-medium text-base">
+              <ColumnLabel columnKey="size">File size</ColumnLabel>
+            </th>
             <th className="border-b border-slate-800 bg-inherit normal-case font-medium text-base"></th>
           </tr>
         </thead>
         <tbody>
           <BackItem />
           {
-            listing.length ? listing.map((item) => <Item item={item} key={item.path} />) : null
+            sortedListing.length ? sortedListing.map((item) => <Item item={item} key={item.path} />) : null
           }
         </tbody>
       </table>

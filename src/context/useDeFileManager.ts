@@ -172,9 +172,10 @@ function useDeFileManager(w3Provider: Object, address: string, privateKey?: stri
     loadCurrentDirectory();
   }, [state.directory?.path]);
 
-  // implementation complete, @todo test
-  useInterval(() => {
-    return;
+  // tested for uploads under 1mb: file being uploaded not reflected in directory listing via node
+  // instead simulating progress
+  // can be re-enabled later
+  false && useInterval(() => {
     for (let dirPath of state.activeUploads.keys()) {
       // @todo make sane
       const absolutePath = state.fm?.rootDirectory().name + ((dirPath) ? ("/" + dirPath) : "");
