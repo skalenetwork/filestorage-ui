@@ -42,3 +42,18 @@ img {
   @apply font-medium;
   @apply text-base;
 }
+
+.input {
+  @apply px-4;
+  @apply py-2;
+  @apply m-0;
+  @apply rounded;
+  @apply bg-white;
+  @apply border-gray-500;
+  @apply focus:border-gray-500;
+  @apply focus:outline-none;
+}
+
+.web3modal-modal-lightbox {
+  z-index: 9999 !important;
+}

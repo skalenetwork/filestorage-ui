@@ -10,6 +10,7 @@ import FolderAddIcon from '@heroicons/react/solid/FolderAddIcon';
 import DocumentAddIcon from '@heroicons/react/solid/DocumentAddIcon';
 import UploadIcon from '@heroicons/react/outline/UploadIcon';
 import { Button, Modal, Progress, Input } from '@/components/common';
+
 import FileNavigator from '@/components/FileNavigator';
 
 const App = () => {
@@ -31,7 +32,7 @@ const App = () => {
 
   const {
     fm, directory: currentDirectory, reservedSpace, occupiedSpace, searchListing,
-    isAuthorized, connectedAddress, activeUploads,
+    isAuthorized, connectWallet, connectedAddress, activeUploads,
     uploadFiles, createDirectory, search
   } = useFileManagerContext();
 
@@ -101,9 +102,13 @@ const App = () => {
                   : null
               }
 
-              <p className="px-4 py-2 rounded bg-gray-100 overflow-hidden">
-                {shortAddress(connectedAddress)}
-              </p>
+              {
+                (connectedAddress) ?
+                  <p className="px-4 py-2 rounded bg-gray-100 overflow-hidden">
+                    {shortAddress(connectedAddress)}
+                  </p> :
+                  <button className="btn rounded-full" onClick={(e) => connectWallet()}>Connect</button>
+              }
             </div>
           </header>
           <div className="status-bar flex flex-row justify-between items-center">
@@ -128,7 +133,7 @@ const App = () => {
               <Input
                 ref={searchField}
                 onChange={(e) => setSearchTerm(searchField.current.value)}
-                className="py-2 px-4 w-full border border-gray-500 rounded"
+                className="w-full border border-gray-500 font-medium"
                 type="text"
                 placeholder="Search files..."
               />
@@ -145,7 +150,7 @@ const App = () => {
                   </>
                   <Button className="btn w-72" onClick={() => setDirectoryModal(true)}>
                     <FolderAddIcon className="h-5 w-5 mr-4" /> Create directory
-                </Button>
+                  </Button>
                 </div>
                 : null
             }
@@ -223,7 +228,7 @@ const App = () => {
           <p>
             Give your folder a name.
           </p>
-          <Input className="px-4 py-2 m-0 rounded bg-gray-100 cursor-pointer focus:border-0 focus:outline-none"
+          <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
             type="text"
             placeholder="New directory name"
             required
