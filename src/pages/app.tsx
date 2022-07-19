@@ -11,9 +11,12 @@ import DocumentAddIcon from '@heroicons/react/solid/DocumentAddIcon';
 import UploadIcon from '@heroicons/react/outline/UploadIcon';
 import { Button, Modal, Progress, Input } from '@/components/common';
 import SearchIcon from '@heroicons/react/solid/SearchIcon';
+import DotsCircleHorizontalIcon from '@heroicons/react/outline/DotsCircleHorizontalIcon';
+
 
 import FileNavigator from '@/components/FileNavigator';
 import FormattedName from '@/components/FormattedName';
+import { spawn } from 'child_process';
 
 const App = () => {
 
@@ -35,7 +38,7 @@ const App = () => {
   const {
     fm, directory: currentDirectory, reservedSpace, occupiedSpace, searchListing,
     isAuthorized, connectWallet, connectedAddress, activeUploads,
-    changeDirectory, uploadFiles, createDirectory, search
+    changeDirectory, uploadFiles, createDirectory, search, isSearching
   } = useFileManagerContext();
 
   const [uploadingFiles, setUploadingFiles] = useState<any[]>([]);
@@ -54,6 +57,10 @@ const App = () => {
   const shortAddress = (address: string) => {
     return address.substring(0, 6) + "...." + address.substring(address.length - 4);
   }
+
+  const renderSpinner = () => (
+    <DotsCircleHorizontalIcon className="animate-spin h-6 w-6" />
+  )
 
   const handleCreateDirectory = async (event: SyntheticEvent) => {
     event.preventDefault();
@@ -132,11 +139,15 @@ const App = () => {
           </div>
           <div className="action-bar my-4 gap-4 flex flex-row justify-between items-center">
             <div className="grow relative">
-              <SearchIcon className="h-6 w-6 mr-4 pointer-events-none absolute top-1/2 transform -translate-y-1/2 left-3" />
+              <div className="mr-4 pointer-events-none absolute top-1/2 transform -translate-y-1/2 left-3">
+                {
+                  isSearching ? renderSpinner() : <SearchIcon className="h-6 w-6" />
+                }
+              </div>
               <Input
                 ref={searchField}
                 onChange={(e) => setSearchTerm(searchField.current.value)}
-                onBlur={e => { searchField.current.value = ""; setSearchTerm(""); }}
+                onBlur={e => { setSearchTerm(""); searchField.current.value = ""; }}
                 className="w-full border border-gray-500 font-medium"
                 style={{ paddingLeft: "3.5rem" }}
                 type="text"
