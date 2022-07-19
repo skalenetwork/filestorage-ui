@@ -17,6 +17,8 @@ import ArrowSmDownIcon from '@heroicons/react/solid/ArrowSmDownIcon';
 import prettyBytes from 'pretty-bytes';
 import orderBy from 'lodash/orderBy';
 
+import FormattedName from './FormattedName';
+
 const FileManagerView = (props) => {
 
   const {
@@ -103,7 +105,7 @@ const FileManagerView = (props) => {
         onClick={(e) => { handleRowClick(currentDirectory.parent) && e.stopPropagation(); }}
       >
         <td className="border-slate-800 bg-transparent">
-          {renderFormattedName({ kind: "directory", name: ".." })}
+          <FormattedName data={{ kind: "directory", name: ".." }} />
         </td>
         <td className="border-slate-800 bg-transparent"></td>
         <td className="border-slate-800 bg-transparent"></td>
@@ -152,7 +154,7 @@ const FileManagerView = (props) => {
         item.kind === "directory" && handleRowClick(item) && e.stopPropagation();
       }
     }>
-      <td className="border-slate-800 bg-transparent">{renderFormattedName(item)}</td>
+      <td className="border-slate-800 bg-transparent"><FormattedName data={item} /></td>
       <td className="border-slate-800 bg-transparent"></td>
       <td className="border-slate-800 bg-transparent">{renderFormattedSize(item)}</td>
       <td className="border-slate-800 bg-transparent"><ItemActions item={item} /></td>
@@ -184,7 +186,7 @@ const FileManagerView = (props) => {
               trail.map(item => (
                 <li className="decoration-blue-500 text-blue-500 underline" key={item.path}>
                   <a onClick={() => changeDirectory(item)}>
-                    {renderFormattedName(item)}
+                    <FormattedName data={item} />
                   </a>
                 </li>
               ))

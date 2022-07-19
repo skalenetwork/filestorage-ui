@@ -10,8 +10,10 @@ import FolderAddIcon from '@heroicons/react/solid/FolderAddIcon';
 import DocumentAddIcon from '@heroicons/react/solid/DocumentAddIcon';
 import UploadIcon from '@heroicons/react/outline/UploadIcon';
 import { Button, Modal, Progress, Input } from '@/components/common';
+import SearchIcon from '@heroicons/react/solid/SearchIcon';
 
 import FileNavigator from '@/components/FileNavigator';
+import FormattedName from '@/components/FormattedName';
 
 const App = () => {
 
@@ -33,7 +35,7 @@ const App = () => {
   const {
     fm, directory: currentDirectory, reservedSpace, occupiedSpace, searchListing,
     isAuthorized, connectWallet, connectedAddress, activeUploads,
-    uploadFiles, createDirectory, search
+    changeDirectory, uploadFiles, createDirectory, search
   } = useFileManagerContext();
 
   const [uploadingFiles, setUploadingFiles] = useState<any[]>([]);
@@ -86,7 +88,7 @@ const App = () => {
     <div className="mx-auto max-h-[100vh] h-[100vh] overflow-hidden">
       <main>
         <section className="px-24" style={{ gridArea: 'frame' }}>
-          <header className="header py-4 flex justify-between items-center">
+          <header className="header py-2 flex justify-between items-center">
             <p className="flex flex-row items-center gap-2">
               <img src="/logo.png" className="h-10 rounded-[14px]" style={{ filter: "revert" }} alt="" />
               <span className="text-xl font-bold">SKALE<sup className="font-medium">fs</sup></span>
@@ -113,7 +115,7 @@ const App = () => {
           </header>
           <div className="status-bar flex flex-row justify-between items-center">
             <h1 className="text-3xl font-semibold">Filestorage</h1>
-            <div className="w-72">
+            <div className="w-80">
               <p className="font-bold">{prettyBytes(occupiedSpace || 0)} used</p>
               <p className="text-sm">{(occupiedSpace / reservedSpace).toFixed(6)}% used - {prettyBytes((reservedSpace - occupiedSpace) || 0)} free</p>
               <Progress className="w-full" value={occupiedSpace / reservedSpace} max={100} />
@@ -129,26 +131,47 @@ const App = () => {
             </div>
           </div>
           <div className="action-bar my-4 gap-4 flex flex-row justify-between items-center">
-            <div className="grow">
+            <div className="grow relative">
+              <SearchIcon className="h-6 w-6 mr-4 pointer-events-none absolute top-1/2 transform -translate-y-1/2 left-3" />
               <Input
                 ref={searchField}
                 onChange={(e) => setSearchTerm(searchField.current.value)}
+                onBlur={e => { searchField.current.value = ""; setSearchTerm(""); }}
                 className="w-full border border-gray-500 font-medium"
+                style={{ paddingLeft: "3.5rem" }}
                 type="text"
                 placeholder="Search files..."
               />
+              {
+                (searchListing && searchListing.length) ?
+                  <div className="absolute top-[100%] bg-slate-100 rounded mt-2 py-2 z-[1001] w-full">
+                    <ul>
+                      {
+                        searchListing.map((item) => (
+                          <li
+                            className="px-4 py-2 mx-2 rounded cursor-default hover:bg-white"
+                            onClick={(e) => (item.kind === "directory") ? changeDirectory(item) : fm?.downloadFile(item)}
+                          >
+                            < FormattedName data={item} />
+                          </li>
+                        ))
+                      }
+                    </ul>
+                  </div>
+                  : <></>
+              }
             </div>
             {
               (isAuthorized) ?
                 <div className="flex-none flex flex-row gap-4">
                   <>
-                    <label className="btn w-72 flex" htmlFor="file-upload">
+                    <label className="btn w-80 flex" htmlFor="file-upload">
                       <DocumentAddIcon className="h-5 w-5 mr-4" /> Upload file
                   </label>
                     <input type="file" id="file-upload" className="hidden" ref={uploadFileField}
                       onChange={() => { uploadFileField.current?.files?.length && setUploadModal(true) }} multiple />
                   </>
-                  <Button className="btn w-72" onClick={() => setDirectoryModal(true)}>
+                  <Button className="btn w-80" onClick={() => setDirectoryModal(true)}>
                     <FolderAddIcon className="h-5 w-5 mr-4" /> Create directory
                   </Button>
                 </div>
@@ -156,7 +179,7 @@ const App = () => {
             }
           </div>
         </section>
-        <section style={{ gridArea: 'mgr' }} className="overflow-y-scroll px-20">
+        <section style={{ gridArea: 'mgr' }} className="overflow-y-scroll px-24">
           <FileNavigator />
         </section>
       </main>
