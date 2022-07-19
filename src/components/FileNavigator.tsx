@@ -13,11 +13,16 @@ import DocumentDownloadIcon from '@heroicons/react/solid/DocumentDownloadIcon';
 import DotsVerticalIcon from '@heroicons/react/solid/DotsVerticalIcon';
 import ArrowSmUpIcon from '@heroicons/react/solid/ArrowSmUpIcon';
 import ArrowSmDownIcon from '@heroicons/react/solid/ArrowSmDownIcon';
+import ChevronRightIcon from '@heroicons/react/solid/ChevronRightIcon';
+import ChevronLeftIcon from '@heroicons/react/solid/ChevronLeftIcon';
+
+import Pagination from 'react-paginate';
 
 import prettyBytes from 'pretty-bytes';
 import orderBy from 'lodash/orderBy';
 
 import FormattedName from './FormattedName';
+import { spawn } from 'child_process';
 
 const FileManagerView = (props) => {
 
@@ -48,6 +53,7 @@ const FileManagerView = (props) => {
   const [sortByKey, setSortByKey] = useState<string>("");
   const [sortByOrder, setSortByOrder] = useState<string>("");
   const [sortedListing, setSortedListing] = useState<Array<DeFile | DeDirectory>>([]);
+  const [itemOffset, setItemOffset] = useState(0);
 
   useMount(() => {
     setSortByKey("name");
@@ -161,6 +167,31 @@ const FileManagerView = (props) => {
     </tr>
   );
 
+  // const Pagination = (props) => {
+  //   const btnClass = "";
+  //   const pageNumbers = [];
+  //   for (let i = 1; i <= Math.ceil(props.totalCount / props.perPageCount); i++) {
+  //     pageNumbers.push(i);
+  //   }
+  //   return (
+  //     <div className="flex justify-center items-center gap-2">
+  //       <span>Shown files {props.perPageCount}/{props.totalCount}</span>
+  //       <span className={btnClass}>
+  //         <ChevronLeftIcon className="h-5 w-5" />
+  //       </span>
+  //       {
+  //         pageNumbers.map(page => (
+
+  //         ));
+  //       }
+  //       <span className={btnClass}>{ }</span>
+  //       <span className={btnClass}>
+  //         <ChevronRightIcon className="h-5 w-5" />
+  //       </span>
+  //     </div>
+  //   );
+  // }
+
   const AddressSelect = () => (
     <input
       type="text" value={fm?.rootDirectory().name}
@@ -174,24 +205,49 @@ const FileManagerView = (props) => {
         setAddress("0x" + value);
       }}
     />
-  )
+  );
 
   return (
     <div>
-      <div className="flex flex-row gap-2 items-center border-y border-slate-800 py-4 sticky top-0 bg-white z-[998]">
-        <AddressSelect /> /
+      <div className="flex flex-row gap-2 justify-between items-center border-y border-slate-800 py-4 sticky top-0 bg-white z-[998]">
+        <div>
+          <AddressSelect /> /
         <div className="breadcrumbs m-0 p-0">
-          <ul>
-            {
-              trail.map(item => (
-                <li className="decoration-blue-500 text-blue-500 underline" key={item.path}>
-                  <a onClick={() => changeDirectory(item)}>
-                    <FormattedName data={item} />
-                  </a>
-                </li>
-              ))
+            <ul>
+              {
+                trail.map(item => (
+                  <li className="decoration-blue-500 text-blue-500 underline" key={item.path}>
+                    <a onClick={() => changeDirectory(item)}>
+                      <FormattedName data={item} />
+                    </a>
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+        </div>
+        <div>
+          <Pagination
+            className="flex justify-center items-center gap-2"
+            pageLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border border-gray-300 rounded text-sm"
+            activeLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border border-gray-500 rounded text-sm"
+            nextLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border text-gray-400 border-gray-300 rounded text-sm"
+            previousLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center font-medium border text-gray-400 border-gray-300 rounded text-sm"
+            disabledClassName="flex items-center justify-center p-2 w-8 h-8 text-center font-medium border text-gray-200 border-gray-300 rounded text-sm bg-gray-300 cursor-pointer"
+            breakLabel="..."
+            nextLabel={
+              <ChevronRightIcon className="h-7 w-7" />}
+            previousLabel={
+              <ChevronLeftIcon className="h-7 w-7" />
             }
-          </ul>
+            pageRangeDisplayed={4}
+            renderOnZeroPageCount={null}
+            pageCount={sortedListing.length / 10}
+            onPageChange={(e) => {
+              const newOffset = (e.selected * 10) % sortedListing.length;
+              setItemOffset(newOffset);
+            }}
+          />
         </div>
       </div>
       <table className="table w-full select-none relative" ref={tableElement}>
@@ -212,7 +268,7 @@ const FileManagerView = (props) => {
         <tbody>
           <BackItem />
           {
-            sortedListing.length ? sortedListing.map((item) => <Item item={item} key={item.path} />) : null
+            sortedListing.length ? sortedListing.slice(itemOffset, itemOffset + 10).map((item) => <Item item={item} key={item.path} />) : null
           }
         </tbody>
       </table>
