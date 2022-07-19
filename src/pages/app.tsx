@@ -16,7 +16,6 @@ import DotsCircleHorizontalIcon from '@heroicons/react/outline/DotsCircleHorizon
 
 import FileNavigator from '@/components/FileNavigator';
 import FormattedName from '@/components/FormattedName';
-import { spawn } from 'child_process';
 
 const App = () => {
 

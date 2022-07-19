@@ -22,14 +22,13 @@ import prettyBytes from 'pretty-bytes';
 import orderBy from 'lodash/orderBy';
 
 import FormattedName from './FormattedName';
-import { spawn } from 'child_process';
 
 const FileManagerView = (props) => {
 
   const {
     fm, directory: currentDirectory, listing, searchListing,
     changeDirectory, deleteFile, deleteDirectory,
-    setAddress
+    setAddress, getFileLink
   } = useFileManagerContext<ContextType>();
 
 
@@ -54,9 +53,10 @@ const FileManagerView = (props) => {
   const [sortByOrder, setSortByOrder] = useState<string>("");
   const [sortedListing, setSortedListing] = useState<Array<DeFile | DeDirectory>>([]);
   const [itemOffset, setItemOffset] = useState(0);
+  const [selectedFile, setSelectedFile] = useState<DeFile>(null);
 
   useMount(() => {
-    setSortByKey("name");
+    setSortByKey("size");
     setSortByOrder("asc");
   });
 
@@ -157,7 +157,8 @@ const FileManagerView = (props) => {
   const Item = ({ item }) => (
     <tr className="focus:bg-slate-100 hover:bg-slate-50" onClick={
       (e) => {
-        item.kind === "directory" && handleRowClick(item) && e.stopPropagation();
+        item.kind === "directory" ? handleRowClick(item) : setSelectedFile(item);
+        e.stopPropagation();
       }
     }>
       <td className="border-slate-800 bg-transparent"><FormattedName data={item} /></td>
@@ -209,10 +210,10 @@ const FileManagerView = (props) => {
 
   return (
     <div>
-      <div className="flex flex-row gap-2 justify-between items-center border-y border-slate-800 py-4 sticky top-0 bg-white z-[998]">
-        <div>
+      <div className="flex flex-row justify-between items-center border-y border-slate-800 py-4 sticky top-0 bg-white z-[998]">
+        <div className="flex flex-row gap-2">
           <AddressSelect /> /
-        <div className="breadcrumbs m-0 p-0">
+          <div className="breadcrumbs m-0 p-0">
             <ul>
               {
                 trail.map(item => (

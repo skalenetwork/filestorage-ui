@@ -20,6 +20,7 @@ export type ContextType = State & Action & {
   connectWallet: Function;
   connectedAddress: string;
   setAddress: React.Dispatch<React.SetStateAction<string>>;
+  getFileLink: Function;
 };
 
 const FileManagerContext = createContext<ContextType>(undefined);
@@ -33,7 +34,7 @@ const getFsEndpoint = (data: ConfigType['chains'][0], address: string = "", path
   if (root.slice(0, 2) === "0x") {
     root = root.slice(2);
   }
-  return `${data.protocol}://${data.nodeDomain}/fs/${data.sChainName}${(root) ? "/" + address : ""}${(path) ? "/" + path : ""}`
+  return `//${data.nodeDomain}/fs/${data.sChainName}${(root) ? "/" + root : ""}${(path) ? "/" + path : ""}`
 }
 
 const RPC_ENDPOINT = getRpcEndpoint(config.chains[0]);
@@ -101,6 +102,12 @@ export function ContextWrapper({ children }) {
     }
   }
 
+  const getFileLink = (file: DeFile) => {
+    let link = getFsEndpoint(config.chains[0], address, file.path);
+    console.log(file, link);
+    return link;
+  }
+
   useEffect(() => {
     if (demoMode) {
       setW3Provider(new Web3.providers.HttpProvider(RPC_ENDPOINT));
@@ -150,7 +157,7 @@ export function ContextWrapper({ children }) {
 
   return (fm && fmState && fmState.fm && fmState.directory) ? (
     <FileManagerContext.Provider value={{
-      fm, ...fmState, ...fmAction, connectWallet, connectedAddress, demoMode, setAddress
+      fm, ...fmState, ...fmAction, connectWallet, connectedAddress, demoMode, setAddress, getFileLink
     }}>
       { children}
     </FileManagerContext.Provider>

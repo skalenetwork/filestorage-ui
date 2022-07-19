@@ -17,7 +17,6 @@ export default defineConfig({
     outDir: './dist',
     rollupOptions: {
       plugins: [
-        // ↓ Needed for build
         nodePolyfills()
       ]
     },
