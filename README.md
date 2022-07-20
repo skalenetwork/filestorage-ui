@@ -24,7 +24,17 @@ Entry point: `pages/-app.tsx`
 
 ## Codebase: heads up for templating
 
-- Project uses tailwind class-based styling.. for those not familiar but seasoned with CSS, you can pick pace in ~3h, after that it's intuitive with occasional doc-check. For backend devs doing minor template updates, come with a temporary counter-DRY mindset and you'll find less friction.
+- Project uses tailwind class-based styling.. for those not familiar but seasoned with CSS, you can pick pace in ~3h, after that it's intuitive with occasional doc-check. For backend devs doing minor template updates, come with a temporary counter-DRY mindset, and you'll find less friction.
+
+## Learnings from failed sprints
+
+- There is no stable single solution for embedded arbitrary file viewing, solution lies in identifying media type and using 2-3 libraries.
+
+Wallet provider DX
+
+- `wagmi` + `rainbowkit` is a neat choice but `rainbowkit` doesn't yet support many wallets.
+
+- `wagmi` doesn't easily interoperate with `web3modal`.
 
 ----
 
