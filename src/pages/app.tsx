@@ -13,7 +13,6 @@ import { Button, Modal, Progress, Input } from '@/components/common';
 import SearchIcon from '@heroicons/react/solid/SearchIcon';
 import DotsCircleHorizontalIcon from '@heroicons/react/outline/DotsCircleHorizontalIcon';
 
-
 import FileNavigator from '@/components/FileNavigator';
 import FormattedName from '@/components/FormattedName';
 
@@ -37,7 +36,7 @@ const App = () => {
   const {
     fm, directory: currentDirectory, reservedSpace, occupiedSpace, searchListing,
     isAuthorized, connectWallet, connectedAddress, activeUploads,
-    changeDirectory, uploadFiles, createDirectory, search, isSearching
+    changeDirectory, uploadFiles, createDirectory, search, isSearching, isCreatingDirectory
   } = useFileManagerContext();
 
   const [uploadingFiles, setUploadingFiles] = useState<any[]>([]);
@@ -57,8 +56,8 @@ const App = () => {
     return address.substring(0, 6) + "...." + address.substring(address.length - 4);
   }
 
-  const renderSpinner = () => (
-    <DotsCircleHorizontalIcon className="animate-spin h-6 w-6" />
+  const SpinnerIcon = ({ className }) => (
+    <DotsCircleHorizontalIcon className={`animate-spin ${className}`} />
   )
 
   const handleCreateDirectory = async (event: SyntheticEvent) => {
@@ -140,7 +139,7 @@ const App = () => {
             <div className="grow relative">
               <div className="mr-4 pointer-events-none absolute top-1/2 transform -translate-y-1/2 left-3">
                 {
-                  isSearching ? renderSpinner() : <SearchIcon className="h-6 w-6" />
+                  isSearching ? <SpinnerIcon className="h6 w-6" /> : <SearchIcon className="h-6 w-6" />
                 }
               </div>
               <Input
@@ -181,8 +180,12 @@ const App = () => {
                     <input type="file" id="file-upload" className="hidden" ref={uploadFileField}
                       onChange={() => { uploadFileField.current?.files?.length && setUploadModal(true) }} multiple />
                   </>
-                  <Button className="btn w-80" onClick={() => setDirectoryModal(true)}>
-                    <FolderAddIcon className="h-5 w-5 mr-4" /> Create directory
+                  <Button className="btn w-80" onClick={() => setDirectoryModal(true)} disabled={isCreatingDirectory}>
+                    {
+                      !isCreatingDirectory ?
+                        (<><FolderAddIcon className="h-5 w-5 mr-4" /> Create directory</>) :
+                        <><SpinnerIcon className="h5 w-5 mr-4" /> Creating directory..</>
+                    }
                   </Button>
                 </div>
                 : null

@@ -17,6 +17,7 @@ export type State = {
   listing: Array<DeDirectory | DeFile>;
   searchListing: Array<DeDirectory | DeFile>;
   isSearching: boolean;
+  isCreatingDirectory: boolean;
   reservedSpace: number;
   occupiedSpace: number;
   activeUploads: Map<DeDirectory, Array<FileStatus>>;
@@ -26,6 +27,8 @@ export type State = {
 export type Action = {
 }
 
+// current operations can be better managed
+
 const initialState: State = {
   isAuthorized: false,
   fm: undefined,
@@ -33,6 +36,7 @@ const initialState: State = {
   listing: [],
   searchListing: [],
   isSearching: false,
+  isCreatingDirectory: false,
   reservedSpace: 0,
   occupiedSpace: 0,
   activeUploads: new Map(),
@@ -46,6 +50,7 @@ const ACTION = {
   SET_LISTING: 'SET_LISTING',
   SET_SEARCH_LISTING: 'SET_SEARCH_LISTING',
   SET_SEARCH_LOADING: 'SET_SEARCH_LOADING',
+  SET_DIRECTORY_OP: 'SET_DIRECTORY_OP',
   ADD_UPLOADS: 'ADD_UPLOADS',
   ADD_TO_UPLOADS: 'ADD_TO_UPLOADS',
   REMOVE_FROM_UPLOADS: 'REMOVE_FROM_UPLOADS',
@@ -65,6 +70,8 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
       return { ...state, listing: action.payload }
     case ACTION.SET_SEARCH_LOADING:
       return { ...state, isSearching: true }
+    case ACTION.SET_DIRECTORY_OP:
+      return { ...state, isCreatingDirectory: action.payload }
     case ACTION.SET_SEARCH_LISTING:
       return { ...state, searchListing: action.payload, isSearching: false }
     case ACTION.ADD_UPLOADS:
@@ -205,12 +212,20 @@ function useDeFileManager(w3Provider: Object, address: string, privateKey?: stri
 
   const createDirectory = (fm && cwd && state.isAuthorized) &&
     (async (name: string, directory: DeDirectory = cwd) => {
-      fm.createDirectory(directory, name)
+      dispatch({
+        type: ACTION.SET_DIRECTORY_OP,
+        payload: true
+      });
+      await fm.createDirectory(directory, name)
         .then(async () => {
           if (directory.path === cwd.path) {
             loadCurrentDirectory();
           }
         });
+      dispatch({
+        type: ACTION.SET_DIRECTORY_OP,
+        payload: false
+      });
     })
 
   const uploadFiles = (fm && cwd && state.isAuthorized) && (async (files: Array<File>, directory: DeDirectory = cwd) => {

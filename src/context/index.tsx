@@ -76,24 +76,21 @@ const providerOptions = {
 
 export function ContextWrapper({ children }) {
 
-  // local params, w3 later to come from wallet-provider
   const [demoMode, setDemoMode] = useState<boolean>(false);
   const [w3Modal, setW3Modal] = useState<Web3Modal | undefined>();
-  const [w3Provider, setW3Provider] = useState<{ request: Function } | undefined>();
 
+  const [w3Provider, setW3Provider] = useState<{ request: Function } | undefined>();
   const [connectedAddress, setConnectedAddress] = useState<string>("");
   const [address, setAddress] = useState<string>("");
 
   const connectWallet = async () => {
     try {
       const web3Provider = await w3Modal.connect();
-      console.log('web3Provider', web3Provider);
-      const web3 = new Web3(web3Provider);
-      setConnectedAddress(web3Provider.selectedAddress);
-      setAddress(web3Provider.selectedAddress);
-      const chain = config.chains[0];
-      await addNetwork(web3, chain);
       setW3Provider(web3Provider);
+      const web3 = new Web3(web3Provider);
+      console.log('web3Provider', web3Provider);
+      console.log('web3 instance', web3);
+      await addNetwork(web3, config.chains[0]);
     } catch (e) {
       console.log("Connecting Wallet", e);
       if (!w3Provider) {
@@ -107,6 +104,13 @@ export function ContextWrapper({ children }) {
     console.log(file, link);
     return link;
   }
+
+  useEffect(() => {
+    if (!w3Provider) return;
+    const account = Web3.utils.toChecksumAddress(w3Provider.selectedAddress);
+    setConnectedAddress(account);
+    setAddress(account);
+  }, [w3Provider]);
 
   useEffect(() => {
     if (demoMode) {
@@ -128,16 +132,6 @@ export function ContextWrapper({ children }) {
     console.log('w3Modal', w3Modal);
   }, [w3Modal]);
 
-  useEffect(() => {
-    if (!w3Provider) return;
-    console.log("w3Provider", w3Provider);
-
-    // w3Provider.request({
-    //   method: 'wallet_switchEthereumChain',
-    //   params: [{ chainId: CHAIN_ID }],
-    // });
-  }, [w3Provider]);
-
   /// DEV ZONE START ///
 
   // shadowy key management.. DTTAH
@@ -156,6 +150,7 @@ export function ContextWrapper({ children }) {
   const [fm, fmState, fmAction]: [DeFileManager, State, any] = useDeFileManager(w3Provider, address, pk);
 
   return (fm && fmState && fmState.fm && fmState.directory) ? (
+
     <FileManagerContext.Provider value={{
       fm, ...fmState, ...fmAction, connectWallet, connectedAddress, demoMode, setAddress, getFileLink
     }}>
