@@ -26,7 +26,7 @@ import FormattedName from './FormattedName';
 const FileManagerView = (props) => {
 
   const {
-    fm, directory: currentDirectory, listing, searchListing,
+    fm, directory: currentDirectory, listing, searchListing, isLoadingDirectory,
     changeDirectory, deleteFile, deleteDirectory,
     updateAddress, getFileLink
   } = useFileManagerContext<ContextType>();
@@ -230,7 +230,7 @@ const FileManagerView = (props) => {
   return (
     <div>
       <div className="flex flex-row justify-between items-center border-y border-slate-800 py-4 sticky top-0 bg-white z-[998]">
-        <div className="flex flex-row gap-2">
+        <div className="h-8 flex flex-row items-center gap-2">
           <AddressSelect /> /
           <div className="breadcrumbs m-0 p-0">
             <ul>
@@ -288,11 +288,16 @@ const FileManagerView = (props) => {
         <tbody>
           <BackItem />
           {
-            sortedListing.length ?
-              sortedListing
-                .slice(itemOffset, itemOffset + 10)
-                .map((item) => <Item item={item} key={item.path} />)
-              : [...Array(10).keys()].map(item => <Item skeleton />)
+            isLoadingDirectory ?
+              [...Array(10).keys()].map(item => <Item skeleton />)
+              :
+              (sortedListing.length)
+                ?
+                sortedListing
+                  .slice(itemOffset, itemOffset + 10)
+                  .map((item) => <Item item={item} key={item.path} />)
+                :
+                <></>
           }
         </tbody>
       </table>

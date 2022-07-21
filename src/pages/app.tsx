@@ -31,14 +31,13 @@ const App = () => {
   const uploadFileField = useRef<HTMLInputElement>();
   const newDirectoryField = useRef<HTMLInputElement>();
 
-  const [filesToUpload, setFilesToUpload] = useState([]);
-
   const {
     fm, directory: currentDirectory, reservedSpace, occupiedSpace, searchListing,
     isAuthorized, connectWallet, activeUploads,
     changeDirectory, uploadFiles, createDirectory, search, isSearching, isCreatingDirectory
   } = useFileManagerContext();
 
+  const [filesToUpload, setFilesToUpload] = useState<Array<File>>([]);
   const [uploadingFiles, setUploadingFiles] = useState<any[]>([]);
   const searchField = useRef<HTMLInputElement>();
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -57,7 +56,10 @@ const App = () => {
   }
 
   const SpinnerIcon = ({ className }) => (
-    <DotsCircleHorizontalIcon className={`animate-spin ${className}`} />
+    <svg class={`animate-spin ${className}`} viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" fill="transparent" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
   )
 
   const handleCreateDirectory = async (event: SyntheticEvent) => {
@@ -66,16 +68,16 @@ const App = () => {
     console.log("handleCreateDirectory", currentDirectory, name);
     if (!(currentDirectory && name)) return;
     setDirectoryModal(false);
+    newDirectoryField.current.value = "";
     await createDirectory(name);
   }
 
   const handleConfirmUpload = async (event: SyntheticEvent) => {
-    const files = Array.from(uploadFileField.current?.files || []);
-    console.log("file to upload", files);
-    if (!(currentDirectory && files && files.length)) return;
+    console.log("file to upload", filesToUpload);
+    if (!(currentDirectory && filesToUpload.length)) return;
     setUploadModal(false);
     setActiveUploadsModal(true);
-    await uploadFiles(files);
+    await uploadFiles(filesToUpload);
   }
 
   const handleReserveSpace = async (event: SyntheticEvent) => {
@@ -86,6 +88,7 @@ const App = () => {
   }
 
   const cancelUpload = () => {
+
     setUploadModal(false);
   }
 
@@ -141,7 +144,7 @@ const App = () => {
             <div className="grow relative">
               <div className="mr-4 pointer-events-none absolute top-1/2 transform -translate-y-1/2 left-3">
                 {
-                  isSearching ? <SpinnerIcon className="h6 w-6" /> : <SearchIcon className="h-6 w-6" />
+                  isSearching ? <SpinnerIcon className="h-6 w-6" /> : <SearchIcon className="h-6 w-6" />
                 }
               </div>
               <Input
@@ -183,11 +186,15 @@ const App = () => {
                   >
                     <DocumentAddIcon className="h-5 w-5 mr-4" /> Upload file
                   </Button>
-                  <Button className="btn w-80" onClick={() => setDirectoryModal(true)} disabled={isCreatingDirectory}>
+                  <Button
+                    className={`btn w-80 text-white ${(isCreatingDirectory) ? 'loading' : ''}`}
+                    onClick={() => setDirectoryModal(true)}
+                    disabled={isCreatingDirectory}
+                  >
                     {
                       !isCreatingDirectory ?
-                        (<><FolderAddIcon className="h-5 w-5 mr-4" /> Create directory</>) :
-                        <><SpinnerIcon className="h5 w-5 mr-4" /> Creating directory..</>
+                        (<><FolderAddIcon className="h-5 w-5 mr-4 text-white" /> Create directory</>) :
+                        <>Creating directory..</>
                     }
                   </Button>
                 </div>
@@ -203,13 +210,30 @@ const App = () => {
       <Modal
         className="gap-4 flex flex-col justify-center items-center"
         open={uploadModal}
+        onClickBackdrop={() => setUploadModal(false)}
       >
         <Modal.Header className="text-center font-bold">
-          Upload Files
+          Upload file
         </Modal.Header>
         <Modal.Body className="flex flex-col gap-1.5 justify-center items-center">
           {
-            Array.from(uploadFileField.current?.files || [])
+            (filesToUpload.length) ?
+              (<>
+                <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
+                  type="text"
+                  placeholder="File name"
+                  value={uploadFileField.current?.files[0].name}
+                  required
+                />
+              </>)
+              :
+              (<>
+                <p>Select files to upload.</p>
+                <UploadIcon className="h-24 w-24 my-4" />
+              </>)
+          }
+          {
+            filesToUpload
               .map(file => (
                 <div key={file.name} className="flex flex-row justify-between w-72">
                   <p>{file.name}</p>
@@ -219,8 +243,27 @@ const App = () => {
           }
         </Modal.Body>
         <Modal.Actions className="flex justify-center items-center gap-8">
-          <Button onClick={handleConfirmUpload}>Confirm Upload</Button>
-          <a className="underline cursor-pointer" onClick={cancelUpload}>Cancel</a>
+          {
+            filesToUpload.length ?
+              <>
+                <Button onClick={handleConfirmUpload}>Upload</Button>
+                <a className="underline cursor-pointer" onClick={cancelUpload}>Cancel</a>
+              </>
+              :
+              <>
+                <label className="btn" htmlFor="file-upload">
+                  Select files
+                </label>
+                <input
+                  type="file"
+                  id="file-upload"
+                  className="hidden"
+                  onChange={(e) => setFilesToUpload(Array.from(e.target.files))}
+                  ref={uploadFileField}
+                  multiple
+                />
+              </>
+          }
         </Modal.Actions>
       </Modal>
 

@@ -19,6 +19,7 @@ export type State = {
   searchListing: Array<DeDirectory | DeFile>;
   isSearching: boolean;
   isCreatingDirectory: boolean;
+  isLoadingDirectory: boolean;
   reservedSpace: number;
   occupiedSpace: number;
   activeUploads: Map<DeDirectory, Array<FileStatus>>;
@@ -38,6 +39,7 @@ const initialState: State = {
   searchListing: [],
   isSearching: false,
   isCreatingDirectory: false,
+  isLoadingDirectory: false,
   reservedSpace: 0,
   occupiedSpace: 0,
   activeUploads: new Map(),
@@ -52,6 +54,7 @@ const ACTION = {
   SET_SEARCH_LISTING: 'SET_SEARCH_LISTING',
   SET_SEARCH_LOADING: 'SET_SEARCH_LOADING',
   SET_DIRECTORY_OP: 'SET_DIRECTORY_OP',
+  SET_LOADING_DIRECTORY: 'SET_LOADING_DIRECTORY',
   ADD_UPLOADS: 'ADD_UPLOADS',
   ADD_TO_UPLOADS: 'ADD_TO_UPLOADS',
   REMOVE_FROM_UPLOADS: 'REMOVE_FROM_UPLOADS',
@@ -77,6 +80,8 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
       return { ...state, isSearching: true }
     case ACTION.SET_DIRECTORY_OP:
       return { ...state, isCreatingDirectory: action.payload }
+    case ACTION.SET_LOADING_DIRECTORY:
+      return { ...state, isLoadingDirectory: action.payload }
     case ACTION.SET_SEARCH_LISTING:
       return { ...state, searchListing: action.payload, isSearching: false }
     case ACTION.ADD_UPLOADS:
@@ -149,6 +154,10 @@ function useDeFileManager(w3Provider: Object, address: string, privateKey?: stri
   }
 
   const loadCurrentDirectory = async () => {
+    dispatch({
+      type: ACTION.SET_LOADING_DIRECTORY,
+      payload: true
+    });
     const entries = await state?.directory?.entries();
     let listing = [];
     for await (let item of entries || []) {
@@ -157,6 +166,10 @@ function useDeFileManager(w3Provider: Object, address: string, privateKey?: stri
     dispatch({
       type: ACTION.SET_LISTING,
       payload: listing
+    });
+    dispatch({
+      type: ACTION.SET_LOADING_DIRECTORY,
+      payload: false
     });
   }
 
@@ -240,39 +253,40 @@ function useDeFileManager(w3Provider: Object, address: string, privateKey?: stri
       });
     })
 
-  const uploadFiles = (fm && cwd && state.isAuthorized) && (async (files: Array<File>, directory: DeDirectory = cwd) => {
-    let activeFiles: FileStatus[] = [];
-    let failedFiles: File[] = [];
+  const uploadFiles = (fm && cwd && state.isAuthorized) &&
+    (async (files: Array<File>, directory: DeDirectory = cwd) => {
+      let activeFiles: FileStatus[] = [];
+      let failedFiles: File[] = [];
 
-    // @todo set up sane actions
-    files.forEach(file => {
-      dispatch({
-        type: ACTION.ADD_TO_UPLOADS,
-        payload: {
-          directory: directory.path,
-          file: { file, dePath: directory.path + file.name, progress: 0 }
-        }
-      });
-      const remove = () => {
+      // @todo set up sane actions
+      files.forEach(file => {
         dispatch({
-          type: ACTION.REMOVE_FROM_UPLOADS,
+          type: ACTION.ADD_TO_UPLOADS,
           payload: {
             directory: directory.path,
-            path: directory.path + file.name
+            file: { file, dePath: directory.path + file.name, progress: 0 }
           }
         });
-      }
-      fm.uploadFile(directory, file)
-        .then(path => {
-          remove();
-          loadCurrentDirectory();
-        })
-        .catch(err => {
-          console.error(err);
-          remove();
-        })
+        const remove = () => {
+          dispatch({
+            type: ACTION.REMOVE_FROM_UPLOADS,
+            payload: {
+              directory: directory.path,
+              path: directory.path + file.name
+            }
+          });
+        }
+        fm.uploadFile(directory, file)
+          .then(path => {
+            remove();
+            loadCurrentDirectory();
+          })
+          .catch(err => {
+            console.error(err);
+            remove();
+          })
+      });
     });
-  });
 
   const deleteFile = (fm && cwd && state.isAuthorized) && (async (file: DeFile, directory: DeDirectory = cwd) => {
     await fm.deleteFile(directory, file);
