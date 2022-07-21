@@ -163,21 +163,23 @@ function useDeFileManager(w3Provider: Object, address: string, privateKey?: stri
   useEffect(() => {
     if (!(w3Provider && address)) return;
     console.log("useDeFileManager::provider", w3Provider);
+
     let account;
     if (w3Provider.selectedAddress) {
       account = Web3.utils.toChecksumAddress(w3Provider.selectedAddress || "");
-      dispatch({
-        type: ACTION.SET_AUTHORITY,
-        payload: (account.toLowerCase() === address.toLowerCase())
-      });
     }
 
     const fm = new DeFileManager(w3Provider, address, account, privateKey);
+
     dispatch({
       type: ACTION.INITIALIZE, payload: {
         fm,
         directory: fm.rootDirectory()
       }
+    });
+    dispatch({
+      type: ACTION.SET_AUTHORITY,
+      payload: (account.toLowerCase() === address.toLowerCase())
     });
 
   }, [w3Provider, address, privateKey]);

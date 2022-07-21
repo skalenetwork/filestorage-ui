@@ -164,19 +164,27 @@ const FileManagerView = (props) => {
     </div>
   );
 
-  const Item = ({ item }) => (
-    <tr className="focus:bg-slate-100 hover:bg-slate-50" onClick={
-      (e) => {
-        item.kind === "directory" ? handleRowClick(item) : setSelectedFile(item);
-        e.stopPropagation();
-      }
-    }>
-      <td className="border-slate-800 bg-transparent"><FormattedName data={item} /></td>
-      <td className="border-slate-800 bg-transparent"></td>
-      <td className="border-slate-800 bg-transparent">{renderFormattedSize(item)}</td>
-      <td className="border-slate-800 bg-transparent"><ItemActions item={item} /></td>
+  const Item = ({ item, skeleton }) => (skeleton) ?
+    <tr className="animate-pulse">
+      <td><p className="w-16 h-2 rounded bg-gray-200"></p></td>
+      <td></td>
+      <td><p className="w-5 h-2 rounded bg-gray-200"></p></td>
+      <td><DotsVerticalIcon className="h-5 w-5 text-gray-200" /></td>
     </tr>
-  );
+    :
+    (
+      <tr className="focus:bg-slate-100 hover:bg-slate-50" onClick={
+        (e) => {
+          item.kind === "directory" ? handleRowClick(item) : setSelectedFile(item);
+          e.stopPropagation();
+        }
+      }>
+        <td className="border-slate-800 bg-transparent"><FormattedName data={item} /></td>
+        <td className="border-slate-800 bg-transparent"></td>
+        <td className="border-slate-800 bg-transparent">{renderFormattedSize(item)}</td>
+        <td className="border-slate-800 bg-transparent"><ItemActions item={item} /></td>
+      </tr>
+    );
 
   // const Pagination = (props) => {
   //   const btnClass = "";
@@ -280,7 +288,11 @@ const FileManagerView = (props) => {
         <tbody>
           <BackItem />
           {
-            sortedListing.length ? sortedListing.slice(itemOffset, itemOffset + 10).map((item) => <Item item={item} key={item.path} />) : null
+            sortedListing.length ?
+              sortedListing
+                .slice(itemOffset, itemOffset + 10)
+                .map((item) => <Item item={item} key={item.path} />)
+              : [...Array(10).keys()].map(item => <Item skeleton />)
           }
         </tbody>
       </table>

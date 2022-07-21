@@ -122,7 +122,9 @@ const App = () => {
             <h1 className="text-3xl font-semibold">Filestorage</h1>
             <div className="w-80">
               <p className="font-bold">{prettyBytes(occupiedSpace || 0)} used</p>
-              <p className="text-sm">{(occupiedSpace / reservedSpace).toFixed(6)}% used - {prettyBytes((reservedSpace - occupiedSpace) || 0)} free</p>
+              <p className="text-sm">
+                {((occupiedSpace / reservedSpace) || 0).toFixed(6)}% used - {prettyBytes((reservedSpace - occupiedSpace) || 0)} free
+              </p>
               <Progress className="w-full" value={occupiedSpace / reservedSpace} max={100} />
               <br />
               {
@@ -173,13 +175,14 @@ const App = () => {
             {
               (isAuthorized) ?
                 <div className="flex-none flex flex-row gap-4">
-                  <>
-                    <label className="btn w-80 flex" htmlFor="file-upload">
-                      <DocumentAddIcon className="h-5 w-5 mr-4" /> Upload file
-                  </label>
-                    <input type="file" id="file-upload" className="hidden" ref={uploadFileField}
-                      onChange={() => { uploadFileField.current?.files?.length && setUploadModal(true) }} multiple />
-                  </>
+                  <Button
+                    className="btn w-80"
+                    onClick={
+                      (e) => setUploadModal(true)
+                    }
+                  >
+                    <DocumentAddIcon className="h-5 w-5 mr-4" /> Upload file
+                  </Button>
                   <Button className="btn w-80" onClick={() => setDirectoryModal(true)} disabled={isCreatingDirectory}>
                     {
                       !isCreatingDirectory ?
