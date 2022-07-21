@@ -54,6 +54,10 @@ img {
   @apply focus:outline-none;
 }
 
+.label .label-text {
+  @apply text-gray-400;
+}
+
 .web3modal-modal-lightbox {
   z-index: 9999 !important;
 }

@@ -9,6 +9,7 @@ type FileStatus = {
   file: File;
   dePath: string;
   progress: number;
+  error?: string;
 };
 
 export type State = {
@@ -23,7 +24,7 @@ export type State = {
   reservedSpace: number;
   occupiedSpace: number;
   activeUploads: Map<DeDirectory, Array<FileStatus>>;
-  failedUploads: Map<DeDirectory, Array<File>>;
+  failedUploads: Map<DeDirectory, Array<FileStatus>>;
 };
 
 export type Action = {
@@ -96,7 +97,15 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
       }
     case ACTION.ADD_TO_UPLOADS:
       {
-        let { directory, file } = action.payload;
+        let { directory, file, isFailed } = action.payload;
+        if (isFailed) {
+          const failedUploads = new Map(state.failedUploads);
+          failedUploads.set(directory, [...failedUploads.get(directory) || [], file]);
+          return {
+            ...state,
+            failedUploads
+          }
+        }
         const activeUploads = new Map(state.activeUploads);
         activeUploads.set(directory, [...activeUploads.get(directory) || [], file]);
         return {
@@ -284,6 +293,14 @@ function useDeFileManager(w3Provider: Object, address: string, privateKey?: stri
           .catch(err => {
             console.error(err);
             remove();
+            dispatch({
+              type: ACTION.ADD_TO_UPLOADS,
+              payload: {
+                directory: directory.path,
+                file: { file, dePath: directory.path + file.name, progress: 0, error: err },
+                isFailed: true
+              }
+            });
           })
       });
     });

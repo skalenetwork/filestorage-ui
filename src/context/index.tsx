@@ -34,7 +34,7 @@ const getFsEndpoint = (data: ConfigType['chains'][0], address: string = "", path
   if (root.slice(0, 2) === "0x") {
     root = root.slice(2);
   }
-  return `//${data.nodeDomain}/fs/${data.sChainName}${(root) ? "/" + root : ""}${(path) ? "/" + path : ""}`
+  return `${data.protocol}://${data.nodeDomain}/fs/${data.sChainName}${(root) ? "/" + root : ""}${(path) ? "/" + path : ""}`
 }
 
 const RPC_ENDPOINT = getRpcEndpoint(config.chains[0]);

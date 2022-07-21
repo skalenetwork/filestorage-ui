@@ -11,6 +11,7 @@ import DocumentAddIcon from '@heroicons/react/solid/DocumentAddIcon';
 import UploadIcon from '@heroicons/react/outline/UploadIcon';
 import { Button, Modal, Progress, Input } from '@/components/common';
 import SearchIcon from '@heroicons/react/solid/SearchIcon';
+import ArchiveIcon from '@heroicons/react/outline/ArchiveIcon';
 import DotsCircleHorizontalIcon from '@heroicons/react/outline/DotsCircleHorizontalIcon';
 
 import FileNavigator from '@/components/FileNavigator';
@@ -26,6 +27,7 @@ const App = () => {
   const [directoryModal, setDirectoryModal] = useState(false);
 
   // field refs
+  const searchField = useRef<HTMLInputElement>();
   const reserveAddrField = useRef<HTMLInputElement>();
   const reserveSpaceField = useRef<HTMLInputElement>();
   const uploadFileField = useRef<HTMLInputElement>();
@@ -33,13 +35,13 @@ const App = () => {
 
   const {
     fm, directory: currentDirectory, reservedSpace, occupiedSpace, searchListing,
-    isAuthorized, connectWallet, activeUploads,
+    isAuthorized, connectWallet, activeUploads, failedUploads,
     changeDirectory, uploadFiles, createDirectory, search, isSearching, isCreatingDirectory
   } = useFileManagerContext();
 
   const [filesToUpload, setFilesToUpload] = useState<Array<File>>([]);
   const [uploadingFiles, setUploadingFiles] = useState<any[]>([]);
-  const searchField = useRef<HTMLInputElement>();
+  const [failedFiles, setFailedFiles] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
 
   useDebounce(() => {
@@ -50,6 +52,10 @@ const App = () => {
   useEffect(() => {
     setUploadingFiles(Array.from(activeUploads.values()).flat());
   }, [activeUploads]);
+
+  useEffect(() => {
+    setFailedFiles(Array.from(failedUploads.values()).flat());
+  }, [failedUploads]);
 
   const shortAddress = (address: string) => {
     return address.substring(0, 6) + "...." + address.substring(address.length - 4);
@@ -88,8 +94,8 @@ const App = () => {
   }
 
   const cancelUpload = () => {
-
     setUploadModal(false);
+    setFilesToUpload([]);
   }
 
   return (
@@ -217,29 +223,41 @@ const App = () => {
         </Modal.Header>
         <Modal.Body className="flex flex-col gap-1.5 justify-center items-center">
           {
-            (filesToUpload.length) ?
-              (<>
-                <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
-                  type="text"
-                  placeholder="File name"
-                  value={uploadFileField.current?.files[0].name}
-                  required
-                />
-              </>)
-              :
-              (<>
-                <p>Select files to upload.</p>
-                <UploadIcon className="h-24 w-24 my-4" />
-              </>)
-          }
-          {
-            filesToUpload
-              .map(file => (
-                <div key={file.name} className="flex flex-row justify-between w-72">
-                  <p>{file.name}</p>
-                  <p>{prettyBytes(file.size)}</p>
-                </div>
-              ))
+            (filesToUpload.length > 1) ?
+              (
+                filesToUpload
+                  .map(file => (
+                    <div key={file.name} className="flex flex-row justify-between w-72">
+                      <p>{file.name}</p>
+                      <p>{prettyBytes(file.size)}</p>
+                    </div>
+                  ))
+              )
+              : (filesToUpload.length === 1) ?
+                (<>
+                  <div>
+                    <label htmlFor="" className="label">
+                      <span className="label-text">Name</span>
+                    </label>
+                    <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
+                      type="text"
+                      placeholder="File name"
+                      defaultValue={filesToUpload[0].name}
+                      onChange={(e) => {
+                        const file = filesToUpload[0];
+                        const { value } = e.target;
+                        const updatedFile = new File([file.slice(0, file.size, file.type)], value, file.type);
+                        setFilesToUpload([updatedFile]);
+                      }}
+                      required
+                    />
+                  </div>
+                </>)
+                :
+                (<>
+                  <p>Select files to upload.</p>
+                  <UploadIcon className="h-24 w-24 my-4" />
+                </>)
           }
         </Modal.Body>
         <Modal.Actions className="flex justify-center items-center gap-8">
@@ -247,7 +265,10 @@ const App = () => {
             filesToUpload.length ?
               <>
                 <Button onClick={handleConfirmUpload}>Upload</Button>
-                <a className="underline cursor-pointer" onClick={cancelUpload}>Cancel</a>
+                <span
+                  className="underline cursor-pointer"
+                  onClick={(e) => cancelUpload()}
+                >Cancel</span>
               </>
               :
               <>
@@ -258,7 +279,7 @@ const App = () => {
                   type="file"
                   id="file-upload"
                   className="hidden"
-                  onChange={(e) => setFilesToUpload(Array.from(e.target.files))}
+                  onChange={(e) => setFilesToUpload(...filesToUpload, Array.from(e.target.files))}
                   ref={uploadFileField}
                   multiple
                 />
@@ -289,11 +310,20 @@ const App = () => {
                     </div>
                   ) : null)
                 }
-                <Progress className="w-72" value={upload.progress} max={100} />
+                <Progress className="w-72 animate-pulse" value={90} max={100} />
               </>
               :
               <>
-                <p>All files are uploaded.</p>
+                {
+                  failedFiles.length ?
+                    (
+                      <>
+                        Failed to upload files {failedFiles[0].err.error.message}
+                      </>
+                    )
+                    :
+                    <p>All files are uploaded.</p>
+                }
               </>
           }
         </Modal.Body>
@@ -310,16 +340,24 @@ const App = () => {
           <p>
             Give your folder a name.
           </p>
-          <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
-            type="text"
-            placeholder="New directory name"
-            required
-            ref={newDirectoryField}
-          />
+          <div>
+            <label className="label" htmlFor="">
+              <span class="label-text">Name</span>
+            </label>
+            <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
+              type="text"
+              placeholder="New directory name"
+              required
+              ref={newDirectoryField}
+            />
+          </div>
         </Modal.Body>
         <Modal.Actions className="flex justify-center items-center gap-8">
           <Button onClick={handleCreateDirectory}>Create</Button>
-          <a className="underline cursor-pointer" onClick={() => { setDirectoryModal(false) }}>Cancel</a>
+          <a className="underline cursor-pointer" onClick={(e) => {
+            setDirectoryModal(false);
+            newDirectoryField.current.value = "";
+          }}>Cancel</a>
         </Modal.Actions>
       </Modal>
 
@@ -328,28 +366,39 @@ const App = () => {
         open={reserveSpaceModal}
         onClickBackdrop={() => setReserveSpaceModal(false)}
       >
-        <Modal.Header className="text-center font-bold">
-          📦<br />Reserve Space
+        <Modal.Header className="text-center font-bold flex flex-col items-center justify-center">
+          <ArchiveIcon className="h-24 w-24" />
+          <p>Reserve Space</p>
         </Modal.Header>
         <Modal.Body className="flex flex-col gap-4 justify-center items-center">
           <p>
             Enter the address to which the space will be allocated.
           </p>
-          <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
-            type="text"
-            placeholder="0x..."
-          />
-          <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
-            type="number"
-            placeholder="Space to reserve"
-          />
+          <div>
+            <label className="label" htmlFor="">
+              <span class="label-text">Address</span>
+            </label>
+            <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
+              type="text"
+              placeholder="0x..."
+            />
+          </div>
+          <div>
+            <label className="label" htmlFor="">
+              <span class="label-text">Space to reserve</span>
+            </label>
+            <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
+              type="number"
+              placeholder="Space to reserve"
+            />
+          </div>
         </Modal.Body>
         <Modal.Actions className="flex justify-center items-center gap-8">
           <Button onClick={handleReserveSpace}>Reserve</Button>
           <a className="underline cursor-pointer" onClick={() => setReserveSpaceModal(false)}>Cancel</a>
         </Modal.Actions>
       </Modal>
-    </div>
+    </div >
   )
 }
 

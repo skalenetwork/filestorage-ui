@@ -5,6 +5,7 @@ import { useAsyncFn, useMount, useDebounce } from 'react-use';
 
 import { useFileManagerContext, ContextType } from '../context';
 import { DeFile, DeDirectory, DeFileManager } from '@/services/filesystem';
+import { downloadUrl } from '../utils';
 
 import FolderIcon from '@heroicons/react/solid/FolderIcon';
 import DocumentTextIcon from '@heroicons/react/outline/DocumentTextIcon';
@@ -138,7 +139,10 @@ const FileManagerView = (props) => {
         {
           (item.kind === "file") ?
             <li
-              onClick={(e) => fm?.downloadFile(item) && tableElement.current?.querySelector(":focus").blur()}
+              onClick={(e) => {
+                fm?.downloadFile(item);
+                tableElement.current?.querySelector(":focus").blur();
+              }}
             >
               <a><DocumentDownloadIcon className="h-5 w-5 text-blue-500" /> Download</a>
             </li>
@@ -186,31 +190,6 @@ const FileManagerView = (props) => {
       </tr>
     );
 
-  // const Pagination = (props) => {
-  //   const btnClass = "";
-  //   const pageNumbers = [];
-  //   for (let i = 1; i <= Math.ceil(props.totalCount / props.perPageCount); i++) {
-  //     pageNumbers.push(i);
-  //   }
-  //   return (
-  //     <div className="flex justify-center items-center gap-2">
-  //       <span>Shown files {props.perPageCount}/{props.totalCount}</span>
-  //       <span className={btnClass}>
-  //         <ChevronLeftIcon className="h-5 w-5" />
-  //       </span>
-  //       {
-  //         pageNumbers.map(page => (
-
-  //         ));
-  //       }
-  //       <span className={btnClass}>{ }</span>
-  //       <span className={btnClass}>
-  //         <ChevronRightIcon className="h-5 w-5" />
-  //       </span>
-  //     </div>
-  //   );
-  // }
-
   const AddressSelect = () => (
     <input
       type="text"
@@ -246,7 +225,8 @@ const FileManagerView = (props) => {
             </ul>
           </div>
         </div>
-        <div>
+        <div className="flex justify-center items-center gap-4">
+          {/* <span className="text-gray-500">Showing files {10}/{sortedListing.length}</span> */}
           <Pagination
             className="flex justify-center items-center gap-2"
             pageLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border border-gray-300 rounded text-sm"
