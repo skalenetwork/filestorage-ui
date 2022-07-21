@@ -35,7 +35,7 @@ const App = () => {
 
   const {
     fm, directory: currentDirectory, reservedSpace, occupiedSpace, searchListing,
-    isAuthorized, connectWallet, connectedAddress, activeUploads,
+    isAuthorized, connectWallet, activeUploads,
     changeDirectory, uploadFiles, createDirectory, search, isSearching, isCreatingDirectory
   } = useFileManagerContext();
 
@@ -110,9 +110,9 @@ const App = () => {
               }
 
               {
-                (connectedAddress) ?
+                (fm?.account) ?
                   <p className="px-4 py-2 rounded bg-gray-100 overflow-hidden">
-                    {shortAddress(connectedAddress)}
+                    {shortAddress(fm.account)}
                   </p> :
                   <button className="btn rounded-full" onClick={(e) => connectWallet()}>Connect</button>
               }

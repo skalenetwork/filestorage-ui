@@ -3,6 +3,7 @@
 import { useEffect, useReducer, useState } from 'react';
 import { useInterval } from 'react-use';
 import { DeFileManager, DeDirectory, DeFile } from '@/services/filesystem';
+import Web3 from 'web3';
 
 type FileStatus = {
   file: File;
@@ -157,19 +158,24 @@ function useDeFileManager(w3Provider: Object, address: string, privateKey?: stri
 
   useEffect(() => {
     if (!(w3Provider && address)) return;
-    console.log("useDeFileManager::provider.address", w3Provider);
-    const selectedAddress = (w3Provider.selectedAddress || "").toLowerCase();
-    dispatch({
-      type: ACTION.SET_AUTHORITY,
-      payload: (selectedAddress === address.toLowerCase())
-    });
-    const fm = new DeFileManager(w3Provider, address, privateKey);
+    console.log("useDeFileManager::provider", w3Provider);
+    let account;
+    if (w3Provider.selectedAddress) {
+      account = Web3.utils.toChecksumAddress(w3Provider.selectedAddress || "");
+      dispatch({
+        type: ACTION.SET_AUTHORITY,
+        payload: (account.toLowerCase() === address.toLowerCase())
+      });
+    }
+
+    const fm = new DeFileManager(w3Provider, address, account, privateKey);
     dispatch({
       type: ACTION.INITIALIZE, payload: {
         fm,
         directory: fm.rootDirectory()
       }
     });
+
   }, [w3Provider, address, privateKey]);
 
   useEffect(() => {

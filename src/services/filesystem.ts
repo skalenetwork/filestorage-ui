@@ -19,6 +19,7 @@ const KIND = {
 }
 
 const ROLE = {
+  OWNER: 'OWNER',
   ALLOCATOR: 'ALLOCATOR',
   CHAIN_OWNER: 'CHAIN_OWNER'
 }
@@ -99,17 +100,16 @@ interface IDeFile {
 // @todo bring in web3 types
 interface IDeFileManager {
   address: string;
-  isAllocator: boolean;
+  account?: string;
+  accountPrivateKey?: string;
 
   w3: Object;
   fs: FileStorageClient;
   contract: Object;
 
-  privateKey?: string;
-
   rootDirectory(): DeDirectory;
-  ownerIsAdmin(): boolean;
-  ownerIsAllocator(): boolean;
+  accountIsAdmin(): boolean;
+  accountIsAllocator(): boolean;
 
   totalSpace(): Promise<BigInt>;
   reservedSpace(): Promise<BigInt>;
@@ -126,7 +126,6 @@ interface IDeFileManager {
 }
 
 function pathToRelative(storagePath: DePath) {
-
   const relative = storagePath.split("/").slice(1).join('/');
   console.log("pathToRelative::", storagePath, relative);
   return relative;
@@ -178,7 +177,9 @@ class DeFile implements IDeFile {
 class DeFileManager implements IDeFileManager {
 
   address: Address;
-  privateKey?: string;
+  account: Address;
+  accountPrivateKey?: string;
+
   w3: Object;
   fs: FileStorageClient;
   contract: { methods: {} };
@@ -187,12 +188,16 @@ class DeFileManager implements IDeFileManager {
 
   dirLastAction: Object;
 
-  constructor(w3: Object, address: Address, privateKey?: Address) {
-    this.address = address;
+  constructor(
+    w3: Object, address: Address, account?: Address, accountPrivateKey?: string
+  ) {
+    this.address = address.toLowerCase();
+    this.account = account;
+    this.accountPrivateKey = accountPrivateKey;
+
     this.w3 = w3;
     this.fs = new FileStorage(w3, true);
     this.contract = this.fs.contract.contract;
-    this.privateKey = privateKey;
 
     this.dirLastAction = "";
 
@@ -236,17 +241,17 @@ class DeFileManager implements IDeFileManager {
   }
 
   // @todo: implement
-  async ownerIsAdmin() {
+  async accountIsAdmin() {
     // chain owner?
   }
 
-  // @todo: confirm response
-  async ownerIsAllocator() {
-    await this.contract.methods.ALLOCATOR_ROLE().call();
+  // @todo: confirm response..
+  async accountIsAllocator() {
+    return await this.contract.methods.ALLOCATOR_ROLE().call();
   }
 
   async reserveSpace(address: Address, amount: number) {
-    return this.fs.reserveSpace(this.address, address, amount, this.privateKey);
+    return this.fs.reserveSpace(this.account, address, amount, this.accountPrivateKey);
   }
 
   /**
@@ -261,19 +266,19 @@ class DeFileManager implements IDeFileManager {
   async createDirectory(destDirectory: DeDirectory, name: string) {
     const path = (destDirectory.path === this.rootDir.path) ? name : `${destDirectory.path}/${name}`;
     console.log("path", path)
-    const returnPath = await this.fs.createDirectory(this.address, path, this.privateKey);
+    const returnPath = await this.fs.createDirectory(this.account, path, this.accountPrivateKey);
     console.log("fm::createDirectory", returnPath);
     this.dirLastAction = `${OPERATON.CREATE_DIRECTORY}:${returnPath}`;
     return returnPath;
   }
 
   async deleteFile(destDirectory: DeDirectory, file: DeFile) {
-    await this.fs.deleteFile(this.address, file.path, this.privateKey);
+    await this.fs.deleteFile(this.account, file.path, this.accountPrivateKey);
     return true;
   }
 
   async deleteDirectory(directory: DeDirectory) {
-    await this.fs.deleteDirectory(this.address, directory.path, this.privateKey);
+    await this.fs.deleteDirectory(this.account, directory.path, this.accountPrivateKey);
   }
 
   async uploadFile(destDirectory: DeDirectory, file: File) {
@@ -283,7 +288,7 @@ class DeFileManager implements IDeFileManager {
     let path;
     try {
       ;
-      path = await this.fs.uploadFile(this.address, uploadPath, buffer, this.privateKey);
+      path = await this.fs.uploadFile(this.account, uploadPath, buffer, this.accountPrivateKey);
     } catch (e) {
       throw {
         file,

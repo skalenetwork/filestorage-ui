@@ -9,18 +9,20 @@ Entry point: `pages/-app.tsx`
 
 ## UI Components - Overview
 
-- [ ] Wallet multi-connect
-- [x] Uploader
+- [x] Wallet picker
+- [x] Multi-file uploader
 - [x] Space reservation 
+- [ ] Space allocation 
 - [x] Total usage metrics
-- [x] Navigable datatable
-- [x] Breadcrumb + Address switch
-- [ ] Search
+- [x] File Navigator: paginated + sortable + actionable
+- [x] Breadcrumb
+- [ ] Address switch
+- [x] Search
 
 ## To locate
 
 - [ ] Chain owner
-- [ ] Timestamps not found in contracts
+- [ ] Timestamps not found in contracts (possibility: history watch + cache / indexing-at-node)
 
 ## Codebase: heads up for templating
 
