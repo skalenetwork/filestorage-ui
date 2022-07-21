@@ -1,7 +1,7 @@
 //@ts-nocheck
 
-import { useState, useEffect, useRef, createRef, SyntheticEvent } from 'react';
-import { useAsyncFn, useMount } from 'react-use';
+import { useState, useEffect, useRef, createRef, SyntheticEvent, Fragment } from 'react';
+import { useAsyncFn, useMount, useDebounce } from 'react-use';
 
 import { useFileManagerContext, ContextType } from '../context';
 import { DeFile, DeDirectory, DeFileManager } from '@/services/filesystem';
@@ -28,9 +28,8 @@ const FileManagerView = (props) => {
   const {
     fm, directory: currentDirectory, listing, searchListing,
     changeDirectory, deleteFile, deleteDirectory,
-    setAddress, getFileLink
+    updateAddress, getFileLink
   } = useFileManagerContext<ContextType>();
-
 
   const tableElement = useRef<HTMLTableElement>();
 
@@ -54,11 +53,22 @@ const FileManagerView = (props) => {
   const [sortedListing, setSortedListing] = useState<Array<DeFile | DeDirectory>>([]);
   const [itemOffset, setItemOffset] = useState(0);
   const [selectedFile, setSelectedFile] = useState<DeFile>(null);
+  const [addressInput, setAddressInput] = useState<string>("");
+  const addressField = useRef();
+
+  useDebounce(() => {
+    console.log("debounce:addressInput", addressInput);
+    updateAddress(addressInput);
+  }, 500, [addressInput]);
 
   useMount(() => {
     setSortByKey("size");
     setSortByOrder("asc");
   });
+
+  useEffect(() => {
+    addressField.current.value = fm.rootDir.name;
+  }, [fm?.rootDir?.name]);
 
   useEffect(() => {
     setTrail(makeItemTrail(currentDirectory));
@@ -195,15 +205,16 @@ const FileManagerView = (props) => {
 
   const AddressSelect = () => (
     <input
-      type="text" value={fm?.rootDirectory().name}
-      onInput={(e) => {
+      type="text"
+      ref={addressField}
+      value={fm?.rootDirectory().name}
+      onChange={(e) => {
         let { value } = e.target;
-        console.log(value);
-        if (value && value.length < 40) {
-          return;
-          //@todo more to sanity and more validation
-        }
-        setAddress("0x" + value);
+        // value = value.toLowerCase();
+        // if (value.slice(0, 2) === "0x") {
+        //   value = value.slice(2);
+        // }
+        setAddressInput(value);
       }}
     />
   );

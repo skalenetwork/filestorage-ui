@@ -64,7 +64,11 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
     case ACTION.SET_AUTHORITY:
       return { ...state, isAuthorized: action.payload }
     case ACTION.INITIALIZE:
-      return { ...state, fm: action.payload.fm, directory: action.payload.directory }
+      return {
+        ...initialState,
+        fm: action.payload.fm,
+        directory: action.payload.directory,
+      }
     case ACTION.CHANGE_DIRECTORY:
       return { ...state, directory: action.payload }
     case ACTION.SET_LISTING:
@@ -189,7 +193,7 @@ function useDeFileManager(w3Provider: Object, address: string, privateKey?: stri
       payload: []
     });
     loadCurrentDirectory();
-  }, [state.directory?.path]);
+  }, [state.fm, state.directory?.path]);
 
   // tested for uploads under 1mb: file being uploaded not reflected in directory listing via node
   // instead simulating progress
