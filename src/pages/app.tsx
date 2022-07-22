@@ -239,7 +239,7 @@ const App = () => {
                     <label htmlFor="" className="label">
                       <span className="label-text">Name</span>
                     </label>
-                    <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
+                    <Input
                       type="text"
                       placeholder="File name"
                       defaultValue={filesToUpload[0].name}
@@ -344,7 +344,7 @@ const App = () => {
             <label className="label" htmlFor="">
               <span class="label-text">Name</span>
             </label>
-            <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
+            <Input
               type="text"
               placeholder="New directory name"
               required
@@ -378,7 +378,7 @@ const App = () => {
             <label className="label" htmlFor="">
               <span class="label-text">Address</span>
             </label>
-            <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
+            <Input
               type="text"
               placeholder="0x..."
             />
@@ -387,7 +387,7 @@ const App = () => {
             <label className="label" htmlFor="">
               <span class="label-text">Space to reserve</span>
             </label>
-            <Input className="px-4 py-2 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
+            <Input
               type="number"
               placeholder="Space to reserve"
             />

@@ -17,12 +17,18 @@ import ArrowSmDownIcon from '@heroicons/react/solid/ArrowSmDownIcon';
 import ChevronRightIcon from '@heroicons/react/solid/ChevronRightIcon';
 import ChevronLeftIcon from '@heroicons/react/solid/ChevronLeftIcon';
 
+import { Input } from '@/components/common';
+
 import Pagination from 'react-paginate';
 
 import prettyBytes from 'pretty-bytes';
 import orderBy from 'lodash/orderBy';
 
 import FormattedName from './FormattedName';
+
+const shortRoot = (address: string) => {
+  return address.substring(0, 4) + "...." + address.substring(address.length - 4);
+}
 
 const FileManagerView = (props) => {
 
@@ -53,9 +59,10 @@ const FileManagerView = (props) => {
   const [sortByOrder, setSortByOrder] = useState<string>("");
   const [sortedListing, setSortedListing] = useState<Array<DeFile | DeDirectory>>([]);
   const [itemOffset, setItemOffset] = useState(0);
+  const [pageListing, setPageListing] = useState([]);
   const [selectedFile, setSelectedFile] = useState<DeFile>(null);
   const [addressInput, setAddressInput] = useState<string>("");
-  const addressField = useRef();
+  const [addressEdit, setAddressEdit] = useState(false);
 
   useDebounce(() => {
     console.log("debounce:addressInput", addressInput);
@@ -64,16 +71,17 @@ const FileManagerView = (props) => {
 
   useMount(() => {
     setSortByKey("size");
-    setSortByOrder("asc");
+    setSortByOrder("desc");
   });
-
-  useEffect(() => {
-    addressField.current.value = fm.rootDir.name;
-  }, [fm?.rootDir?.name]);
 
   useEffect(() => {
     setTrail(makeItemTrail(currentDirectory));
   }, [currentDirectory?.path]);
+
+  useEffect(() => {
+    setPageListing(sortedListing
+      .slice(itemOffset, itemOffset + 10))
+  }, [itemOffset])
 
   useEffect(() => {
     if (!(listing && sortByKey && sortByOrder)) return;
@@ -190,27 +198,52 @@ const FileManagerView = (props) => {
       </tr>
     );
 
-  const AddressSelect = () => (
-    <input
-      type="text"
-      ref={addressField}
-      value={fm?.rootDirectory().name}
-      onChange={(e) => {
-        let { value } = e.target;
-        // value = value.toLowerCase();
-        // if (value.slice(0, 2) === "0x") {
-        //   value = value.slice(2);
-        // }
-        setAddressInput(value);
-      }}
-    />
-  );
+  const AddressSelect = ({ onConfirm }) => {
+    const [edit, setEdit] = useState(false);
+    const inputField = useRef<HTMLInputElement>();
+    useEffect(() => {
+      if (edit) {
+        inputField.current?.focus();
+      }
+    }, [edit])
+    return (
+      <div>
+        <p onClick={e => {
+          setEdit(true);
+        }}>{shortRoot(fm?.rootDirectory().name)}</p>
+        <>
+          {
+            (edit) ? (
+              <Input
+                className="absolute l-0 drop-shadow-md"
+                ref={inputField}
+                type="text"
+                defaultValue={shortRoot(fm?.rootDirectory().name)}
+                value={shortRoot(fm?.rootDirectory().name)}
+                onKeyUp={(e) => {
+                  if (e.key !== "Enter") return;
+                  let { value } = e.target;
+                  onConfirm(value);
+                  setEdit(false);
+                }}
+                onBlur={e => setEdit(false)}
+              />
+            )
+              : null
+          }
+        </>
+      </div>
+    )
+  };
+
 
   return (
     <div>
       <div className="flex flex-row justify-between items-center border-y border-slate-800 py-4 sticky top-0 bg-white z-[998]">
         <div className="h-8 flex flex-row items-center gap-2">
-          <AddressSelect /> /
+          <AddressSelect
+            onConfirm={setAddressInput}
+          /> /
           <div className="breadcrumbs m-0 p-0">
             <ul>
               {
@@ -226,7 +259,7 @@ const FileManagerView = (props) => {
           </div>
         </div>
         <div className="flex justify-center items-center gap-4">
-          {/* <span className="text-gray-500">Showing files {10}/{sortedListing.length}</span> */}
+          {/* <span className="text-gray-500">Showing files {itemOffset + 10}/{sortedListing.length}</span> */}
           <Pagination
             className="flex justify-center items-center gap-2"
             pageLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border border-gray-300 rounded text-sm"

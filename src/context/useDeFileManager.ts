@@ -330,7 +330,7 @@ function useDeFileManager(w3Provider: Object, address: string, privateKey?: stri
   const search = async (query) => {
     dispatch({
       type: ACTION.SET_SEARCH_LOADING,
-    })
+    });
 
     if (!query) {
       dispatch({
