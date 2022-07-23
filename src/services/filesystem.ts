@@ -12,6 +12,7 @@
 import FileStorage from '@skalenetwork/filestorage.js';
 import { Buffer } from 'buffer';
 import sortBy from 'lodash/sortBy';
+import mime from 'mime/lite';
 
 const KIND = {
   FILE: "file",
@@ -93,8 +94,9 @@ interface IDeFile {
   kind: string;
   name: string;
   path: string;
-  timestamp?: string;
+  type: string;
   size: number;
+  timestamp?: string;
 }
 
 // @todo bring in web3 types
@@ -152,18 +154,20 @@ class DeDirectory implements IDeDirectory {
   }
 }
 
-// @todo enclose manager like DeDirectory to handle buffer
+// @todo enhancement:: enclose manager like DeDirectory to handle buffer
 class DeFile implements IDeFile {
   kind: string;
   name: string;
   path: string;
   size: number;
+  type: string;
 
   constructor(data: FileStorageFile) {
     this.kind = KIND.FILE;
     this.name = data.name;
     this.path = pathToRelative(data.storagePath);
     this.size = data.size;
+    this.type = mime.getType(data.name);
   }
 }
 

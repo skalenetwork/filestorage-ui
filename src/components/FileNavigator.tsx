@@ -17,7 +17,6 @@ import ArrowSmDownIcon from '@heroicons/react/solid/ArrowSmDownIcon';
 import ChevronRightIcon from '@heroicons/react/solid/ChevronRightIcon';
 import ChevronLeftIcon from '@heroicons/react/solid/ChevronLeftIcon';
 
-import { Input } from '@/components/common';
 import Pagination from 'react-paginate';
 import FormattedName from './FormattedName';
 import FormattedSize from './FormattedSize';
