@@ -83,7 +83,8 @@ export function ContextWrapper({ children }) {
   const [address, setAddress] = useState<string>("");
   const [inputAddress, setInputAddress] = useState<string>("");
 
-  const updateAddress = (address) => {
+  const updateAddress = (address: string) => {
+    address = (address.slice(0, 2) === "0x") ? address : "0x" + address;
     if (!Web3.utils.isAddress(address)) {
       throw Error("Address is invalid", address);
     }

@@ -39,8 +39,7 @@ img {
 }
 
 .btn {
-  @apply font-medium;
-  @apply text-base;
+  @apply text-base font-normal;
 }
 
 .input {

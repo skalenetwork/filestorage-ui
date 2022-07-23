@@ -1,14 +1,14 @@
 //@ts-nocheck
 
-import { useState, useEffect, useRef, createRef, SyntheticEvent, Fragment } from 'react';
-import { useAsyncFn, useMount, useDebounce } from 'react-use';
+import { useState, useEffect, useRef, SyntheticEvent, useLayoutEffect } from 'react';
+import { useMount, useDebounce } from 'react-use';
 
 import { useFileManagerContext, ContextType } from '../context';
-import { DeFile, DeDirectory, DeFileManager } from '@/services/filesystem';
+import { DeFile, DeDirectory } from '@/services/filesystem';
 import { downloadUrl } from '../utils';
 
-import FolderIcon from '@heroicons/react/solid/FolderIcon';
-import DocumentTextIcon from '@heroicons/react/outline/DocumentTextIcon';
+import orderBy from 'lodash/orderBy';
+
 import DocumentRemoveIcon from '@heroicons/react/solid/DocumentRemoveIcon';
 import DocumentDownloadIcon from '@heroicons/react/solid/DocumentDownloadIcon';
 import DotsVerticalIcon from '@heroicons/react/solid/DotsVerticalIcon';
@@ -18,24 +18,49 @@ import ChevronRightIcon from '@heroicons/react/solid/ChevronRightIcon';
 import ChevronLeftIcon from '@heroicons/react/solid/ChevronLeftIcon';
 
 import { Input } from '@/components/common';
-
 import Pagination from 'react-paginate';
-
-import prettyBytes from 'pretty-bytes';
-import orderBy from 'lodash/orderBy';
-
 import FormattedName from './FormattedName';
+import FormattedSize from './FormattedSize';
+import SmartAddress from './SmartAddress';
 
-const shortRoot = (address: string) => {
-  return address.substring(0, 4) + "...." + address.substring(address.length - 4);
+const makeDirTrail = (directory: DeDirectory) => {
+  let trail = [];
+  let item = directory;
+  while (item.parent) {
+    trail.push(item);
+    item = item.parent;
+  }
+  return trail.reverse();
 }
 
-const FileManagerView = (props) => {
+const DirCrumb = (
+  { trail, preLimit, postLimit, onCrumbClick }:
+    { trail: DeDirectory[], preLimit?: number, postLimit?: number, onCrumbClick: Function }) => {
+  return (
+    <div className="breadcrumbs m-0 p-0">
+      <ul>
+        {
+          trail.map(item => (
+            <li
+              className="decoration-blue-500 text-blue-500 underline cursor-pointer"
+              key={item.path}
+            >
+              <a onClick={(e) => onCrumbClick(item)}>
+                <FormattedName item={item} />
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  );
+}
+
+const FileManagerView = (props: any) => {
 
   const {
     fm, directory: currentDirectory, listing, searchListing, isLoadingDirectory,
-    changeDirectory, deleteFile, deleteDirectory,
-    updateAddress, getFileLink
+    changeDirectory, deleteFile, deleteDirectory, updateAddress, getFileLink
   } = useFileManagerContext<ContextType>();
 
   const tableElement = useRef<HTMLTableElement>();
@@ -44,25 +69,24 @@ const FileManagerView = (props) => {
     changeDirectory(directory);
   }
 
-  const makeItemTrail = (directory: DeDirectory) => {
-    let trail = [];
-    let item = directory;
-    while (item.parent) {
-      trail.push(item);
-      item = item.parent;
-    }
-    return trail.reverse();
-  }
 
+  // table
   const [trail, setTrail] = useState<any[]>([]);
   const [sortByKey, setSortByKey] = useState<string>("");
   const [sortByOrder, setSortByOrder] = useState<string>("");
   const [sortedListing, setSortedListing] = useState<Array<DeFile | DeDirectory>>([]);
-  const [itemOffset, setItemOffset] = useState(0);
-  const [pageListing, setPageListing] = useState([]);
-  const [selectedFile, setSelectedFile] = useState<DeFile>(null);
+
+  // table:pagination
+  const [itemOffset, setItemOffset] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageListing, setPageListing] = useState<Array<DeFile | DeDirectory>>([]);
+
+  // uploads
+  const [selectedFile, setSelectedFile] = useState<DeFile>();
   const [addressInput, setAddressInput] = useState<string>("");
-  const [addressEdit, setAddressEdit] = useState(false);
+
+  // address switching
+  const [isAddressEditing, setIsAddressEditing] = useState<boolean>(false);
 
   useDebounce(() => {
     console.log("debounce:addressInput", addressInput);
@@ -75,13 +99,13 @@ const FileManagerView = (props) => {
   });
 
   useEffect(() => {
-    setTrail(makeItemTrail(currentDirectory));
+    setTrail(makeDirTrail(currentDirectory));
   }, [currentDirectory?.path]);
 
-  useEffect(() => {
-    setPageListing(sortedListing
-      .slice(itemOffset, itemOffset + 10))
-  }, [itemOffset])
+  useLayoutEffect(() => {
+    const endOffset = itemOffset + 10;
+    setPageListing(sortedListing.slice(itemOffset, endOffset));
+  }, [itemOffset, sortedListing])
 
   useEffect(() => {
     if (!(listing && sortByKey && sortByOrder)) return;
@@ -89,22 +113,7 @@ const FileManagerView = (props) => {
     setSortedListing(newListing);
   }, [listing, sortByKey, sortByOrder]);
 
-  const renderFormattedName = (item: DeFile | DeDirectory) => (
-    <span className="gap-x-2 flex flex-row items-center">
-      {
-        item.kind === "directory"
-          ? <FolderIcon className="h-5 w-5 text-blue-500" />
-          : <DocumentTextIcon className="h-5 w-5 text-blue-500" />
-      }
-      {item.name}
-    </span>
-  );
-
-  const renderFormattedSize = (item: DeFile | DeDirectory) => (
-    (item.kind === "file") ? prettyBytes(item.size || 0) : "--"
-  );
-
-  const renderSortElement = (key) => (
+  const sortElement = (key: string) => (
     <span>
       {(key !== sortByKey) ? "·" : ((sortByOrder === "asc") ?
         <ArrowSmUpIcon className="h-5 w-5 inline-block" /> :
@@ -113,24 +122,27 @@ const FileManagerView = (props) => {
     </span>
   );
 
-  const ColumnLabel = (props) => (
+  const ColumnLabel = ({ columnKey, children }: { columnKey: string; children: any }) => (
     <p className="p-0 cursor-pointer" onClick={
       (e) => {
-        setSortByKey(props.columnKey);
+        setSortByKey(columnKey);
         setSortByOrder((sortByOrder === "asc") ? "desc" : "asc");
       }}>
-      {props.children} {props.columnKey ? renderSortElement(props.columnKey) : null}
+      {children} {columnKey ? sortElement(columnKey) : null}
     </p>
   );
 
   const BackItem = () => (
-    currentDirectory.parent ?
+    currentDirectory?.parent ?
       <tr
         className="focus:bg-slate-100 hover:bg-slate-50"
-        onClick={(e) => { handleRowClick(currentDirectory.parent) && e.stopPropagation(); }}
+        onClick={(e) => {
+          handleRowClick(currentDirectory.parent as DeDirectory);
+          e.stopPropagation();
+        }}
       >
         <td className="border-slate-800 bg-transparent">
-          <FormattedName data={{ kind: "directory", name: ".." }} />
+          <FormattedName item={{ kind: "directory", name: ".." } as DeDirectory} />
         </td>
         <td className="border-slate-800 bg-transparent"></td>
         <td className="border-slate-800 bg-transparent"></td>
@@ -138,18 +150,18 @@ const FileManagerView = (props) => {
       </tr> : <></>
   );
 
-  const ItemActions = ({ item }) => (
+  const ItemActions = ({ item }: { item: DeFile | DeDirectory }) => (
     <div className="dropdown dropdown-left" onClick={(e) => e.stopPropagation()}>
-      <label tabIndex="0" className="cursor-pointer">
+      <label tabIndex={0} className="cursor-pointer">
         <DotsVerticalIcon className="h-5 w-5" />
       </label>
-      <ul tabIndex="0" className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
+      <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
         {
           (item.kind === "file") ?
             <li
               onClick={(e) => {
-                fm?.downloadFile(item);
-                tableElement.current?.querySelector(":focus").blur();
+                fm?.downloadFile(item as DeFile);
+                (tableElement.current?.querySelector(":focus") as HTMLElement).blur();
               }}
             >
               <a><DocumentDownloadIcon className="h-5 w-5 text-blue-500" /> Download</a>
@@ -165,7 +177,7 @@ const FileManagerView = (props) => {
                 } else {
                   deleteDirectory(item);
                 }
-                tableElement.current?.querySelector(":focus").blur();
+                (tableElement.current?.querySelector(":focus") as HTMLElement).blur();
               }}
             >
               <a><DocumentRemoveIcon className="h-5 w-5 text-red-500" /> Delete</a>
@@ -173,10 +185,10 @@ const FileManagerView = (props) => {
             : <></>
         }
       </ul>
-    </div>
+    </div >
   );
 
-  const Item = ({ item, skeleton }) => (skeleton) ?
+  const Item = ({ item, skeleton }: { item: DeFile | DeDirectory, skeleton: boolean }) => (skeleton) ?
     <tr className="animate-pulse">
       <td><p className="w-16 h-2 rounded bg-gray-200"></p></td>
       <td></td>
@@ -187,79 +199,40 @@ const FileManagerView = (props) => {
     (
       <tr className="focus:bg-slate-100 hover:bg-slate-50" onClick={
         (e) => {
-          item.kind === "directory" ? handleRowClick(item) : setSelectedFile(item);
+          item.kind === "directory"
+            ? handleRowClick(item as DeDirectory)
+            : setSelectedFile(item as DeFile);
           e.stopPropagation();
         }
       }>
-        <td className="border-slate-800 bg-transparent"><FormattedName data={item} /></td>
+        <td className="border-slate-800 bg-transparent"><FormattedName item={item} /></td>
         <td className="border-slate-800 bg-transparent"></td>
-        <td className="border-slate-800 bg-transparent">{renderFormattedSize(item)}</td>
+        <td className="border-slate-800 bg-transparent"><FormattedSize item={item} /></td>
         <td className="border-slate-800 bg-transparent"><ItemActions item={item} /></td>
       </tr>
     );
 
-  const AddressSelect = ({ onConfirm }) => {
-    const [edit, setEdit] = useState(false);
-    const inputField = useRef<HTMLInputElement>();
-    useEffect(() => {
-      if (edit) {
-        inputField.current?.focus();
-      }
-    }, [edit])
-    return (
-      <div>
-        <p onClick={e => {
-          setEdit(true);
-        }}>{shortRoot(fm?.rootDirectory().name)}</p>
-        <>
-          {
-            (edit) ? (
-              <Input
-                className="absolute l-0 drop-shadow-md"
-                ref={inputField}
-                type="text"
-                defaultValue={shortRoot(fm?.rootDirectory().name)}
-                value={shortRoot(fm?.rootDirectory().name)}
-                onKeyUp={(e) => {
-                  if (e.key !== "Enter") return;
-                  let { value } = e.target;
-                  onConfirm(value);
-                  setEdit(false);
-                }}
-                onBlur={e => setEdit(false)}
-              />
-            )
-              : null
-          }
-        </>
-      </div>
-    )
-  };
-
-
   return (
     <div>
       <div className="flex flex-row justify-between items-center border-y border-slate-800 py-4 sticky top-0 bg-white z-[998]">
-        <div className="h-8 flex flex-row items-center gap-2">
-          <AddressSelect
-            onConfirm={setAddressInput}
-          /> /
-          <div className="breadcrumbs m-0 p-0">
-            <ul>
-              {
-                trail.map(item => (
-                  <li className="decoration-blue-500 text-blue-500 underline" key={item.path}>
-                    <a onClick={() => changeDirectory(item)}>
-                      <FormattedName data={item} />
-                    </a>
-                  </li>
-                ))
-              }
-            </ul>
-          </div>
+        <div className="h-8 flex flex-row items-center gap-2 px-4">
+          <SmartAddress
+            address={fm?.rootDirectory().name || ""}
+            onEdit={() => setIsAddressEditing(true)}
+            offEdit={() => setIsAddressEditing(false)}
+            onConfirm={updateAddress}
+          />
+          {
+            (isAddressEditing === false) ?
+              <DirCrumb trail={trail} onCrumbClick={changeDirectory} />
+              :
+              <></>
+          }
         </div>
-        <div className="flex justify-center items-center gap-4">
-          {/* <span className="text-gray-500">Showing files {itemOffset + 10}/{sortedListing.length}</span> */}
+        <div className="flex justify-center items-center gap-8">
+          <span className="text-gray-500 text-sm">
+            Showing files {itemOffset + pageListing.length}/{sortedListing.length}
+          </span>
           <Pagination
             className="flex justify-center items-center gap-2"
             pageLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border border-gray-300 rounded text-sm"
@@ -275,8 +248,9 @@ const FileManagerView = (props) => {
             }
             pageRangeDisplayed={4}
             renderOnZeroPageCount={null}
-            pageCount={sortedListing.length / 10}
+            pageCount={Math.ceil(sortedListing.length / 10)}
             onPageChange={(e) => {
+              setCurrentPage(e.selected);
               const newOffset = (e.selected * 10) % sortedListing.length;
               setItemOffset(newOffset);
             }}
@@ -304,11 +278,9 @@ const FileManagerView = (props) => {
             isLoadingDirectory ?
               [...Array(10).keys()].map(item => <Item skeleton />)
               :
-              (sortedListing.length)
+              (pageListing.length)
                 ?
-                sortedListing
-                  .slice(itemOffset, itemOffset + 10)
-                  .map((item) => <Item item={item} key={item.path} />)
+                pageListing.map((item) => <Item item={item} key={item.path} />)
                 :
                 <></>
           }
