@@ -12,6 +12,7 @@ import DocumentAddIcon from '@heroicons/react/solid/DocumentAddIcon';
 import UploadIcon from '@heroicons/react/outline/UploadIcon';
 import SearchIcon from '@heroicons/react/solid/SearchIcon';
 import ArchiveIcon from '@heroicons/react/outline/ArchiveIcon';
+import XIcon from '@heroicons/react/outline/XIcon';
 
 import FileNavigator from '@/components/FileNavigator';
 import FormattedName from '@/components/FormattedName';
@@ -91,7 +92,7 @@ const App = () => {
   return (
     <div className="mx-auto max-h-[100vh] h-[100vh] overflow-hidden">
       <main>
-        <section className="px-24" style={{ gridArea: 'frame' }}>
+        <section className="px-36" style={{ gridArea: 'frame' }}>
           <header className="header py-2 flex justify-between items-center">
             <p className="flex flex-row items-center gap-2">
               <img src="/logo.png" className="h-10 rounded-[14px]" style={{ filter: "revert" }} alt="" />
@@ -120,8 +121,13 @@ const App = () => {
           <div className="status-bar flex flex-row justify-between items-center">
             <h1 className="text-3xl font-semibold">Filestorage</h1>
             <div className="w-80">
-              <p className="font-bold"><FormattedSize value={occupiedSpace} /> used</p>
-              <p className="text-sm">
+              <p>
+                <span className="font-semibold">
+                  <FormattedSize
+                    value={occupiedSpace} />
+                </span> used
+                </p>
+              <p className="text-xs font-medium">
                 {((occupiedSpace / reservedSpace) || 0).toFixed(6)}% used - {prettyBytes((reservedSpace - occupiedSpace) || 0)} free
               </p>
               <Progress className="w-full" value={occupiedSpace / reservedSpace} max={100} />
@@ -139,7 +145,7 @@ const App = () => {
           </div>
           <div className="action-bar my-4 gap-4 flex flex-row justify-between items-center">
             <div className="grow relative">
-              <div className="mr-4 pointer-events-none absolute top-1/2 transform -translate-y-1/2 left-3">
+              <div className="mr-4 pointer-events-none absolute top-1/2 transform -translate-y-1/2 left-4">
                 {
                   isSearching
                     ? <SpinnerIcon className="h-6 w-6" />
@@ -155,6 +161,13 @@ const App = () => {
                 type="text"
                 placeholder="Search files..."
               />
+              <div className="pointer-events-none absolute top-1/2 transform -translate-y-1/2 right-4">
+                {
+                  isSearching
+                    ? <XIcon className="h-6 w-6" />
+                    : <></>
+                }
+              </div>
               {
                 (searchListing && searchListing.length) ?
                   <div className="absolute top-[100%] bg-slate-100 rounded mt-2 py-2 z-[1001] w-full">
@@ -201,7 +214,7 @@ const App = () => {
             }
           </div>
         </section>
-        <section style={{ gridArea: 'mgr' }} className="overflow-y-scroll px-24">
+        <section style={{ gridArea: 'mgr' }} className="overflow-y-scroll px-36">
           <FileNavigator />
         </section>
       </main>

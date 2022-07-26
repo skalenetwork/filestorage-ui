@@ -150,9 +150,9 @@ const FileManagerView = (props: any) => {
   );
 
   const ItemActions = ({ item }: { item: DeFile | DeDirectory }) => (
-    <div className="dropdown dropdown-left" onClick={(e) => e.stopPropagation()}>
+    <div className="dropdown dropdown-left h-full flex items-center" onClick={(e) => e.stopPropagation()}>
       <label tabIndex={0} className="cursor-pointer">
-        <DotsVerticalIcon className="h-5 w-5" />
+        <DotsVerticalIcon className="h-6 w-6" />
       </label>
       <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
         {
@@ -172,9 +172,9 @@ const FileManagerView = (props: any) => {
             <li
               onClick={(e: SyntheticEvent) => {
                 if (item.kind === "file") {
-                  deleteFile(item)
+                  deleteFile(item as DeFile)
                 } else {
-                  deleteDirectory(item);
+                  deleteDirectory(item as DeDirectory);
                 }
                 (tableElement.current?.querySelector(":focus") as HTMLElement).blur();
               }}
@@ -216,6 +216,7 @@ const FileManagerView = (props: any) => {
       <div className="flex flex-row justify-between items-center border-y border-slate-800 py-4 sticky top-0 bg-white z-[998]">
         <div className="h-8 flex flex-row items-center gap-2 px-4">
           <SmartAddress
+            className="cursor-pointer"
             address={fm?.rootDirectory().name || ""}
             onEdit={() => setIsAddressEditing(true)}
             offEdit={() => setIsAddressEditing(false)}
@@ -229,21 +230,21 @@ const FileManagerView = (props: any) => {
           }
         </div>
         <div className="flex justify-center items-center gap-8">
-          <span className="text-gray-500 text-sm">
+          <span className="text-gray-500 text-sm font-medium">
             Showing files {itemOffset + pageListing.length}/{sortedListing.length}
           </span>
           <Pagination
             className="flex justify-center items-center gap-2"
-            pageLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border border-gray-300 rounded text-sm"
-            activeLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border border-gray-500 rounded text-sm"
+            pageLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border border-gray-300 rounded text-sm font-medium"
+            activeLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border border-gray-500 rounded text-sm font-medium"
             nextLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border text-gray-400 border-gray-300 rounded text-sm"
             previousLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center font-medium border text-gray-400 border-gray-300 rounded text-sm"
             disabledClassName="flex items-center justify-center p-2 w-8 h-8 text-center font-medium border text-gray-200 border-gray-300 rounded text-sm bg-gray-300 cursor-pointer"
             breakLabel="..."
             nextLabel={
-              <ChevronRightIcon className="h-7 w-7" />}
+              <ChevronRightIcon className="h-8 w-8" />}
             previousLabel={
-              <ChevronLeftIcon className="h-7 w-7" />
+              <ChevronLeftIcon className="h-8 w-8" />
             }
             pageRangeDisplayed={4}
             renderOnZeroPageCount={null}
@@ -259,13 +260,13 @@ const FileManagerView = (props: any) => {
       <table className="table w-full select-none relative" ref={tableElement}>
         <thead>
           <tr>
-            <th className="w-[30%] border-b border-slate-800 bg-inherit normal-case font-medium text-base">
+            <th className="w-[40%] border-b border-slate-800 bg-inherit normal-case font-medium text-base">
               <ColumnLabel columnKey="name">Name</ColumnLabel>
             </th>
-            <th className="w-[30%] border-b border-slate-800 bg-inherit normal-case font-medium text-base">
+            <th className="w-[35%] border-b border-slate-800 bg-inherit normal-case font-medium text-base">
               <ColumnLabel columnKey="timestamp">Timestamp</ColumnLabel>
             </th>
-            <th className="w-[30%] border-b border-slate-800 bg-inherit normal-case font-medium text-base">
+            <th className="w-[20%] border-b border-slate-800 bg-inherit normal-case font-medium text-base">
               <ColumnLabel columnKey="size">File size</ColumnLabel>
             </th>
             <th className="border-b border-slate-800 bg-inherit normal-case font-medium text-base"></th>

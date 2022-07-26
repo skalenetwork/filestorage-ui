@@ -12,7 +12,7 @@ const FileIcon = ({ file, className = "" }: { file: DeFile, className: string })
     (pre === "application") ? <DocumentTextIcon className={className} />
       : (pre === "text") ? <DocumentTextIcon className={className} />
         : (pre === "image") ? <PhotographIcon className={className + " !text-red-500"} />
-          : (pre === "audio") ? <VolumeUpIcon className={className} />
+          : (pre === "audio") ? <VolumeUpIcon className={className + " !text-green-500"} />
             : (pre === "video") ? <FilmIcon className={className + " !text-yellow-500"} />
               : <DocumentTextIcon className={className} />
   )

@@ -5,7 +5,8 @@ import CheckIcon from '@heroicons/react/solid/CheckIcon';
 import XIcon from '@heroicons/react/solid/XIcon';
 
 const SmartAddress = (
-  { address, onEdit, offEdit, onConfirm }: { address: string, onEdit: Function, offEdit: Function, onConfirm: Function }
+  { className, address, onEdit, offEdit, onConfirm }:
+    { className: string, address: string, onEdit: Function, offEdit: Function, onConfirm: Function }
 ) => {
   const inputField = useRef<any>();
   const [edit, setEdit] = useState<boolean | undefined>(undefined);
@@ -21,7 +22,7 @@ const SmartAddress = (
   }, [edit]);
 
   return (
-    <div>
+    <div className={className}>
       <p className={(edit === true) ? "hidden" : ""}
         onClick={e => { setEdit(true); }}
       >
