@@ -12,7 +12,6 @@ body {
 }
 
 body {
-  transform: rotate(180deg);
   overflow-y: hidden;
 }
 

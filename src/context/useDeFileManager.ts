@@ -263,7 +263,7 @@ function useDeFileManager(w3Provider: Object, address: string, privateKey?: stri
     })
 
   const uploadFiles = (fm && cwd && state.isAuthorized) &&
-    (async (files: Array<File>, directory: DeDirectory = cwd) => {
+    (async (files: Array<File>, directory: DeDirectory = cwd): Array => {
       let activeFiles: FileStatus[] = [];
       let failedFiles: File[] = [];
 
