@@ -56,7 +56,7 @@ const DirCrumb = (
   );
 }
 
-const FileManagerView = (props: any) => {
+const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => void }) => {
 
   const {
     fm, directory: currentDirectory, listing, searchListing, isLoadingDirectory,
@@ -81,7 +81,6 @@ const FileManagerView = (props: any) => {
   const [pageListing, setPageListing] = useState<Array<DeFile | DeDirectory>>([]);
 
   // uploads
-  const [selectedFile, setSelectedFile] = useState<DeFile>();
   const [addressInput, setAddressInput] = useState<string>("");
 
   // address switching
@@ -106,7 +105,7 @@ const FileManagerView = (props: any) => {
     setPageListing(sortedListing.slice(itemOffset, endOffset));
   }, [itemOffset, sortedListing])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!(listing && sortByKey && sortByOrder)) return;
     let newListing = orderBy(
       listing,
@@ -115,6 +114,8 @@ const FileManagerView = (props: any) => {
     );
     setSortedListing(newListing);
   }, [listing, sortByKey, sortByOrder]);
+
+
 
   const sortElement = (key: string) => (
     <span>
@@ -204,7 +205,7 @@ const FileManagerView = (props: any) => {
         (e) => {
           item.kind === "directory"
             ? handleRowClick(item as DeDirectory)
-            : setSelectedFile(item as DeFile);
+            : onSelectFile(item as DeFile);
           e.stopPropagation();
         }
       }>
@@ -268,7 +269,7 @@ const FileManagerView = (props: any) => {
               <ColumnLabel columnKey="name">Name</ColumnLabel>
             </th>
             <th className="w-[35%] border-b border-slate-800 bg-inherit normal-case font-medium text-base">
-              <ColumnLabel columnKey="timestamp">Timestamp</ColumnLabel>
+              {/* <ColumnLabel columnKey="timestamp">Timestamp</ColumnLabel> */}
             </th>
             <th className="w-[20%] border-b border-slate-800 bg-inherit normal-case font-medium text-base">
               <ColumnLabel columnKey="size">File size</ColumnLabel>

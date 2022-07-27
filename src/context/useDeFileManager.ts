@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { useEffect, useReducer, useState } from 'react';
+import { useEffect, useLayoutEffect, useReducer, useState } from 'react';
 import { useInterval } from 'react-use';
 import { DeFileManager, DeDirectory, DeFile } from '@/services/filesystem';
 import Web3 from 'web3';
@@ -182,7 +182,7 @@ function useDeFileManager(w3Provider: Object, address: string, privateKey?: stri
     });
   }
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!(w3Provider && address)) return;
     console.log("useDeFileManager::provider", w3Provider);
 
@@ -206,11 +206,11 @@ function useDeFileManager(w3Provider: Object, address: string, privateKey?: stri
 
   }, [w3Provider, address, privateKey]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     updateCapacity();
   }, [fm]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!state.directory) return;
     dispatch({
       type: ACTION.SET_LISTING,

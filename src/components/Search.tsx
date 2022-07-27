@@ -12,22 +12,25 @@ import FormattedName from "./FormattedName";
 type SearchProps = {
   className: string,
   isSearching: boolean,
-  onInput: (value: string) => void
+  onInput: (value: string) => void,
+  onFileClick: (file: DeFile) => void
 }
 
-const SearchList = () => {
-  const { searchListing, fm, changeDirectory } = useFileManagerContext();
-  return (fm && searchListing && searchListing.length) ? (
+const SearchList = (
+  { listing, onFileClick, onDirectoryClick }:
+    { listing: (DeFile | DeDirectory)[], onFileClick: (file: DeFile) => void, onDirectoryClick: (directory: DeDirectory) => void }
+) => {
+  return (listing && listing.length) ? (
     <div className="absolute top-[100%] bg-slate-100 rounded mt-2 py-2 z-[1001] w-full">
       <ul>
         {
-          searchListing.map((item) => (
+          listing.map((item) => (
             <li
               className="px-4 py-2 mx-2 rounded cursor-default hover:bg-white"
               onClick={
                 (e) => (item.kind === "directory")
-                  ? changeDirectory(item as DeDirectory)
-                  : fm?.downloadFile(item as DeFile)
+                  ? onDirectoryClick(item as DeDirectory)
+                  : onFileClick(item as DeFile)
               }
             >
               <FormattedName item={item} />
@@ -40,8 +43,9 @@ const SearchList = () => {
 }
 
 const Search = (
-  { className, isSearching, onInput }: SearchProps
+  { className, isSearching, onInput, onFileClick }: SearchProps
 ) => {
+  const { searchListing, changeDirectory } = useFileManagerContext();
 
   const searchField = useRef<HTMLInputElement>();
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -83,7 +87,11 @@ const Search = (
             : <></>
         }
       </div>
-      <SearchList />
+      <SearchList
+        listing={searchListing}
+        onFileClick={onFileClick}
+        onDirectoryClick={changeDirectory}
+      />
     </div>
   )
 }

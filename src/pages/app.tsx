@@ -1,10 +1,8 @@
 // @ts-nocheck
 
-import { useState, useEffect } from 'react';
-
-import { useFileManagerContext } from '@/context/index';
-
+import { useState, useEffect, useLayoutEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useFileManagerContext } from '@/context/index';
 
 import { Button } from '@/components/common';
 
@@ -13,6 +11,7 @@ import DocumentAddIcon from '@heroicons/react/solid/DocumentAddIcon';
 
 import Branding from '@/components/Branding';
 import Connect from '@/components/Connect';
+import StorageStatus from '@/components/StorageStatus';
 import Search from '@/components/Search';
 
 import FileNavigator from '@/components/FileNavigator';
@@ -23,7 +22,6 @@ import CreateDirectoryWidget from '../partials/CreateDirectoryWidget';
 import ReserveSpaceWidget from '../partials/ReserveSpaceWidget';
 import GrantorWidget from '../partials/GrantorWidget';
 import ViewFileWidget from '../partials/ViewFileWidget';
-import StorageStatus from '@/components/StorageStatus';
 
 const App = () => {
 
@@ -43,6 +41,7 @@ const App = () => {
 
   const [uploadingFiles, setUploadingFiles] = useState<any[]>([]);
   const [failedFiles, setFailedFiles] = useState<any[]>([]);
+  const [selectedFile, setSelectedFile] = useState<DeFile>(undefined);
 
   type ActionsFormData = {
     uploads: { name: string, file: File }[],
@@ -61,6 +60,10 @@ const App = () => {
       roleGranteeAddress: ""
     } as ActionsFormData
   });
+
+  useLayoutEffect(() => {
+    if (!selectedFile) return;
+  }, [selectedFile]);
 
   useEffect(() => {
     setUploadingFiles(Array.from(activeUploads.values()).flat());
@@ -129,6 +132,7 @@ const App = () => {
               className="grow relative"
               isSearching={isSearching}
               onInput={search}
+              onFileClick={setSelectedFile}
             />
             {
               (isAuthorized) ?
@@ -158,7 +162,9 @@ const App = () => {
           </div>
         </section>
         <section style={{ gridArea: 'mgr' }} className="overflow-y-scroll px-36">
-          <FileNavigator />
+          <FileNavigator
+            onSelectFile={setSelectedFile}
+          />
         </section>
       </main>
 
@@ -212,7 +218,14 @@ const App = () => {
         onClose={() => setGrantRoleModal(false)}
         formRegister={register}
       />
-    </div >
+
+      <ViewFileWidget
+        open={!!selectedFile}
+        onClose={() => setSelectedFile(undefined)}
+        file={selectedFile}
+      />
+
+    </div>
   )
 }
 
