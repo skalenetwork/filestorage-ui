@@ -20,7 +20,9 @@ import FileNavigator from '@/components/FileNavigator';
 import FormattedName from '@/components/FormattedName';
 import FormattedAddress from '@/components/FormattedAddress';
 import FormattedSize from '@/components/FormattedSize';
-import CheckIcon from '@heroicons/react/solid/CheckIcon';
+
+import UploadWidget from '../partials/UploadWidget';
+import CreateDirectoryWidget from '../partials/CreateDirectoryWidget';
 
 const App = () => {
 
@@ -35,7 +37,6 @@ const App = () => {
   const searchField = useRef<HTMLInputElement>();
   const reserveAddrField = useRef<HTMLInputElement>();
   const reserveSpaceField = useRef<HTMLInputElement>();
-  const uploadFileField = useRef<HTMLInputElement>();
   const newDirectoryField = useRef<HTMLInputElement>();
 
   const {
@@ -49,10 +50,6 @@ const App = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
 
   const { register, control, handleSubmit, watch, formState: { errors } } = useForm();
-  const { fields, append, prepend, remove, swap, move, insert } = useFieldArray({
-    control, // control props comes from useForm (optional: if you are using FormContext)
-    name: "uploads", // unique name for your Field Array
-  });
 
   useDebounce(() => {
     console.log("debounce:search", searchTerm);
@@ -85,7 +82,7 @@ const App = () => {
     });
     setUploadModal(false);
     setActiveUploadsModal(true);
-    await uploadFiles(filesToUpload);
+    return await uploadFiles(filesToUpload);
   }
 
   const handleReserveSpace = async (event: SyntheticEvent) => {
@@ -230,95 +227,13 @@ const App = () => {
         </section>
       </main>
 
-      <Modal
-        className="gap-4 flex flex-col justify-center items-center"
+      <UploadWidget
         open={uploadModal}
-        onClickBackdrop={() => setUploadModal(false)}
-      >
-        <form onSubmit={handleSubmit(handleConfirmUpload)}>
-          <Modal.Header className="text-center font-bold">
-            Upload file
-        </Modal.Header>
-          <Modal.Body className="flex flex-col gap-1.5 justify-center items-center">
-            {
-              (fields.length > 1) ?
-                (
-                  fields
-                    .map((field, index) => (
-                      <div key={field.id} className="flex flex-row justify-between w-72">
-                        <div>
-                          <input
-                            {...register(`uploads.${index}.name`)}
-                          />
-                        </div>
-                        {/* <p>{prettyBytes(field.defaultValue.)}</p> */}
-                      </div>
-                    ))
-                )
-                : (fields.length === 1) ?
-                  (<>
-                    <div>
-                      <label htmlFor="" className="label">
-                        <span className="label-text">Name</span>
-                      </label>
-                      <Input
-                        type="text"
-                        placeholder="File name"
-                        defaultValue={filesToUpload[0].name}
-                        onChange={(e) => {
-                          const file = filesToUpload[0];
-                          const { value } = e.target;
-                          const updatedFile = new File(file, value);
-                          setFilesToUpload([updatedFile]);
-                        }}
-                        required
-                      />
-                    </div>
-                  </>)
-                  :
-                  (<>
-                    <p>Select files to upload.</p>
-                    <UploadIcon className="h-24 w-24 my-4" />
-                  </>)
-            }
-          </Modal.Body>
-          <Modal.Actions className="flex justify-center items-center gap-8">
-            {
-              fields.length ?
-                <>
-                  <Button type="submit">Upload</Button>
-                  <span
-                    className="underline cursor-pointer"
-                    onClick={(e) => cancelUpload()}
-                  >Cancel</span>
-                </>
-                :
-                <>
-                  <label className="btn" htmlFor="file-upload">
-                    Select files
-                  </label>
-                  <input
-                    type="file"
-                    id="file-upload"
-                    className="hidden"
-                    onChange={(e) => {
-                      false && setFilesToUpload(...filesToUpload, Array.from(e.target.files));
-                      const files = Array.from(e.target.files);
-                      files.forEach(file => {
-                        append({
-                          name: file.name,
-                          file
-                        });
-                      });
-                    }}
-                    ref={uploadFileField}
-                    multiple
-                  />
-                </>
-            }
-          </Modal.Actions>
-        </form>
-      </Modal>
+        formControl={control}
+        formRegister={register}
+        onClose={() => setUploadModal(false)}
+        onSubmit={handleSubmit(handleConfirmUpload)}
+      />
 
       <Modal
         className="gap-4 flex flex-col justify-center items-center"
