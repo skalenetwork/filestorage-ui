@@ -1,28 +1,21 @@
 // @ts-nocheck
 
-import prettyBytes from 'pretty-bytes';
-import { useState, useRef, SyntheticEvent, useEffect } from 'react';
-import { useDebounce } from 'react-use';
+import { useState, useEffect } from 'react';
 
 import { useFileManagerContext } from '@/context/index';
 
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 
-import { Button, Modal, Progress, Input, SpinnerIcon } from '@/components/common';
+import { Button } from '@/components/common';
+
 import FolderAddIcon from '@heroicons/react/solid/FolderAddIcon';
 import DocumentAddIcon from '@heroicons/react/solid/DocumentAddIcon';
-import UploadIcon from '@heroicons/react/outline/UploadIcon';
-import SearchIcon from '@heroicons/react/solid/SearchIcon';
-import ArchiveIcon from '@heroicons/react/outline/ArchiveIcon';
-import XIcon from '@heroicons/react/outline/XIcon';
-
-import FileNavigator from '@/components/FileNavigator';
-import FormattedName from '@/components/FormattedName';
-import FormattedAddress from '@/components/FormattedAddress';
-import FormattedSize from '@/components/FormattedSize';
 
 import Branding from '@/components/Branding';
 import Connect from '@/components/Connect';
+import Search from '@/components/Search';
+
+import FileNavigator from '@/components/FileNavigator';
 
 import UploadWidget from '../partials/UploadWidget';
 import UploadProgressWidget from '../partials/UploadProgressWidget';
@@ -31,7 +24,6 @@ import ReserveSpaceWidget from '../partials/ReserveSpaceWidget';
 import GrantorWidget from '../partials/GrantorWidget';
 import ViewFileWidget from '../partials/ViewFileWidget';
 import StorageStatus from '@/components/StorageStatus';
-import Search from '@/components/Search';
 
 const App = () => {
 
@@ -41,6 +33,7 @@ const App = () => {
   const [activeUploadsModal, setActiveUploadsModal] = useState(false);
   const [uploadModal, setUploadModal] = useState(false);
   const [directoryModal, setDirectoryModal] = useState(false);
+  const [grantRoleModal, setGrantRoleModal] = useState(false);
 
   const {
     fm, directory: currentDirectory, reservedSpace, occupiedSpace, searchListing,
@@ -51,7 +44,23 @@ const App = () => {
   const [uploadingFiles, setUploadingFiles] = useState<any[]>([]);
   const [failedFiles, setFailedFiles] = useState<any[]>([]);
 
-  const { register, control, handleSubmit, watch, formState: { errors } } = useForm();
+  type ActionsFormData = {
+    uploads: [],
+    directoryName: string,
+    reserveSpaceAddress: string,
+    reserveSpaceAmount: number,
+    roleGranteeAddress: string,
+  }
+
+  const { register, control, handleSubmit, watch, formState: { errors }, resetField } = useForm({
+    defaultValues: {
+      uploads: [],
+      directoryName: "",
+      reserveSpaceAddress: "",
+      reserveSpaceAmount: "",
+      roleGranteeAddress: ""
+    } as ActionsFormData
+  });
 
   useEffect(() => {
     setUploadingFiles(Array.from(activeUploads.values()).flat());
@@ -68,6 +77,7 @@ const App = () => {
       return new File([file], name);
     });
     setUploadModal(false);
+    resetField('uploads');
     setActiveUploadsModal(true);
     return await uploadFiles(filesToUpload);
   }
@@ -152,11 +162,13 @@ const App = () => {
         </section>
       </main>
 
+      {/* Action widgets, can be iterated on with FormContext */}
+
       <UploadWidget
         open={uploadModal}
+        onClose={() => setUploadModal(false)}
         formControl={control}
         formRegister={register}
-        onClose={() => setUploadModal(false)}
         onSubmit={handleSubmit(handleConfirmUpload)}
       />
 
@@ -169,19 +181,36 @@ const App = () => {
 
       <CreateDirectoryWidget
         open={directoryModal}
-        onSubmit={({ name }) => {
-          console.log(`create directory ${name} in`, currentDirectory);
-          setDirectoryModal(false);
-          createDirectory(name);
-        }}
+        onClose={() => setDirectoryModal(false)}
+        formRegister={register}
+        onSubmit={handleSubmit(
+          ({ directoryName }) => {
+            console.log(`create directory ${directoryName} in`, currentDirectory);
+            setDirectoryModal(false);
+            resetField('directoryName');
+            createDirectory(directoryName);
+          }
+        )}
       />
 
       <ReserveSpaceWidget
         open={reserveSpaceModal}
-        onSubmit={({ address, space }) => {
-          setReserveSpaceModal(false);
-          return address && space && fm?.fs.reserveSpace(fm.address, address, Number(space));
-        }}
+        onClose={() => setReserveSpaceModal(false)}
+        formRegister={register}
+        onSubmit={handleSubmit(
+          ({ address, space }) => {
+            setReserveSpaceModal(false);
+            resetField('reserveSpaceAddress');
+            resetField('reserveSpaceAmount');
+            return address && space && fm?.fs.reserveSpace(fm.address, address, Number(space));
+          }
+        )}
+      />
+
+      <GrantorWidget
+        open={grantRoleModal}
+        onClose={() => setGrantRoleModal(false)}
+        formRegister={register}
       />
     </div >
   )

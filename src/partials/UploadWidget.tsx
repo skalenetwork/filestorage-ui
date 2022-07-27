@@ -4,14 +4,11 @@ import { Button, Input, Modal } from '@/components/common';
 import UploadIcon from '@heroicons/react/outline/UploadIcon';
 
 import { useFieldArray } from 'react-hook-form';
+import { ModalWidgetProps, FormProps } from 'partials';
+import { WidgetMode } from 'fortmatic/dist/cjs/src/core/sdk';
+import WidgetModal from '@/components/WidgetModal';
 
-type Props = {
-  open: boolean,
-  formControl: any,
-  formRegister: any,
-  onClose: () => void,
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void
-}
+type Props = ModalWidgetProps & FormProps;
 
 const UploadWidget = (
   { open, formControl, formRegister, onClose, onSubmit }: Props
@@ -28,10 +25,9 @@ const UploadWidget = (
   }
 
   return (
-    <Modal
-      className="gap-4 flex flex-col justify-center items-center"
+    <WidgetModal
       open={open}
-      onClickBackdrop={onClose}
+      onClose={onClose}
     >
       <form onSubmit={onSubmit}>
         <Modal.Header className="text-center font-bold">
@@ -107,7 +103,7 @@ const UploadWidget = (
           }
         </Modal.Actions>
       </form>
-    </Modal>
+    </WidgetModal>
   )
 }
 
