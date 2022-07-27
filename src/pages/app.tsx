@@ -39,9 +39,6 @@ const App = () => {
 
   // field refs
   const searchField = useRef<HTMLInputElement>();
-  const reserveAddrField = useRef<HTMLInputElement>();
-  const reserveSpaceField = useRef<HTMLInputElement>();
-  const newDirectoryField = useRef<HTMLInputElement>();
 
   const {
     fm, directory: currentDirectory, reservedSpace, occupiedSpace, searchListing,
@@ -68,16 +65,6 @@ const App = () => {
     setFailedFiles(Array.from(failedUploads.values()).flat());
   }, [failedUploads]);
 
-  const handleCreateDirectory = async (event: SyntheticEvent) => {
-    event.preventDefault();
-    const name = newDirectoryField.current?.value;
-    console.log("handleCreateDirectory", currentDirectory, name);
-    if (!(currentDirectory && name)) return;
-    setDirectoryModal(false);
-    newDirectoryField.current.value = "";
-    await createDirectory(name);
-  }
-
   const handleConfirmUpload = async (data: { uploads: Array<{ name: string, file: File }> }) => {
     console.log("file to upload", data.uploads);
     if (!(currentDirectory && data.uploads && data.uploads.length)) return;
@@ -87,18 +74,6 @@ const App = () => {
     setUploadModal(false);
     setActiveUploadsModal(true);
     return await uploadFiles(filesToUpload);
-  }
-
-  const handleReserveSpace = async (event: SyntheticEvent) => {
-    const address = reserveAddrField.current?.value;
-    const space = reserveSpaceField.current?.value;
-    setReserveSpaceModal(false);
-    return address && space && fm?.fs.reserveSpace(fm.address, address, Number(space));
-  }
-
-  const cancelUpload = () => {
-    setUploadModal(false);
-    setFilesToUpload([]);
   }
 
   return (
@@ -246,75 +221,22 @@ const App = () => {
         failedUploads={failedFiles}
       />
 
-      <Modal
-        className="gap-4 flex flex-col justify-center items-center"
+      <CreateDirectoryWidget
         open={directoryModal}
-      >
-        <Modal.Header className="text-center font-bold">
-          Create new directory
-        </Modal.Header>
-        <Modal.Body className="flex flex-col gap-4 justify-center items-center">
-          <p>
-            Give your folder a name.
-          </p>
-          <div>
-            <label className="label" htmlFor="">
-              <span class="label-text">Name</span>
-            </label>
-            <Input
-              type="text"
-              placeholder="New directory name"
-              required
-              ref={newDirectoryField}
-            />
-          </div>
-        </Modal.Body>
-        <Modal.Actions className="flex justify-center items-center gap-8">
-          <Button onClick={handleCreateDirectory}>Create</Button>
-          <a className="underline cursor-pointer" onClick={(e) => {
-            setDirectoryModal(false);
-            newDirectoryField.current.value = "";
-          }}>Cancel</a>
-        </Modal.Actions>
-      </Modal>
+        onSubmit={({ name }) => {
+          console.log(`create directory ${name} in`, currentDirectory);
+          setDirectoryModal(false);
+          await createDirectory(name);
+        }}
+      />
 
-      <Modal
-        className="gap-4 flex flex-col justify-center items-center"
+      <ReserveSpaceWidget
         open={reserveSpaceModal}
-        onClickBackdrop={() => setReserveSpaceModal(false)}
-      >
-        <Modal.Header className="text-center font-bold flex flex-col items-center justify-center">
-          <ArchiveIcon className="h-24 w-24" />
-          <p>Reserve Space</p>
-        </Modal.Header>
-        <Modal.Body className="flex flex-col gap-4 justify-center items-center">
-          <p>
-            Enter the address to which the space will be allocated.
-          </p>
-          <div>
-            <label className="label" htmlFor="">
-              <span class="label-text">Address</span>
-            </label>
-            <Input
-              type="text"
-              placeholder="0x..."
-            />
-          </div>
-          <div>
-            <label className="label" htmlFor="">
-              <span class="label-text">Space to reserve</span>
-            </label>
-            <Input
-              type="number"
-              placeholder="Space to reserve"
-            />
-          </div>
-        </Modal.Body>
-        <Modal.Actions className="flex justify-center items-center gap-8">
-          <Button onClick={handleReserveSpace}>Reserve</Button>
-          <a className="underline cursor-pointer" onClick={() => setReserveSpaceModal(false)}>Cancel</a>
-        </Modal.Actions>
-      </Modal>
+        onSubmit={({ address, space }) => {
+          setReserveSpaceModal(false);
+          return address && space && fm?.fs.reserveSpace(fm.address, address, Number(space));
+        }}
+      />
     </div >
   )
 }

@@ -1,7 +1,7 @@
-import { Button, Input, Modal } from '@/components/common';
-import UploadIcon from '@heroicons/react/outline/UploadIcon';
 import prettyBytes from 'pretty-bytes';
 import { FormEvent } from 'react';
+import { Button, Input, Modal } from '@/components/common';
+import UploadIcon from '@heroicons/react/outline/UploadIcon';
 
 import { useFieldArray } from 'react-hook-form';
 
