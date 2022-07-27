@@ -5,11 +5,11 @@ import { useInterval } from 'react-use';
 import { DeFileManager, DeDirectory, DeFile } from '@/services/filesystem';
 import Web3 from 'web3';
 
-type FileStatus = {
+export type FileStatus = {
   file: File;
   dePath: string;
   progress: number;
-  error?: string;
+  error?: {};
 };
 
 export type State = {

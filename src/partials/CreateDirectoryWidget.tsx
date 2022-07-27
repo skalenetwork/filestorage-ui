@@ -1,4 +1,6 @@
-type Props = {
+import { ModalWidgetProps } from "partials";
+
+type Props = ModalWidgetProps & {
   open: boolean,
 }
 

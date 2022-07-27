@@ -22,7 +22,11 @@ import FormattedAddress from '@/components/FormattedAddress';
 import FormattedSize from '@/components/FormattedSize';
 
 import UploadWidget from '../partials/UploadWidget';
+import UploadProgressWidget from '../partials/UploadProgressWidget';
 import CreateDirectoryWidget from '../partials/CreateDirectoryWidget';
+import ReserveSpaceWidget from '../partials/ReserveSpaceWidget';
+import GrantorWidget from '../partials/GrantorWidget';
+import ViewFileWidget from '../partials/ViewFileWidget';
 
 const App = () => {
 
@@ -77,7 +81,7 @@ const App = () => {
   const handleConfirmUpload = async (data: { uploads: Array<{ name: string, file: File }> }) => {
     console.log("file to upload", data.uploads);
     if (!(currentDirectory && data.uploads && data.uploads.length)) return;
-    const filesToUpload: Array<File> = uploads.map(({ name, file }) => {
+    const filesToUpload: File[] = data.uploads.map(({ name, file }) => {
       return new File([file], name);
     });
     setUploadModal(false);
@@ -235,46 +239,12 @@ const App = () => {
         onSubmit={handleSubmit(handleConfirmUpload)}
       />
 
-      <Modal
-        className="gap-4 flex flex-col justify-center items-center"
+      <UploadProgressWidget
         open={activeUploadsModal}
-        onClickBackdrop={() => setActiveUploadsModal(false)}
-      >
-        <Modal.Header className="text-center font-bold">
-          Uploading
-        </Modal.Header>
-        <Modal.Body className="flex flex-col gap-1.5 justify-center items-center">
-          {
-            (uploadingFiles.length) ?
-              <>
-                <p>This process may take some time.</p>
-                <UploadIcon className="h-24 w-24 my-4" />
-                {
-                  Array.from(activeUploads.values()).flat().map(upload => (upload) ? (
-                    <div key={upload.dePath} className="flex flex-row justify-between items-center gap-2">
-                      <p>{upload.file.name}</p>
-                      <p>{prettyBytes(upload.file.size)}</p>
-                    </div>
-                  ) : null)
-                }
-                <Progress className="w-72 animate-pulse" value={90} max={100} />
-              </>
-              :
-              <>
-                {
-                  failedFiles.length ?
-                    (
-                      <>
-                        Failed to upload files {failedFiles[0].err.error.message}
-                      </>
-                    )
-                    :
-                    <p>All files are uploaded.</p>
-                }
-              </>
-          }
-        </Modal.Body>
-      </Modal>
+        onClose={() => setActiveUploadsModal(false)}
+        activeUploads={uploadingFiles}
+        failedUploads={failedFiles}
+      />
 
       <Modal
         className="gap-4 flex flex-col justify-center items-center"

@@ -37,13 +37,13 @@ const OPERATON = {
  * we start without file handles
  */
 
-type FileStorageDirectory = {
+export type FileStorageDirectory = {
   name: string;
   storagePath: string;
   isFile: string;
 }
 
-type FileStorageFile = {
+export type FileStorageFile = {
   name: string;
   storagePath: string;
   isFile: string;
@@ -52,16 +52,16 @@ type FileStorageFile = {
   uploadingProgress: number;
 }
 
-type PrivateKey = string;
-type Address = string;
-type FilePath = string;
+export type PrivateKey = string;
+export type Address = string;
+export type FilePath = string;
 
 type FileStorageContract = {
   contract: Object
 }
 
 // @todo confirm and set return type where void
-type FileStorageClient = {
+export type FileStorageClient = {
   contract: FileStorageContract;
   // core-actions
   uploadFile(address: Address, filePath: FilePath, fileBuffer: Buffer, privateKey?: PrivateKey): Promise<string>;
