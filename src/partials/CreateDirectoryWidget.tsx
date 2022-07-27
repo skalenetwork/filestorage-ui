@@ -1,7 +1,6 @@
 import WidgetModal from "@/components/WidgetModal";
 import XIcon from "@heroicons/react/outline/XIcon";
 import type { FormProps, ModalWidgetProps } from "partials";
-import { SyntheticEvent, useRef } from "react";
 import { Button, Input, Modal } from "react-daisyui";
 
 type Props = ModalWidgetProps & FormProps;

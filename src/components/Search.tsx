@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { DeDirectory, DeFile } from "@/services/filesystem";
 import XIcon from "@heroicons/react/outline/XIcon";
 import SearchIcon from "@heroicons/react/solid/SearchIcon";

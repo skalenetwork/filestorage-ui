@@ -8,6 +8,7 @@ import { DeFile, DeDirectory } from '@/services/filesystem';
 import { downloadUrl } from '../utils';
 
 import orderBy from 'lodash/orderBy';
+import sortBy from 'lodash/sortBy';
 
 import DocumentRemoveIcon from '@heroicons/react/solid/DocumentRemoveIcon';
 import DocumentDownloadIcon from '@heroicons/react/solid/DocumentDownloadIcon';
@@ -68,7 +69,6 @@ const FileManagerView = (props: any) => {
     changeDirectory(directory);
   }
 
-
   // table
   const [trail, setTrail] = useState<any[]>([]);
   const [sortByKey, setSortByKey] = useState<string>("");
@@ -108,7 +108,11 @@ const FileManagerView = (props: any) => {
 
   useEffect(() => {
     if (!(listing && sortByKey && sortByOrder)) return;
-    const newListing = orderBy(listing, [(o => o.isFile === true), sortByKey], ['asc', sortByOrder]);
+    let newListing = orderBy(
+      listing,
+      [(o => o.kind === "file"), sortByKey],
+      ['asc', sortByOrder]
+    );
     setSortedListing(newListing);
   }, [listing, sortByKey, sortByOrder]);
 

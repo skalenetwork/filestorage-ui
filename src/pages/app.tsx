@@ -45,7 +45,7 @@ const App = () => {
   const [failedFiles, setFailedFiles] = useState<any[]>([]);
 
   type ActionsFormData = {
-    uploads: [],
+    uploads: { name: string, file: File }[],
     directoryName: string,
     reserveSpaceAddress: string,
     reserveSpaceAmount: number,

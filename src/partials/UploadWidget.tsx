@@ -42,7 +42,7 @@ const UploadWidget = (
                     <div key={field.id} className="flex flex-row justify-between w-72">
                       <div>
                         <input
-                          {...formRegister(`uploads.${index}.name`)}
+                          {...formRegister(`uploads.${index}.name` as any)}
                         />
                       </div>
                       <p>{prettyBytes(0)}</p>
