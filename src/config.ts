@@ -1,4 +1,5 @@
 export type ConfigType = {
+  logoUrl: "/logo.png",
   chains: {
     protocol: string;
     nodeDomain: string;

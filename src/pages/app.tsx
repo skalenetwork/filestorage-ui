@@ -21,12 +21,17 @@ import FormattedName from '@/components/FormattedName';
 import FormattedAddress from '@/components/FormattedAddress';
 import FormattedSize from '@/components/FormattedSize';
 
+import Branding from '@/components/Branding';
+import Connect from '@/components/Connect';
+
 import UploadWidget from '../partials/UploadWidget';
 import UploadProgressWidget from '../partials/UploadProgressWidget';
 import CreateDirectoryWidget from '../partials/CreateDirectoryWidget';
 import ReserveSpaceWidget from '../partials/ReserveSpaceWidget';
 import GrantorWidget from '../partials/GrantorWidget';
 import ViewFileWidget from '../partials/ViewFileWidget';
+import StorageStatus from '@/components/StorageStatus';
+import Search from '@/components/Search';
 
 const App = () => {
 
@@ -37,9 +42,6 @@ const App = () => {
   const [uploadModal, setUploadModal] = useState(false);
   const [directoryModal, setDirectoryModal] = useState(false);
 
-  // field refs
-  const searchField = useRef<HTMLInputElement>();
-
   const {
     fm, directory: currentDirectory, reservedSpace, occupiedSpace, searchListing,
     isAuthorized, connectWallet, activeUploads, failedUploads,
@@ -48,14 +50,8 @@ const App = () => {
 
   const [uploadingFiles, setUploadingFiles] = useState<any[]>([]);
   const [failedFiles, setFailedFiles] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState<string>("");
 
   const { register, control, handleSubmit, watch, formState: { errors } } = useForm();
-
-  useDebounce(() => {
-    console.log("debounce:search", searchTerm);
-    search(searchTerm);
-  }, 500, [searchTerm]);
 
   useEffect(() => {
     setUploadingFiles(Array.from(activeUploads.values()).flat());
@@ -81,10 +77,9 @@ const App = () => {
       <main>
         <section className="px-36" style={{ gridArea: 'frame' }}>
           <header className="header py-2 flex justify-between items-center">
-            <p className="flex flex-row items-center gap-2">
-              <img src="/logo.png" className="h-10 rounded-[14px]" style={{ filter: "revert" }} alt="" />
+            <Branding>
               <span className="text-xl font-bold">SKALE<sup className="font-medium">fs</sup></span>
-            </p>
+            </Branding>
             <div className="flex flex-row gap-4">
               {
                 (uploadingFiles.length) ?
@@ -95,30 +90,19 @@ const App = () => {
                   </p>
                   : <></>
               }
-              {
-                (fm?.account) ?
-                  <p className="w-80 flex items-center justify-between px-4 py-2 rounded bg-gray-100 overflow-hidden">
-                    <span>Account</span><FormattedAddress address={fm.account} pre={5} post={10} />
-                  </p>
-                  :
-                  <button className="btn rounded-full" onClick={(e) => connectWallet()}>Connect</button>
-              }
+              <Connect
+                account={fm?.account}
+                onConnectClick={connectWallet}
+              />
             </div>
           </header>
           <div className="status-bar flex flex-row justify-between items-center">
             <h1 className="text-3xl font-semibold">Filestorage</h1>
             <div className="w-80">
-              <p>
-                <span className="font-semibold">
-                  <FormattedSize
-                    value={occupiedSpace} />
-                </span> used
-                </p>
-              <p className="text-xs font-medium">
-                {((occupiedSpace / reservedSpace) || 0).toFixed(6)}% used - {prettyBytes((reservedSpace - occupiedSpace) || 0)} free
-              </p>
-              <Progress className="w-full" value={occupiedSpace / reservedSpace} max={100} />
-              <br />
+              <StorageStatus
+                occupiedSpace={occupiedSpace}
+                reservedSpace={reservedSpace}
+              />
               {
                 (isAuthorized) ?
                   <Button
@@ -131,49 +115,11 @@ const App = () => {
             </div>
           </div>
           <div className="action-bar my-4 gap-4 flex flex-row justify-between items-center">
-            <div className="grow relative">
-              <div className="mr-4 pointer-events-none absolute top-1/2 transform -translate-y-1/2 left-4">
-                {
-                  isSearching
-                    ? <SpinnerIcon className="h-6 w-6" />
-                    : <SearchIcon className="h-6 w-6" />
-                }
-              </div>
-              <Input
-                ref={searchField}
-                onChange={(e) => setSearchTerm(searchField.current.value)}
-                onBlur={e => { setSearchTerm(""); searchField.current.value = ""; }}
-                className="w-full border border-gray-500 font-medium"
-                style={{ paddingLeft: "3.5rem" }}
-                type="text"
-                placeholder="Search files..."
-              />
-              <div className="pointer-events-none absolute top-1/2 transform -translate-y-1/2 right-4">
-                {
-                  isSearching
-                    ? <XIcon className="h-6 w-6" />
-                    : <></>
-                }
-              </div>
-              {
-                (searchListing && searchListing.length) ?
-                  <div className="absolute top-[100%] bg-slate-100 rounded mt-2 py-2 z-[1001] w-full">
-                    <ul>
-                      {
-                        searchListing.map((item) => (
-                          <li
-                            className="px-4 py-2 mx-2 rounded cursor-default hover:bg-white"
-                            onClick={(e) => (item.kind === "directory") ? changeDirectory(item) : fm?.downloadFile(item)}
-                          >
-                            <FormattedName item={item} />
-                          </li>
-                        ))
-                      }
-                    </ul>
-                  </div>
-                  : <></>
-              }
-            </div>
+            <Search
+              className="grow relative"
+              isSearching={isSearching}
+              onInput={search}
+            />
             {
               (isAuthorized) ?
                 <div className="flex-none flex flex-row gap-4">
@@ -226,7 +172,7 @@ const App = () => {
         onSubmit={({ name }) => {
           console.log(`create directory ${name} in`, currentDirectory);
           setDirectoryModal(false);
-          await createDirectory(name);
+          createDirectory(name);
         }}
       />
 
