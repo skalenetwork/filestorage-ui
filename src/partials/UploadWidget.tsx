@@ -21,17 +21,24 @@ const UploadWidget = (
     name: "uploads",
   });
 
-  const cancelUpload = () => {
-    // @todo clear fields
-    onClose();
+  const clearFields = () => {
+    fields.forEach((field, index) => {
+      remove(index);
+    });
   }
 
   return (
     <WidgetModal
       open={open}
-      onClose={onClose}
+      onClose={() => {
+        clearFields();
+        onClose();
+      }}
     >
-      <form onSubmit={onSubmit}>
+      <form onSubmit={(e) => {
+        onSubmit(e);
+        clearFields();
+      }}>
         <Modal.Header className="text-center font-bold">
           Upload file
           </Modal.Header>
@@ -84,7 +91,10 @@ const UploadWidget = (
                 <Button type="submit" className="btn-wide">Upload</Button>
                 <span
                   className="underline cursor-pointer"
-                  onClick={(e) => cancelUpload()}
+                  onClick={(e) => {
+                    clearFields();
+                    onClose();
+                  }}
                 >Cancel</span>
               </>
               :

@@ -271,7 +271,7 @@ function useDeFileManager(
   const uploadFiles = (fm && cwd && state.isAuthorized) &&
     (async (files: Array<File>, directory: DeDirectory = cwd): Array => {
 
-      // @todo set up sane actions
+      // upload transactions going serially
       for (let index = 0; index < files.length; index++) {
         let file = files[index];
         dispatch({
