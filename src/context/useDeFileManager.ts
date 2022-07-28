@@ -27,6 +27,8 @@ export type State = {
   isLoadingDirectory: boolean;
   reservedSpace: number;
   occupiedSpace: number;
+  totalUploadCount: number;
+  processedUploadCount: number;
   activeUploads: Map<DeDirectory, Array<FileStatus>>;
   failedUploads: Map<DeDirectory, Array<FileStatus>>;
 };
@@ -47,6 +49,8 @@ const initialState: State = {
   isLoadingDirectory: false,
   reservedSpace: 0,
   occupiedSpace: 0,
+  totalUploadCount: 0,
+  processedUploadCount: 0,
   activeUploads: new Map(),
   failedUploads: new Map(),
 };
@@ -60,10 +64,11 @@ const ACTION = {
   SET_SEARCH_LOADING: 'SET_SEARCH_LOADING',
   SET_DIRECTORY_OP: 'SET_DIRECTORY_OP',
   SET_LOADING_DIRECTORY: 'SET_LOADING_DIRECTORY',
-  ADD_UPLOADS: 'ADD_UPLOADS',
+  INIT_UPLOADS: 'INIT_UPLOADS',
   ADD_TO_UPLOADS: 'ADD_TO_UPLOADS',
   REMOVE_FROM_UPLOADS: 'REMOVE_FROM_UPLOADS',
   UPDATE_UPLOADS: 'UPDATE_UPLOADS',
+  RESET_UPLOADS: 'RESET_UPLOADS',
   SET_CAPACITY: 'SET_CAPACITY'
 };
 
@@ -89,15 +94,14 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
       return { ...state, isLoadingDirectory: action.payload }
     case ACTION.SET_SEARCH_LISTING:
       return { ...state, searchListing: action.payload, isSearching: false }
-    case ACTION.ADD_UPLOADS:
-      {
-        let { directory, activeFiles } = action.payload;
-        const activeUploads = new Map(state.activeUploads);
-        activeUploads.set(directory, [...activeUploads.get(directory) || [], ...activeFiles]);
-        return {
-          ...state,
-          activeUploads
-        }
+    case ACTION.INIT_UPLOADS:
+      return { ...state, totalUploadCount: state.totalUploadCount + action.payload }
+    case ACTION.RESET_UPLOADS:
+      return {
+        ...state,
+        totalUploadCount: 0,
+        processedUploadCount: 0,
+        activeUploads: initialState.activeUploads,
       }
     case ACTION.ADD_TO_UPLOADS:
       {
@@ -107,14 +111,14 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
           failedUploads.set(directory, [...failedUploads.get(directory) || [], file]);
           return {
             ...state,
-            failedUploads
+            failedUploads,
           }
         }
         const activeUploads = new Map(state.activeUploads);
         activeUploads.set(directory, [...activeUploads.get(directory) || [], file]);
         return {
           ...state,
-          activeUploads
+          activeUploads,
         }
       }
     case ACTION.REMOVE_FROM_UPLOADS:
@@ -127,7 +131,8 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
         activeUploads.set(directory, currentFiles);
         return {
           ...state,
-          activeUploads
+          activeUploads,
+          processedUploadCount: state.processedUploadCount + 1
         }
       }
     case ACTION.UPDATE_UPLOADS:
@@ -271,6 +276,15 @@ function useDeFileManager(
   const uploadFiles = (fm && cwd && state.isAuthorized) &&
     (async (files: Array<File>, directory: DeDirectory = cwd): Array => {
 
+      if (!files.length) {
+        return;
+      }
+
+      dispatch({
+        type: ACTION.INIT_UPLOADS,
+        payload: files.length
+      });
+
       // upload transactions going serially
       for (let index = 0; index < files.length; index++) {
         let file = files[index];
@@ -308,6 +322,10 @@ function useDeFileManager(
             });
           })
       };
+
+      dispatch({
+        type: ACTION.RESET_UPLOADS
+      })
     });
 
   const deleteFile = (fm && cwd && state.isAuthorized) && (async (file: DeFile, directory: DeDirectory = cwd) => {

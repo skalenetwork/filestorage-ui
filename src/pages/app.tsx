@@ -37,7 +37,7 @@ const App = () => {
   const {
     config,
     fm, directory: currentDirectory, reservedSpace, occupiedSpace, searchListing,
-    isAuthorized, connectWallet, activeUploads, failedUploads,
+    isAuthorized, connectWallet, activeUploads, failedUploads, totalUploadCount, processedUploadCount,
     changeDirectory, uploadFiles, createDirectory, search, isSearching, isCreatingDirectory
   }: ContextType = useFileManagerContext<ContextType>();
 
@@ -189,6 +189,8 @@ const App = () => {
         onClose={() => setActiveUploadsModal(false)}
         activeUploads={uploadingFiles}
         failedUploads={failedFiles}
+        total={totalUploadCount}
+        processed={processedUploadCount}
       />
 
       <CreateDirectoryWidget

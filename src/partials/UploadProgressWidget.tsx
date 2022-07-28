@@ -3,18 +3,24 @@ import { FileStatus } from '@/context/useDeFileManager';
 import UploadIcon from '@heroicons/react/outline/UploadIcon';
 import type { ModalWidgetProps } from 'partials';
 import prettyBytes from 'pretty-bytes';
+import { useFileManagerContext, ContextType } from '../context';
 
 type Props = ModalWidgetProps & {
   activeUploads: FileStatus[],
-  failedUploads: FileStatus[]
+  failedUploads: FileStatus[],
+  total: number,
+  processed: number
 }
 
 const UploadProgressWidget = ({
   open,
   onClose,
+  total,
+  processed,
   activeUploads,
   failedUploads
 }: Props) => {
+
   return (
     <Modal
       className="gap-4 flex flex-col justify-center items-center"
@@ -38,7 +44,10 @@ const UploadProgressWidget = ({
                   </div>
                 ) : null)
               }
-              <Progress className="w-72 animate-pulse" value={90} max={100} />
+              <Progress
+                className="w-72 animate-pulse"
+                value={total === 1 ? undefined : processed} max={total === 1 ? undefined : total}
+              />
             </>
             :
             <>

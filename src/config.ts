@@ -1,4 +1,8 @@
 export type ConfigType = {
+  optimize: {
+    prefetchEvent: string;
+    prefetchDepth: number;
+  };
   branding: {
     logoUrl: string;
   };
@@ -18,6 +22,10 @@ export type ConfigType = {
 }
 
 export default <ConfigType>{
+  optimize: {
+    prefetchEvent: 'dirLoad',
+    prefetchDepth: Infinity
+  },
   branding: {
     logoUrl: "/logo.png"
   },
