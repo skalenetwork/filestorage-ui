@@ -133,6 +133,15 @@ function pathToRelative(storagePath: DePath) {
   return relative;
 }
 
+// @todo implement
+function memoize(fn) {
+  const cache = new Map();
+  return (...args) => {
+    const strArgs = JSON.stringify(args);
+    const result = cache.get(strArgs);
+  }
+}
+
 
 class DeDirectory implements IDeDirectory {
   kind: string;
@@ -269,7 +278,7 @@ class DeFileManager implements IDeFileManager {
 
   async createDirectory(destDirectory: DeDirectory, name: string) {
     const path = (destDirectory.path === this.rootDir.path) ? name : `${destDirectory.path}/${name}`;
-    console.log("path", path)
+    console.log("path", path);
     const returnPath = await this.fs.createDirectory(this.account, path, this.accountPrivateKey);
     console.log("fm::createDirectory", returnPath);
     this.dirLastAction = `${OPERATON.CREATE_DIRECTORY}:${returnPath}`;

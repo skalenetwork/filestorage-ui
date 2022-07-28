@@ -1,4 +1,5 @@
 import WidgetModal from "@/components/WidgetModal";
+import ArchiveIcon from "@heroicons/react/outline/ArchiveIcon";
 import XIcon from "@heroicons/react/outline/XIcon";
 import type { FormProps, ModalWidgetProps } from "partials";
 import { Button, Input, Modal } from "react-daisyui";
@@ -17,15 +18,13 @@ const CreateDirectoryWidget = ({
     <WidgetModal
       open={open}
       onClose={onClose}
+      heading="Create new directory"
     >
       <XIcon
         className="w-5 h-5 absolute right-4 top-4 cursor-pointer"
         onClick={onClose}
       />
       <form onSubmit={onSubmit}>
-        <Modal.Header className="text-center font-bold">
-          Create new directory
-        </Modal.Header>
         <Modal.Body className="flex flex-col gap-4 justify-center items-center">
           <p>
             Give your folder a name.

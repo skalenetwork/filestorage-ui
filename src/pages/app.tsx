@@ -19,6 +19,7 @@ import FileNavigator from '@/components/FileNavigator';
 
 import UploadWidget from '../partials/UploadWidget';
 import UploadProgressWidget from '../partials/UploadProgressWidget';
+import UploadFailedWidget from '../partials/UploadFailedWidget';
 import CreateDirectoryWidget from '../partials/CreateDirectoryWidget';
 import ReserveSpaceWidget from '../partials/ReserveSpaceWidget';
 import GrantorWidget from '../partials/GrantorWidget';
@@ -30,6 +31,7 @@ const App = () => {
 
   const [reserveSpaceModal, setReserveSpaceModal] = useState(false);
   const [activeUploadsModal, setActiveUploadsModal] = useState(false);
+  const [failedUploadsModal, setFailedUploadsModal] = useState(false);
   const [uploadModal, setUploadModal] = useState(false);
   const [directoryModal, setDirectoryModal] = useState(false);
   const [grantRoleModal, setGrantRoleModal] = useState(false);
@@ -98,17 +100,21 @@ const App = () => {
             <div className="flex flex-row gap-4">
               {
                 (uploadingFiles.length) ?
-                  <p className="px-4 py-2 cursor-pointer rounded bg-yellow-50 border border-yellow-500"
+                  <p className="px-4 py-2 relative cursor-pointer rounded bg-yellow-50 border border-yellow-500"
                     onClick={(e) => setActiveUploadsModal(true)}
                   >
-                    Uploading {uploadingFiles.length} files..
+                    <span class="flex h-3 w-3 absolute -right-1 -top-1">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
+                    </span>
+                    Uploading files..
                   </p>
                   : <></>
               }
               {
                 (failedFiles.length) ?
                   <p className="px-4 py-2 cursor-pointer rounded bg-red-50 border border-red-500"
-                    onClick={(e) => setActiveUploadsModal(true)}
+                    onClick={(e) => setFailedUploadsModal(true)}
                   >
                     {failedFiles.length} uploads failed..
                   </p>
@@ -200,6 +206,12 @@ const App = () => {
         failedUploads={failedFiles}
         total={totalUploadCount}
         processed={processedUploadCount}
+      />
+
+      <UploadFailedWidget
+        open={failedUploadsModal}
+        onClose={() => setFailedUploadsModal(false)}
+        failedUploads={failedFiles}
       />
 
       <CreateDirectoryWidget

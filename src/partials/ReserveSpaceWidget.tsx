@@ -13,12 +13,10 @@ const ReserveSpaceWidget = ({
     <WidgetModal
       open={open}
       onClose={onClose}
+      heading="Reserve space"
     >
+      <ArchiveIcon className="h-24 w-24" />
       <form onSubmit={onSubmit}>
-        <Modal.Header className="text-center font-bold flex flex-col items-center justify-center">
-          <ArchiveIcon className="h-24 w-24" />
-          <p>Reserve Space</p>
-        </Modal.Header>
         <Modal.Body className="flex flex-col gap-4 justify-center items-center">
           <p>
             Enter the address to which the space will be allocated.

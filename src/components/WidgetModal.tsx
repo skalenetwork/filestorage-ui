@@ -3,8 +3,8 @@ import { Modal } from '@/components/common';
 import XIcon from '@heroicons/react/outline/XIcon';
 
 const WidgetModal = (
-  { children, open, onClose }:
-    { children: ReactNode, open: boolean, onClose: () => void }
+  { children, open, onClose, heading }:
+    { children: ReactNode, open: boolean, onClose: () => void, heading?: string }
 ) => {
   return (
     <Modal
@@ -16,7 +16,13 @@ const WidgetModal = (
         className="w-5 h-5 absolute right-4 top-4 cursor-pointer"
         onClick={onClose}
       />
-
+      {
+        (heading) ?
+          <Modal.Header className="text-center font-medium py-4">
+            {heading}
+          </Modal.Header>
+          : <></>
+      }
       {children}
     </Modal>
   );
