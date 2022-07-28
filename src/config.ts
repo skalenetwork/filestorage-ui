@@ -1,5 +1,13 @@
 export type ConfigType = {
-  logoUrl: "/logo.png",
+  branding: {
+    logoUrl: string;
+  };
+  navigator: {
+    pageLimit: number;
+  };
+  uploader: {
+    batchThreshold: number;
+  };
   chains: {
     protocol: string;
     nodeDomain: string;
@@ -10,6 +18,15 @@ export type ConfigType = {
 }
 
 export default <ConfigType>{
+  branding: {
+    logoUrl: "/logo.png"
+  },
+  navigator: {
+    pageLimit: 10
+  },
+  uploader: {
+    batchThreshold: 5
+  },
   chains: [
     {
       protocol: "https",

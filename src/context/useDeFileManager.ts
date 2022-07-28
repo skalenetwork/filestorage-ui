@@ -9,7 +9,11 @@ export type FileStatus = {
   file: File;
   dePath: string;
   progress: number;
-  error?: {};
+  error?: {
+    name: string;
+    message: string;
+    stack: string;
+  };
 };
 
 export type State = {
@@ -146,7 +150,9 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
   }
 }
 
-function useDeFileManager(w3Provider: Object, address: string, privateKey?: string) {
+function useDeFileManager(
+  w3Provider: Object, address: string, privateKey?: string
+): [DeFileManager, State, Action] {
   const [state, dispatch]: [State, Function] = useReducer(reducer, initialState);
 
   const { fm, directory: cwd } = state;
@@ -201,7 +207,7 @@ function useDeFileManager(w3Provider: Object, address: string, privateKey?: stri
     });
     dispatch({
       type: ACTION.SET_AUTHORITY,
-      payload: (account.toLowerCase() === address.toLowerCase())
+      payload: ((account || "").toLowerCase() === address.toLowerCase())
     });
 
   }, [w3Provider, address, privateKey]);
@@ -264,11 +270,10 @@ function useDeFileManager(w3Provider: Object, address: string, privateKey?: stri
 
   const uploadFiles = (fm && cwd && state.isAuthorized) &&
     (async (files: Array<File>, directory: DeDirectory = cwd): Array => {
-      let activeFiles: FileStatus[] = [];
-      let failedFiles: File[] = [];
 
       // @todo set up sane actions
-      files.forEach(file => {
+      for (let index = 0; index < files.length; index++) {
+        let file = files[index];
         dispatch({
           type: ACTION.ADD_TO_UPLOADS,
           payload: {
@@ -285,7 +290,7 @@ function useDeFileManager(w3Provider: Object, address: string, privateKey?: stri
             }
           });
         }
-        fm.uploadFile(directory, file)
+        await fm.uploadFile(directory, file)
           .then(path => {
             remove();
             loadCurrentDirectory();
@@ -297,12 +302,12 @@ function useDeFileManager(w3Provider: Object, address: string, privateKey?: stri
               type: ACTION.ADD_TO_UPLOADS,
               payload: {
                 directory: directory.path,
-                file: { file, dePath: directory.path + file.name, progress: 0, error: err },
+                file: { file: err.file, dePath: directory.path + file.name, progress: 0, error: err.error },
                 isFailed: true
               }
             });
           })
-      });
+      };
     });
 
   const deleteFile = (fm && cwd && state.isAuthorized) && (async (file: DeFile, directory: DeDirectory = cwd) => {

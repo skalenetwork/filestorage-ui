@@ -8,10 +8,12 @@ import { ModalWidgetProps, FormProps } from 'partials';
 import { WidgetMode } from 'fortmatic/dist/cjs/src/core/sdk';
 import WidgetModal from '@/components/WidgetModal';
 
-type Props = ModalWidgetProps & FormProps;
+type Props = ModalWidgetProps & FormProps & {
+  batchThreshold: number
+};
 
 const UploadWidget = (
-  { open, formControl, formRegister, onClose, onSubmit }: Props
+  { open, formControl, formRegister, batchThreshold, onClose, onSubmit }: Props
 ) => {
 
   const { fields, append, prepend, remove, swap, move, insert } = useFieldArray({
@@ -33,47 +35,53 @@ const UploadWidget = (
         <Modal.Header className="text-center font-bold">
           Upload file
           </Modal.Header>
-        <Modal.Body className="flex flex-col gap-1.5 justify-center items-center">
+        <Modal.Body className="flex flex-col gap-1.5 justify-center items-center min-w-72">
           {
-            (fields.length > 1) ?
+            (fields.length > batchThreshold) ?
               (
-                fields
-                  .map((field, index) => (
-                    <div key={field.id} className="flex flex-row justify-between w-72">
-                      <div>
+                <div>
+                  <p>You're batch uploading {fields.length} files.</p>
+                  <p>Batch uploads may take a while, files cannot be renamed.</p>
+                </div>
+              )
+              : (fields.length > 1) ?
+
+                (
+                  fields
+                    .map((field, index) => (
+                      <div key={field.id} className="flex flex-row justify-between">
                         <input
+                          className="px-2 py-1 grow relative focus:border-gray-500 focus:outline-none"
                           {...formRegister(`uploads.${index}.name` as any)}
                         />
                       </div>
-                      <p>{prettyBytes(0)}</p>
+                    ))
+                )
+                : (fields.length === 1) ?
+                  (<>
+                    <div>
+                      <label htmlFor="" className="label">
+                        <span className="label-text">Name</span>
+                      </label>
+                      <Input
+                        type="text"
+                        {...formRegister(`uploads.0.name`)}
+                        required
+                      />
                     </div>
-                  ))
-              )
-              : (fields.length === 1) ?
-                (<>
-                  <div>
-                    <label htmlFor="" className="label">
-                      <span className="label-text">Name</span>
-                    </label>
-                    <Input
-                      type="text"
-                      {...formRegister(`uploads.0.name`)}
-                      required
-                    />
-                  </div>
-                </>)
-                :
-                (<>
-                  <p>Select files to upload.</p>
-                  <UploadIcon className="h-24 w-24 my-4" />
-                </>)
+                  </>)
+                  :
+                  (<>
+                    <p>Select files to upload.</p>
+                    <UploadIcon className="h-24 w-24 my-4" />
+                  </>)
           }
         </Modal.Body>
         <Modal.Actions className="flex justify-center items-center gap-8">
           {
             fields.length ?
               <>
-                <Button type="submit">Upload</Button>
+                <Button type="submit" className="btn-wide">Upload</Button>
                 <span
                   className="underline cursor-pointer"
                   onClick={(e) => cancelUpload()}
@@ -81,9 +89,9 @@ const UploadWidget = (
               </>
               :
               <>
-                <label className="btn" htmlFor="file-upload">
+                <label className="btn btn-wide" htmlFor="file-upload">
                   Select files
-                  </label>
+                </label>
                 <input
                   type="file"
                   id="file-upload"

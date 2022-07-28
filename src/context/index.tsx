@@ -1,11 +1,11 @@
-//@ts-nocheck
 
-import config, { ConfigType } from '../config';
+import config from '../config';
+import type { ConfigType } from '../config';
 
 import Web3 from 'web3';
 import Web3Modal from 'web3modal';
 
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import { useMount, useKey, useLocalStorage } from 'react-use';
 
 import { DeFileManager, DeDirectory, DeFile } from '@/services/filesystem';
@@ -21,9 +21,10 @@ export type ContextType = State & Action & {
   connectWallet: Function;
   updateAddress: Function;
   getFileLink: Function;
+  config: ConfigType;
 };
 
-const FileManagerContext = createContext<ContextType>(undefined);
+const FileManagerContext = createContext<ContextType | undefined>(undefined);
 
 const getRpcEndpoint = (data: ConfigType['chains'][0]) => {
   return `${data.protocol}://${data.nodeDomain}/${data.version}/${data.sChainName}`
@@ -34,14 +35,14 @@ const getFsEndpoint = (data: ConfigType['chains'][0], address: string = "", path
   if (root.slice(0, 2) === "0x") {
     root = root.slice(2);
   }
-  return `${data.protocol}://${data.nodeDomain}/fs/${data.sChainName}${(root) ? "/" + root : ""}${(path) ? "/" + path : ""}`
+  return `${data.protocol}://${data.nodeDomain}/fs/${data.sChainName}${(root) ? "/" + root : ""}${(path) ? "/" + path : ""}`;
 }
 
 const RPC_ENDPOINT = getRpcEndpoint(config.chains[0]);
 const CHAIN_ID = config.chains[0].chainId;
 const TEST_ADDRESS = '0x5A4AB05FBB140eb6A51e7D13a528A6Aa35a5ef4A';
 
-const addNetwork = (web3, chain: ConfigType['chains'][0]) => {
+const addNetwork = (web3: any, chain: ConfigType['chains'][0]) => {
   return web3.currentProvider.request({
     method: "wallet_addEthereumChain",
     params: [
@@ -74,30 +75,34 @@ const providerOptions = {
   }
 }
 
-export function ContextWrapper({ children }) {
+const appConfig = config;
+
+export function ContextWrapper({ children }: { children: ReactNode }) {
+
+  const [config, setConfig] = useState<ConfigType>();
 
   const [demoMode, setDemoMode] = useState<boolean>(false);
   const [w3Modal, setW3Modal] = useState<Web3Modal | undefined>();
 
-  const [w3Provider, setW3Provider] = useState<{ request: Function } | undefined>();
+  const [w3Provider, setW3Provider] = useState<any>();
   const [address, setAddress] = useState<string>("");
   const [inputAddress, setInputAddress] = useState<string>("");
 
   const updateAddress = (address: string) => {
     address = (address.slice(0, 2) === "0x") ? address : "0x" + address;
     if (!Web3.utils.isAddress(address)) {
-      throw Error("Address is invalid", address);
+      throw Error(`Address is invalid ${address}`);
     }
     setAddress(address);
   }
 
   const connectWallet = async () => {
     try {
-      const web3Provider = await w3Modal.connect();
+      const web3Provider = await w3Modal?.connect();
       const web3 = new Web3(web3Provider);
       setW3Provider(web3Provider);
       updateAddress(web3Provider.selectedAddress);
-      await addNetwork(web3, config.chains[0]);
+      await addNetwork(web3, (config as ConfigType).chains[0]);
       console.log('web3Provider', web3Provider, 'web3Instance', web3);
     }
 
@@ -110,10 +115,15 @@ export function ContextWrapper({ children }) {
   }
 
   const getFileLink = (file: DeFile) => {
-    let link = getFsEndpoint(config.chains[0], address, file.path);
+    let link = getFsEndpoint((config as ConfigType).chains[0], address, file.path);
     console.log(file, link);
     return link;
   }
+
+  useMount(() => {
+    console.log(appConfig);
+    setConfig(appConfig);
+  });
 
   // por demo
   useEffect(() => {
@@ -140,7 +150,7 @@ export function ContextWrapper({ children }) {
   /// DEV ZONE START ///
 
   // shadowy key management.. DTTAH
-  const [pk, setPk] = useLocalStorage("SKL_pvtKey", undefined);
+  const [pk, setPk] = useLocalStorage<string>("SKL_pvtKey", undefined);
   useKey((e) => (e.ctrlKey && e.key === '.'), () => {
     let k = window.prompt("🙈");
     k && setPk(k);
@@ -156,13 +166,14 @@ export function ContextWrapper({ children }) {
   const [fm, fmState, fmAction]:
     [DeFileManager, State, any] = useDeFileManager(w3Provider, address, pk);
 
-  return (fm && fmState && fmState.fm && fmState.directory) ? (
+  return (fm && fmState && fmState.fm && fmState.directory && config) ? (
     <FileManagerContext.Provider value={{
       fm, ...fmState, ...fmAction,
       demoMode,
       connectWallet,
       updateAddress,
-      getFileLink
+      getFileLink,
+      config
     }}>
       { children}
     </FileManagerContext.Provider>

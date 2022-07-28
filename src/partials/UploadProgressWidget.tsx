@@ -26,7 +26,7 @@ const UploadProgressWidget = ({
         </Modal.Header>
       <Modal.Body className="flex flex-col gap-1.5 justify-center items-center">
         {
-          (activeUploads.length) ?
+          (activeUploads.length > 0) ?
             <>
               <p>This process may take some time.</p>
               <UploadIcon className="h-24 w-24 my-4" />
@@ -43,12 +43,17 @@ const UploadProgressWidget = ({
             :
             <>
               {
-                failedUploads.length ?
-                  (
-                    <>
-                      Failed to upload files {failedUploads[0].error}
-                    </>
-                  )
+                failedUploads && failedUploads.length > 0 ?
+                  <p>
+                    <span className="py-2">
+                      Failed to upload {failedUploads.length} files.
+                    </span>
+                    {
+                      (failedUploads.map(upload => (
+                        <p>{upload.file.name}: {upload.error?.message}</p>
+                      )))
+                    }
+                  </p>
                   :
                   <p>All files are uploaded.</p>
               }

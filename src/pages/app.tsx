@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useLayoutEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useFileManagerContext } from '@/context/index';
+import { useFileManagerContext, ContextType } from '@/context/index';
+import type { FileStatus } from '@/context/useDeFileManager';
 
 import { Button } from '@/components/common';
 
@@ -34,13 +35,14 @@ const App = () => {
   const [grantRoleModal, setGrantRoleModal] = useState(false);
 
   const {
+    config,
     fm, directory: currentDirectory, reservedSpace, occupiedSpace, searchListing,
     isAuthorized, connectWallet, activeUploads, failedUploads,
     changeDirectory, uploadFiles, createDirectory, search, isSearching, isCreatingDirectory
-  } = useFileManagerContext();
+  }: ContextType = useFileManagerContext<ContextType>();
 
-  const [uploadingFiles, setUploadingFiles] = useState<any[]>([]);
-  const [failedFiles, setFailedFiles] = useState<any[]>([]);
+  const [uploadingFiles, setUploadingFiles] = useState<FileStatus[]>([]);
+  const [failedFiles, setFailedFiles] = useState<FileStatus[]>([]);
   const [selectedFile, setSelectedFile] = useState<DeFile>(undefined);
 
   type ActionsFormData = {
@@ -90,7 +92,7 @@ const App = () => {
       <main>
         <section className="px-36" style={{ gridArea: 'frame' }}>
           <header className="header py-2 flex justify-between items-center">
-            <Branding>
+            <Branding logoUrl={config.branding.logoUrl}>
               <span className="text-xl font-bold">SKALE<sup className="font-medium">fs</sup></span>
             </Branding>
             <div className="flex flex-row gap-4">
@@ -172,9 +174,13 @@ const App = () => {
 
       <UploadWidget
         open={uploadModal}
-        onClose={() => setUploadModal(false)}
+        onClose={() => {
+          setUploadModal(false);
+          resetField('uploads');
+        }}
         formControl={control}
         formRegister={register}
+        batchThreshold={config.uploader.batchThreshold}
         onSubmit={handleSubmit(handleConfirmUpload)}
       />
 
@@ -187,7 +193,10 @@ const App = () => {
 
       <CreateDirectoryWidget
         open={directoryModal}
-        onClose={() => setDirectoryModal(false)}
+        onClose={() => {
+          resetField('directoryName');
+          setDirectoryModal(false);
+        }}
         formRegister={register}
         onSubmit={handleSubmit(
           ({ directoryName }) => {
@@ -201,7 +210,11 @@ const App = () => {
 
       <ReserveSpaceWidget
         open={reserveSpaceModal}
-        onClose={() => setReserveSpaceModal(false)}
+        onClose={() => {
+          setReserveSpaceModal(false);
+          resetField('reserveSpaceAddress');
+          resetField('reserveSpaceAmount');
+        }}
         formRegister={register}
         onSubmit={handleSubmit(
           ({ address, space }) => {
@@ -221,7 +234,9 @@ const App = () => {
 
       <ViewFileWidget
         open={!!selectedFile}
-        onClose={() => setSelectedFile(undefined)}
+        onClose={() => {
+          setSelectedFile(undefined)
+        }}
         file={selectedFile}
       />
 

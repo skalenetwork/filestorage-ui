@@ -59,9 +59,10 @@ const DirCrumb = (
 const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => void }) => {
 
   const {
+    config,
     fm, directory: currentDirectory, listing, searchListing, isLoadingDirectory,
     changeDirectory, deleteFile, deleteDirectory, updateAddress, getFileLink
-  } = useFileManagerContext<ContextType>();
+  }: ContextType = useFileManagerContext<ContextType>();
 
   const tableElement = useRef<HTMLTableElement>();
 
@@ -101,7 +102,7 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
   }, [currentDirectory?.path]);
 
   useLayoutEffect(() => {
-    const endOffset = itemOffset + 10;
+    const endOffset = itemOffset + config.navigator.pageLimit;
     setPageListing(sortedListing.slice(itemOffset, endOffset));
   }, [itemOffset, sortedListing])
 
@@ -253,10 +254,10 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
             }
             pageRangeDisplayed={4}
             renderOnZeroPageCount={null}
-            pageCount={Math.ceil(sortedListing.length / 10)}
+            pageCount={Math.ceil(sortedListing.length / config.navigator.pageLimit)}
             onPageChange={(e) => {
               setCurrentPage(e.selected);
-              const newOffset = (e.selected * 10) % sortedListing.length;
+              const newOffset = (e.selected * config.navigator.pageLimit) % sortedListing.length;
               setItemOffset(newOffset);
             }}
           />
