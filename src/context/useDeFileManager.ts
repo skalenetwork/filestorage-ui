@@ -69,6 +69,7 @@ const ACTION = {
   REMOVE_FROM_UPLOADS: 'REMOVE_FROM_UPLOADS',
   UPDATE_UPLOADS: 'UPDATE_UPLOADS',
   RESET_UPLOADS: 'RESET_UPLOADS',
+  RESET_FAILED_UPLOADS: 'RESET_FAILED_UPLOADS',
   SET_CAPACITY: 'SET_CAPACITY'
 };
 
@@ -101,7 +102,12 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
         ...state,
         totalUploadCount: 0,
         processedUploadCount: 0,
-        activeUploads: initialState.activeUploads,
+        activeUploads: initialState.activeUploads
+      }
+    case ACTION.RESET_FAILED_UPLOADS:
+      return {
+        ...state,
+        failedUploads: initialState.failedUploads
       }
     case ACTION.ADD_TO_UPLOADS:
       {
@@ -281,6 +287,10 @@ function useDeFileManager(
       }
 
       dispatch({
+        type: ACTION.RESET_FAILED_UPLOADS,
+      });
+
+      dispatch({
         type: ACTION.INIT_UPLOADS,
         payload: files.length
       });
@@ -325,7 +335,7 @@ function useDeFileManager(
 
       dispatch({
         type: ACTION.RESET_UPLOADS
-      })
+      });
     });
 
   const deleteFile = (fm && cwd && state.isAuthorized) && (async (file: DeFile, directory: DeDirectory = cwd) => {

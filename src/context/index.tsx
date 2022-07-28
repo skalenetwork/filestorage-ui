@@ -166,9 +166,9 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
   const [fm, fmState, fmAction]:
     [DeFileManager, State, any] = useDeFileManager(w3Provider, address, pk);
 
-  return (fm && fmState && fmState.fm && fmState.directory && config) ? (
+  return (fm && fmState && fmState.directory && config) ? (
     <FileManagerContext.Provider value={{
-      fm, ...fmState, ...fmAction,
+      ...fmState, ...fmAction,
       demoMode,
       connectWallet,
       updateAddress,

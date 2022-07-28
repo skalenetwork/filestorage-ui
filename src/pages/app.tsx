@@ -105,6 +105,15 @@ const App = () => {
                   </p>
                   : <></>
               }
+              {
+                (failedFiles.length) ?
+                  <p className="px-4 py-2 cursor-pointer rounded bg-red-50 border border-red-500"
+                    onClick={(e) => setActiveUploadsModal(true)}
+                  >
+                    {failedFiles.length} uploads failed..
+                  </p>
+                  : <></>
+              }
               <Connect
                 account={fm?.account}
                 onConnectClick={connectWallet}
