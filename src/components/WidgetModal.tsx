@@ -8,17 +8,17 @@ const WidgetModal = (
 ) => {
   return (
     <Modal
-      className="gap-4 flex flex-col justify-center items-center"
+      className="p-16 first-letter:gap-4 flex flex-col justify-center items-center"
       open={open}
       onClickBackdrop={onClose}
     >
       <XIcon
-        className="w-5 h-5 absolute right-4 top-4 cursor-pointer"
+        className="w-4 h-4 absolute right-8 top-8 cursor-pointer"
         onClick={onClose}
       />
       {
         (heading) ?
-          <Modal.Header className="text-center font-medium py-4">
+          <Modal.Header className="mb-4 text-center text-2xl font-medium">
             {heading}
           </Modal.Header>
           : <></>

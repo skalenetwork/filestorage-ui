@@ -2,6 +2,7 @@ import { Modal, Progress } from '@/components/common';
 import WidgetModal from '@/components/WidgetModal';
 import { FileStatus } from '@/context/useDeFileManager';
 import UploadIcon from '@heroicons/react/outline/UploadIcon';
+import CheckIcon from '@heroicons/react/solid/CheckIcon';
 import type { ModalWidgetProps } from 'partials';
 import prettyBytes from 'pretty-bytes';
 import { useFileManagerContext, ContextType } from '../context';
@@ -26,13 +27,13 @@ const UploadProgressWidget = ({
     <WidgetModal
       open={open}
       onClose={onClose}
-      heading="Uploading"
+      heading={(processed === total) ? "Files have been uploaded successfully" : "Uploading"}
     >
-      <Modal.Body className="flex flex-col gap-1.5 justify-center items-center">
+      <Modal.Body className="w-full flex flex-col gap-1.5 justify-center items-center">
         {
           (processed < total) ?
             <>
-              <p>This process may take some time.</p>
+              <p>This process may take some time</p>
               <UploadIcon className="h-24 w-24 my-4" />
               {
                 activeUploads.map(upload => (upload) ? (
@@ -43,12 +44,12 @@ const UploadProgressWidget = ({
                 ) : null)
               }
               <Progress
-                className="w-72 animate-pulse"
+                className="w-full animate-pulse"
                 value={total === 1 ? undefined : processed} max={total === 1 ? undefined : total}
               />
             </>
             :
-            <p>All files are uploaded.</p>
+            <p><CheckIcon className="w-16 h-16 text-green-500" /></p>
         }
       </Modal.Body>
     </WidgetModal>

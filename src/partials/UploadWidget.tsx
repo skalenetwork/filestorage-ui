@@ -34,15 +34,13 @@ const UploadWidget = (
         clearFields();
         onClose();
       }}
+      heading="Upload files"
     >
       <form onSubmit={(e) => {
         onSubmit(e);
         clearFields();
       }}>
-        <Modal.Header className="text-center font-bold">
-          Upload file
-          </Modal.Header>
-        <Modal.Body className="flex flex-col gap-1.5 justify-center items-center min-w-72">
+        <Modal.Body className="w-full flex flex-col gap-1.5 justify-center items-center min-w-72">
           {
             (fields.length > batchThreshold) ?
               (
@@ -79,8 +77,8 @@ const UploadWidget = (
                   </>)
                   :
                   (<>
-                    <p>Select files to upload.</p>
                     <UploadIcon className="h-24 w-24 my-4" />
+                    <p>Select files to upload.</p>
                   </>)
           }
         </Modal.Body>
@@ -89,13 +87,6 @@ const UploadWidget = (
             fields.length ?
               <>
                 <Button type="submit" className="btn-wide">Upload</Button>
-                <span
-                  className="underline cursor-pointer"
-                  onClick={(e) => {
-                    clearFields();
-                    onClose();
-                  }}
-                >Cancel</span>
               </>
               :
               <>

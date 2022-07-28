@@ -20,12 +20,8 @@ const CreateDirectoryWidget = ({
       onClose={onClose}
       heading="Create new directory"
     >
-      <XIcon
-        className="w-5 h-5 absolute right-4 top-4 cursor-pointer"
-        onClick={onClose}
-      />
       <form onSubmit={onSubmit}>
-        <Modal.Body className="flex flex-col gap-4 justify-center items-center">
+        <Modal.Body className="w-full flex flex-col gap-4 justify-center items-center">
           <p>
             Give your folder a name.
           </p>
@@ -34,17 +30,13 @@ const CreateDirectoryWidget = ({
               <span className="label-text">Name</span>
             </label>
             <Input
+              className="w-full"
               {...formRegister('directoryName')}
             />
           </div>
         </Modal.Body>
         <Modal.Actions className="flex justify-center items-center gap-8">
-          <Button type="submit">Create</Button>
-          <a className="underline cursor-pointer"
-            onClick={(e) => {
-              onClose();
-            }}
-          >Cancel</a>
+          <Button className="btn-wide" type="submit">Create</Button>
         </Modal.Actions>
       </form>
     </WidgetModal>

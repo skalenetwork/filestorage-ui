@@ -100,7 +100,7 @@ const App = () => {
             <div className="flex flex-row gap-4">
               {
                 (uploadingFiles.length) ?
-                  <p className="px-4 py-2 relative cursor-pointer rounded bg-yellow-50 border border-yellow-500"
+                  <p className="px-4 py-2 relative cursor-pointer rounded bg-yellow-50 border border-yellow-500 text-sm"
                     onClick={(e) => setActiveUploadsModal(true)}
                   >
                     <span class="flex h-3 w-3 absolute -right-1 -top-1">
@@ -113,7 +113,7 @@ const App = () => {
               }
               {
                 (failedFiles.length) ?
-                  <p className="px-4 py-2 cursor-pointer rounded bg-red-50 border border-red-500"
+                  <p className="px-4 py-2 cursor-pointer rounded bg-red-50 border border-red-500 text-sm"
                     onClick={(e) => setFailedUploadsModal(true)}
                   >
                     {failedFiles.length} uploads failed..
