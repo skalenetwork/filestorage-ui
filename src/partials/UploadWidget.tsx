@@ -77,7 +77,7 @@ const UploadWidget = (
                   </>)
                   :
                   (<>
-                    <UploadIcon className="h-24 w-24 my-4" />
+                    <UploadIcon className="h-24 w-24 my-4" strokeWidth={1} />
                     <p>Select files to upload.</p>
                   </>)
           }

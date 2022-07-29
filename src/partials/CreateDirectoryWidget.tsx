@@ -20,12 +20,12 @@ const CreateDirectoryWidget = ({
       onClose={onClose}
       heading="Create new directory"
     >
-      <form onSubmit={onSubmit}>
+      <form className="w-full" onSubmit={onSubmit}>
         <Modal.Body className="w-full flex flex-col gap-4 justify-center items-center">
           <p>
             Give your folder a name.
           </p>
-          <div>
+          <div className="w-full flex flex-col flex-grow">
             <label className="label" htmlFor="">
               <span className="label-text">Name</span>
             </label>

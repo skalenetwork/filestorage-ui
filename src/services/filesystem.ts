@@ -87,6 +87,7 @@ interface IDeDirectory {
   kind: string;
   name: string;
   path: string;
+  manager: DeFileManager;
   entries(): Promise<Iterable<DeFile | DeDirectory>>;
 }
 
@@ -97,6 +98,8 @@ interface IDeFile {
   type: string;
   size: number;
   timestamp?: string;
+  arrayBuffer: () => Promise<ArrayBuffer>;
+  manager: DeFileManager;
 }
 
 // @todo bring in web3 types
@@ -110,8 +113,8 @@ interface IDeFileManager {
   contract: Object;
 
   rootDirectory(): DeDirectory;
-  accountIsAdmin(): boolean;
-  accountIsAllocator(): boolean;
+  accountIsAdmin(): Promise<boolean>;
+  accountIsAllocator(): Promise<boolean>;
 
   totalSpace(): Promise<BigInt>;
   reservedSpace(): Promise<BigInt>;
@@ -124,7 +127,7 @@ interface IDeFileManager {
   deleteFile(destDirectory: DeDirectory, file: DeFile): Promise<void>;
 
   downloadFile(file: DeFile): Promise<void>;
-  search(inDirectory: DeDirectory, query: string): Array<DeFile | DeDirectory>;
+  search(inDirectory: DeDirectory, query: string): Promise<Array<DeFile | DeDirectory>>;
 }
 
 function pathToRelative(storagePath: DePath) {
@@ -170,13 +173,23 @@ class DeFile implements IDeFile {
   path: string;
   size: number;
   type: string;
+  manager: DeFileManager;
 
-  constructor(data: FileStorageFile) {
+  constructor(data: FileStorageFile, manager: DeFileManager) {
     this.kind = KIND.FILE;
     this.name = data.name;
     this.path = pathToRelative(data.storagePath);
     this.size = data.size;
     this.type = mime.getType(data.name);
+    this.manager = manager;
+  }
+
+  async arrayBuffer() {
+    const buffer = await this.manager.fs.downloadToBuffer(this.manager.rootDir.name + "/" + this.path);
+    const arrayBuffer = buffer.buffer.slice(
+      buffer.byteOffset, buffer.byteOffset + buffer.byteLength
+    );
+    return arrayBuffer;
   }
 }
 
@@ -239,7 +252,7 @@ class DeFileManager implements IDeFileManager {
       // make DeFile
       if (item.isFile) {
         item = <FileStorageFile>item;
-        yield new DeFile(item);
+        yield new DeFile(item, this);
       }
       // recursive: make DeDirectory with entries()
       else {
@@ -260,7 +273,7 @@ class DeFileManager implements IDeFileManager {
 
   // @todo: confirm response..
   async accountIsAllocator() {
-    return await this.contract.methods.ALLOCATOR_ROLE().call();
+    return await this.contract.methods.hasRole(this.account,).call();
   }
 
   async reserveSpace(address: Address, amount: number) {

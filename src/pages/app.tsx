@@ -39,7 +39,7 @@ const App = () => {
   const {
     config,
     fm, directory: currentDirectory, reservedSpace, occupiedSpace, searchListing,
-    isAuthorized, connectWallet, activeUploads, failedUploads, totalUploadCount, processedUploadCount,
+    isAuthorized, accountRoles, connectWallet, activeUploads, failedUploads, totalUploadCount, processedUploadCount,
     changeDirectory, uploadFiles, createDirectory, search, isSearching, isCreatingDirectory
   }: ContextType = useFileManagerContext<ContextType>();
 

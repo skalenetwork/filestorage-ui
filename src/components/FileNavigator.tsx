@@ -230,7 +230,9 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
           />
           {
             (isAddressEditing === false) ?
-              <DirCrumb trail={trail} onCrumbClick={changeDirectory} />
+              <DirCrumb trail={
+                (trail.length > 5) ? [trail[0]].concat(trail.slice(trail.length - 3)) : trail
+              } onCrumbClick={changeDirectory} />
               :
               <></>
           }

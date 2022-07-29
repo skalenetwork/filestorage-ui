@@ -15,13 +15,13 @@ const ReserveSpaceWidget = ({
       onClose={onClose}
       heading="Reserve space"
     >
-      <ArchiveIcon className="h-24 w-24" />
-      <form onSubmit={onSubmit}>
+      <ArchiveIcon className="h-24 w-24" strokeWidth={1} />
+      <form className="w-full" onSubmit={onSubmit}>
         <Modal.Body className="w-full flex flex-col gap-4 justify-center items-center">
           <p>
             Enter the address to which the space will be allocated.
           </p>
-          <div>
+          <div className="w-full flex flex-col flex-grow">
             <label className="label" htmlFor="">
               <span className="label-text">Address</span>
             </label>
@@ -30,12 +30,11 @@ const ReserveSpaceWidget = ({
               placeholder="0x..."
               {...formRegister('reserveSpaceAddress')}
             />
-          </div>
-          <div>
             <label className="label" htmlFor="">
               <span className="label-text">Space to reserve</span>
             </label>
             <Input
+              className="appearance-none"
               type="number"
               placeholder="Space to reserve"
               {...formRegister('reserveSpaceAmount')}

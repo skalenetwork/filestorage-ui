@@ -19,7 +19,7 @@ const UploadProgressWidget = ({
       onClose={onClose}
       heading="Something went wrong"
     >
-      <Modal.Body className="flex flex-col gap-1.5 justify-center items-center">
+      <Modal.Body className="w-full flex flex-col gap-1.5 justify-center items-center">
         {
           (failedUploads && failedUploads.length > 0) ?
             <p>

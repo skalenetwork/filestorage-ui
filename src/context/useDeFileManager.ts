@@ -18,6 +18,7 @@ export type FileStatus = {
 
 export type State = {
   isAuthorized: boolean;
+  accountRoles: [],
   fm: DeFileManager | undefined;
   directory: DeDirectory | undefined;
   listing: Array<DeDirectory | DeFile>;
@@ -36,10 +37,16 @@ export type State = {
 export type Action = {
 }
 
+export const ROLE = {
+  ALLOCATOR: 'ALLOCATOR',
+  ADMIN: 'ADMIN'
+}
+
 // current operations can be better managed
 
 const initialState: State = {
   isAuthorized: false,
+  accountRoles: [],
   fm: undefined,
   directory: undefined,
   listing: [],
@@ -57,6 +64,7 @@ const initialState: State = {
 
 const ACTION = {
   INITIALIZE: 'INITIALIZE',
+  SET_ROLES: 'SET_ROLES',
   SET_AUTHORITY: 'SET_AUTHORITY',
   CHANGE_DIRECTORY: 'CHANGE_DIRECTORY',
   SET_LISTING: 'SET_LISTING',
@@ -75,6 +83,8 @@ const ACTION = {
 
 const reducer = (state: State, action: { type: string, payload: any }) => {
   switch (action.type) {
+    case ACTION.SET_ROLES:
+      return { ...state, accountRoles: action.payload }
     case ACTION.SET_AUTHORITY:
       return { ...state, isAuthorized: action.payload }
     case ACTION.INITIALIZE:
@@ -220,6 +230,23 @@ function useDeFileManager(
       type: ACTION.SET_AUTHORITY,
       payload: ((account || "").toLowerCase() === address.toLowerCase())
     });
+
+    // @todo complete implementation in fs.js or fm.ts
+    false && (async () => {
+      let roles = [];
+      if (await fm.accountIsAllocator()) {
+        roles.push(ROLE.ALLOCATOR);
+      }
+      if (await fm.accountIsAdmin()) {
+        roles.push(ROLE.ADMIN);
+      }
+      if (roles.length) {
+        dispatch({
+          action: ACTION.SET_ROLES,
+          payload: roles
+        });
+      }
+    })();
 
   }, [w3Provider, address, privateKey]);
 
