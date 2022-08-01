@@ -13,7 +13,7 @@ priors
 feedback
 
 [x] close smart address field when off-focus
-[ ] clickable home nav against smart address
+[x] clickable home nav against smart address
 [ ] file preferred direct download, fallback contract call
 [ ] general notifications / errors
 [ ] by mockups: new toggled list of uploads with each progress (bottom-right)

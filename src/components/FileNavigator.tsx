@@ -17,6 +17,7 @@ import ArrowSmUpIcon from '@heroicons/react/solid/ArrowSmUpIcon';
 import ArrowSmDownIcon from '@heroicons/react/solid/ArrowSmDownIcon';
 import ChevronRightIcon from '@heroicons/react/solid/ChevronRightIcon';
 import ChevronLeftIcon from '@heroicons/react/solid/ChevronLeftIcon';
+import HomeIcon from '@heroicons/react/solid/HomeIcon';
 
 import Pagination from 'react-paginate';
 import FormattedName from './FormattedName';
@@ -224,8 +225,9 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
     <div>
       <div className="flex flex-row justify-between items-center border-y border-slate-800 py-4 sticky top-0 bg-white z-[998]">
         <div className="h-8 flex flex-row items-center gap-2 px-4">
+          <HomeIcon className="w-5 h-5 cursor-pointer text-blue-500" onClick={(e) => changeDirectory(fm?.rootDirectory())} />
           <SmartAddress
-            className="cursor-pointer"
+            className="cursor-cell"
             address={fm?.rootDirectory().name || ""}
             onEdit={() => setIsAddressEditing(true)}
             offEdit={() => setIsAddressEditing(false)}
