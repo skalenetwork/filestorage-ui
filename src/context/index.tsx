@@ -8,7 +8,7 @@ import Web3Modal from 'web3modal';
 import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import { useMount, useKey, useLocalStorage } from 'react-use';
 
-import { DeFileManager, DeDirectory, DeFile } from '@/services/filesystem';
+import { DeFileManager, DeDirectory, DeFile } from '@/services/filemanager';
 import useDeFileManager, { Action, State } from '@/context/useDeFileManager';
 
 import WalletConnectProvider from "@walletconnect/web3-provider";

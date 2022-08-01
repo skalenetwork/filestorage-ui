@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useReducer, useState } from 'react';
 import { useInterval } from 'react-use';
-import { DeFileManager, DeDirectory, DeFile } from '@/services/filesystem';
+import { DeFileManager, DeDirectory, DeFile } from '@/services/filemanager';
 import Web3 from 'web3';
 
 export type FileStatus = {

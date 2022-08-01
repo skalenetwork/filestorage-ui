@@ -1,5 +1,3 @@
-//@ts-nocheck
-
 /**
  * @module
  * On-chain file manager for containerizing file management against users / chains
@@ -9,9 +7,17 @@
  * @todo: rate limiting, cache management
  */
 
-import FileStorage from '@skalenetwork/filestorage.js';
+
+import FileStorage, {
+  FileStorageContract,
+  FileStorageDirectory,
+  FileStorageFile
+} from '@skalenetwork/filestorage.js';
+// import type { FileStorageFile, FileStorageDirectory, File  } from '@skalenetwork/filestorage.js';
 import { Buffer } from 'buffer';
+//@ts-ignore
 import sortBy from 'lodash/sortBy';
+//@ts-ignore
 import mime from 'mime/lite';
 
 const KIND = {
@@ -32,102 +38,35 @@ const OPERATON = {
   CREATE_DIRECTORY: 'CREATE_DIRECTORY'
 }
 
+const ERROR = {
+  NO_ACCOUNT: "FileManager has no signer account"
+}
+
 /**
  * Interfacing based on simpified form of web FileSystem and FileSystem Access API
  * we start without file handles
  */
 
-export type FileStorageDirectory = {
-  name: string;
-  storagePath: string;
-  isFile: string;
-}
-
-export type FileStorageFile = {
-  name: string;
-  storagePath: string;
-  isFile: string;
-  size: number;
-  status: number;
-  uploadingProgress: number;
-}
-
-export type PrivateKey = string;
-export type Address = string;
 export type FilePath = string;
+export type DePath = string;
+export type Address = string;
+export type PrivateKey = string;
 
-type FileStorageContract = {
-  contract: Object
-}
-
-// @todo confirm and set return type where void
-export type FileStorageClient = {
-  contract: FileStorageContract;
-  // core-actions
-  uploadFile(address: Address, filePath: FilePath, fileBuffer: Buffer, privateKey?: PrivateKey): Promise<string>;
-  deleteFile(address: Address, filePath: string, privateKey?: PrivateKey): Promise<void>; // confirmed
-  createDirectory(address: Address, directoryPath: string, privateKey?: PrivateKey): Promise<{ storagePath: string }>;
-  deleteDirectory(address: Address, directoryPath: string, privateKey?: PrivateKey): Promise<void>;
-  // core-actions:public
-  listDirectory(storagePath: string): Promise<Array<FileStorageDirectory | FileStorageFile>>;
-  downloadToFile(storagePath: string): Promise<void>;
-  downloadToBuffer(storagePath: string): Promise<Buffer>;
-  // meta-actions
-  reserveSpace(allocatorAddress: Address, addressToReserve: Address, reservedSpace: number, privateKey?: PrivateKey): Promise<void>;
-  grantAllocatorRole(adminAddress: Address, allocatorAddress: Address, adminPrivateKey?: PrivateKey): Promise<void>;
-  // state::address
-  getReservedSpace(address: Address): Promise<{ reservedSpace: number }>;
-  getOccupiedSpace(address: Address): Promise<{ occupiedSpace: number }>;
-  // state::global
-  getTotalReservedSpace(): Promise<{ reservedSpace: number }>;
-  getTotalSpace(): Promise<{ space: number }>;
-}
-
-interface IDeDirectory {
+export interface IDeDirectory {
   kind: string;
   name: string;
-  path: string;
-  manager: DeFileManager;
-  entries(): Promise<Iterable<DeFile | DeDirectory>>;
+  path: DePath;
+  entries(): Promise<Iterable<IDeFile | IDeDirectory>>;
 }
 
-interface IDeFile {
+export interface IDeFile {
   kind: string;
   name: string;
-  path: string;
+  path: DePath;
   type: string;
   size: number;
   timestamp?: string;
   arrayBuffer: () => Promise<ArrayBuffer>;
-  manager: DeFileManager;
-}
-
-// @todo bring in web3 types
-interface IDeFileManager {
-  address: string;
-  account?: string;
-  accountPrivateKey?: string;
-
-  w3: Object;
-  fs: FileStorageClient;
-  contract: Object;
-
-  rootDirectory(): DeDirectory;
-  accountIsAdmin(): Promise<boolean>;
-  accountIsAllocator(): Promise<boolean>;
-
-  totalSpace(): Promise<BigInt>;
-  reservedSpace(): Promise<BigInt>;
-  totalReservedSpace(): Promise<BigInt>;
-  occupiedSpace(): Promise<BigInt>;
-
-  createDirectory(destDirectory: DeDirectory): Promise<DeDirectory>;
-  deleteDirectory(directory: DeDirectory): Promise<boolean>;
-  uploadFile(destDirectory: DeDirectory): Promise<string>;
-  deleteFile(destDirectory: DeDirectory, file: DeFile): Promise<void>;
-
-  downloadFile(file: DeFile): Promise<void>;
-  search(inDirectory: DeDirectory, query: string): Promise<Array<DeFile | DeDirectory>>;
 }
 
 function pathToRelative(storagePath: DePath) {
@@ -137,9 +76,9 @@ function pathToRelative(storagePath: DePath) {
 }
 
 // @todo implement
-function memoize(fn) {
+function memoize(fn: () => void) {
   const cache = new Map();
-  return (...args) => {
+  return (...args: any) => {
     const strArgs = JSON.stringify(args);
     const result = cache.get(strArgs);
   }
@@ -149,7 +88,7 @@ function memoize(fn) {
 class DeDirectory implements IDeDirectory {
   kind: string;
   name: string;
-  path: string;
+  path: DePath;
   manager: DeFileManager;
   parent?: DeDirectory;
 
@@ -166,11 +105,10 @@ class DeDirectory implements IDeDirectory {
   }
 }
 
-// @todo enhancement:: enclose manager like DeDirectory to handle buffer
 class DeFile implements IDeFile {
   kind: string;
   name: string;
-  path: string;
+  path: DePath;
   size: number;
   type: string;
   manager: DeFileManager;
@@ -184,8 +122,8 @@ class DeFile implements IDeFile {
     this.manager = manager;
   }
 
-  async arrayBuffer() {
-    const buffer = await this.manager.fs.downloadToBuffer(this.manager.rootDir.name + "/" + this.path);
+  async arrayBuffer(): Promise<ArrayBuffer> {
+    const buffer = await this.manager.fs.downloadToBuffer(this.manager.rootDirectory().name + "/" + this.path);
     const arrayBuffer = buffer.buffer.slice(
       buffer.byteOffset, buffer.byteOffset + buffer.byteLength
     );
@@ -200,22 +138,22 @@ class DeFile implements IDeFile {
  * @todo on:iteration could possibly consider extending FilestorageClient
  */
 
-class DeFileManager implements IDeFileManager {
+class DeFileManager {
 
   address: Address;
-  account: Address;
-  accountPrivateKey?: string;
+  account?: Address;
+  accountPrivateKey?: PrivateKey;
 
   w3: Object;
-  fs: FileStorageClient;
-  contract: { methods: {} };
+  fs: FileStorage;
+  contract: FileStorageContract['contract'];
 
   private rootDir: DeDirectory;
 
   dirLastAction: Object;
 
   constructor(
-    w3: Object, address: Address, account?: Address, accountPrivateKey?: string
+    w3: Object, address: Address, account?: Address, accountPrivateKey?: PrivateKey
   ) {
     this.address = address.toLowerCase();
     this.account = account;
@@ -230,16 +168,17 @@ class DeFileManager implements IDeFileManager {
     const addrWithoutPrefix = this.address.slice(2);
 
     this.rootDir = new DeDirectory({
-      name: addrWithoutPrefix, // do-not-change
+      name: addrWithoutPrefix, // do-not-change: heavy dependency
       storagePath: addrWithoutPrefix,
-      isFile: 'false',
+      isFile: false,
     }, this);
   }
 
   /**
-   * File Manager maintains generatin
-   * @param dirPath 
+   * File Manager maintains generating filetree iterator
    */
+
+  //@ts-ignore
   async * entriesGenerator(directory: DeDirectory): Promise<Iterable<DeDirectory | DeFile>> {
     let path = (directory.parent) ? this.rootDir.name + "/" + directory.path : this.rootDir.name;
     console.log("* entriesGenerator::", path, this);
@@ -252,12 +191,11 @@ class DeFileManager implements IDeFileManager {
       // make DeFile
       if (item.isFile) {
         item = <FileStorageFile>item;
-        yield new DeFile(item, this);
+        yield new DeFile(item as FileStorageFile, this);
       }
       // recursive: make DeDirectory with entries()
       else {
-        item = <FileStorageDirectory>item;
-        yield new DeDirectory(item, this, directory);
+        yield new DeDirectory(item as FileStorageDirectory, this, directory);
       }
     }
   }
@@ -268,15 +206,19 @@ class DeFileManager implements IDeFileManager {
 
   // @todo: implement
   async accountIsAdmin() {
+    return false;
     // chain owner?
   }
 
   // @todo: confirm response..
   async accountIsAllocator() {
-    return await this.contract.methods.hasRole(this.account,).call();
+    const ALLOCATOR = "";
+    return await this.contract.methods.hasRole(this.account, ALLOCATOR).call();
   }
 
   async reserveSpace(address: Address, amount: number) {
+    if (!this.account)
+      throw Error(ERROR.NO_ACCOUNT);
     return this.fs.reserveSpace(this.account, address, amount, this.accountPrivateKey);
   }
 
@@ -286,10 +228,12 @@ class DeFileManager implements IDeFileManager {
   async loadDirectory(path: string): Promise<Array<FileStorageFile | FileStorageDirectory>> {
     const entries = await this.fs.listDirectory(`${path}`);
     console.log("fm:loadDirectory", entries);
-    return sortBy(entries, (o => o.isFile === true));
+    return sortBy(entries, ((o: FileStorageDirectory | FileStorageFile) => o.isFile === true));
   }
 
-  async createDirectory(destDirectory: DeDirectory, name: string) {
+  async createDirectory(destDirectory: DeDirectory, name: string): Promise<DePath> {
+    if (!this.account)
+      throw Error(ERROR.NO_ACCOUNT);
     const path = (destDirectory.path === this.rootDir.path) ? name : `${destDirectory.path}/${name}`;
     console.log("path", path);
     const returnPath = await this.fs.createDirectory(this.account, path, this.accountPrivateKey);
@@ -298,22 +242,26 @@ class DeFileManager implements IDeFileManager {
     return returnPath;
   }
 
-  async deleteFile(destDirectory: DeDirectory, file: DeFile) {
+  async deleteFile(destDirectory: DeDirectory, file: DeFile): Promise<void> {
+    if (!this.account)
+      throw Error(ERROR.NO_ACCOUNT);
     await this.fs.deleteFile(this.account, file.path, this.accountPrivateKey);
-    return true;
   }
 
-  async deleteDirectory(directory: DeDirectory) {
+  async deleteDirectory(directory: DeDirectory): Promise<void> {
+    if (!this.account)
+      throw Error(ERROR.NO_ACCOUNT);
     await this.fs.deleteDirectory(this.account, directory.path, this.accountPrivateKey);
   }
 
   async uploadFile(destDirectory: DeDirectory, file: File) {
+    if (!this.account)
+      throw Error(ERROR.NO_ACCOUNT);
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer(arrayBuffer);
+    const buffer = Buffer.from(arrayBuffer);
     const uploadPath = (destDirectory.path === this.rootDir.path) ? file.name : `${destDirectory.path}/${file.name}`;
     let path;
     try {
-      ;
       path = await this.fs.uploadFile(this.account, uploadPath, buffer, this.accountPrivateKey);
     } catch (e) {
       throw {
@@ -332,7 +280,8 @@ class DeFileManager implements IDeFileManager {
   }
 
   // depth-first
-  private async iterateDirectory(directory: DeDirectory, onEntry: DeDirectory | DeFile) {
+  private async iterateDirectory(directory: DeDirectory, onEntry: (entry: DeDirectory | DeFile) => any) {
+    //@ts-ignore
     for await (const entry of directory.entries()) {
       if (entry.kind === KIND.FILE) {
         onEntry(entry);
@@ -346,7 +295,7 @@ class DeFileManager implements IDeFileManager {
 
   // @todo: test and implement fuzzy query
   async search(inDirectory: DeDirectory, query: string) {
-    const results = [];
+    const results: (DeDirectory | DeFile)[] = [];
     console.log("filemanager::query", query);
     if (!query) return results;
     const handleMatch = (fileOrDir: DeFile | DeDirectory) => {

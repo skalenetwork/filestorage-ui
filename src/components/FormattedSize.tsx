@@ -1,6 +1,6 @@
 
 import prettyBytes from 'pretty-bytes';
-import { DeFile, DeDirectory } from '@/services/filesystem';
+import { DeFile, DeDirectory } from '@/services/filemanager';
 
 type ItemProps = { item: DeFile | DeDirectory, value?: never };
 type ValueProps = { value: number, item?: never };

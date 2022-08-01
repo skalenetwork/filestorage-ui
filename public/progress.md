@@ -8,13 +8,16 @@ priors
 [ ] role checks and conditional view
 [ ] embedded file preview
 [ ] faster lookups: client-side file listing caching + deep prefetch
-[ ] app-wide error flow (UX TBD)
+[ ] app-wide error flow (bring in toasts)
 
 feedback
 
-[ ] clickable home nav next to smart address
+[ ] close smart address field when off-focus
+[ ] clickable home nav against smart address
 [ ] file preferred direct download, fallback contract call
-...
+[ ] general notifications / errors
+[ ] by mockups: new toggled list of uploads with each progress (bottom-right)
+[ ] detect duplications in upload form as field validation
 
 frontier
 

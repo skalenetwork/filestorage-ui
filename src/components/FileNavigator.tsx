@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, SyntheticEvent, useLayoutEffect } from 're
 import { useMount, useDebounce } from 'react-use';
 
 import { useFileManagerContext, ContextType } from '../context';
-import { DeFile, DeDirectory } from '@/services/filesystem';
+import { DeFile, DeDirectory } from '@/services/filemanager';
 import { downloadUrl } from '../utils';
 
 import orderBy from 'lodash/orderBy';
@@ -22,6 +22,7 @@ import Pagination from 'react-paginate';
 import FormattedName from './FormattedName';
 import FormattedSize from './FormattedSize';
 import SmartAddress from './SmartAddress';
+import { SpinnerIcon } from './common';
 
 const makeDirTrail = (directory: DeDirectory) => {
   let trail = [];
@@ -99,6 +100,8 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
 
   useEffect(() => {
     setTrail(makeDirTrail(currentDirectory));
+    setItemOffset(0);
+    setCurrentPage(1);
   }, [currentDirectory?.path]);
 
   useLayoutEffect(() => {
@@ -239,7 +242,13 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
         </div>
         <div className="flex justify-center items-center gap-8">
           <span className="text-gray-500 text-sm font-medium">
-            Showing files {itemOffset + pageListing.length}/{sortedListing.length}
+            {
+              (isLoadingDirectory) ?
+                <SpinnerIcon className="w-5 h-5 px-4" /> :
+                (sortedListing.length === 0) ?
+                  <>No results found</> :
+                  <>Showing files {itemOffset + pageListing.length}/{sortedListing.length}</>
+            }
           </span>
           <Pagination
             className="flex justify-center items-center gap-2"
@@ -254,8 +263,7 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
             previousLabel={
               <ChevronLeftIcon className="h-8 w-8" />
             }
-            pageRangeDisplayed={4}
-            renderOnZeroPageCount={null}
+            pageRangeDisplayed={5}
             pageCount={Math.ceil(sortedListing.length / config.navigator.pageLimit)}
             onPageChange={(e) => {
               setCurrentPage(e.selected);

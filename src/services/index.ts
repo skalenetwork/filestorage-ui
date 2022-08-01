@@ -1,4 +1,4 @@
-import { DeFileManager } from './filesystem';
+import { DeFileManager } from './filemanager';
 
 export {
   DeFileManager

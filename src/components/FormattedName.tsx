@@ -1,4 +1,4 @@
-import { DeDirectory, DeFile } from '@/services/filesystem';
+import { DeDirectory, DeFile } from '@/services/filemanager';
 import FolderIcon from '@heroicons/react/solid/FolderIcon';
 import DocumentTextIcon from '@heroicons/react/outline/DocumentTextIcon';
 import PhotographIcon from '@heroicons/react/solid/PhotographIcon';
