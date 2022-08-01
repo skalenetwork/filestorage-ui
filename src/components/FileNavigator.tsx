@@ -292,7 +292,7 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
           <BackItem />
           {
             isLoadingDirectory ?
-              [...Array(10).keys()].map(item => <Item skeleton />)
+              [...Array(10).keys()].map((item, index) => <Item key={index} skeleton />)
               :
               (pageListing.length)
                 ?

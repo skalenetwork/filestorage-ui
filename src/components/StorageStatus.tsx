@@ -1,4 +1,5 @@
 import prettyBytes from "pretty-bytes";
+import { useEffect, useState } from "react";
 import { Progress } from "./common";
 import FormattedSize from "./FormattedSize";
 
@@ -6,6 +7,13 @@ const StorageStatus = (
   { occupiedSpace, reservedSpace }:
     { occupiedSpace: number, reservedSpace: number }
 ) => {
+
+  const [usedSpace, setUsedSpace] = useState(0);
+
+  useEffect(() => {
+    setUsedSpace((occupiedSpace / reservedSpace) || 0);
+  }, [occupiedSpace, reservedSpace]);
+
   return (
     <div>
       <p>
@@ -16,11 +24,11 @@ const StorageStatus = (
         </span> used
       </p>
       <p className="text-xs font-medium">
-        {((occupiedSpace / reservedSpace) || 0).toFixed(6)}% used - {prettyBytes((reservedSpace - occupiedSpace) || 0)} free
+        {usedSpace.toFixed(4)}% used - {prettyBytes((reservedSpace - occupiedSpace) || 0)} free
       </p>
       <Progress
         className="w-full"
-        value={occupiedSpace / reservedSpace}
+        value={usedSpace}
         max={100}
       />
     </div>

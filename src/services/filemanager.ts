@@ -1,3 +1,6 @@
+import { FileOrDir } from './filemanager';
+import { ContractContext } from './../../types/abi/filestorage-1.0.1';
+
 /**
  * @module
  * On-chain file manager for containerizing file management against users / chains
@@ -9,9 +12,8 @@
 
 
 import FileStorage, {
-  FileStorageContract,
   FileStorageDirectory,
-  FileStorageFile
+  FileStorageFile,
 } from '@skalenetwork/filestorage.js';
 // import type { FileStorageFile, FileStorageDirectory, File  } from '@skalenetwork/filestorage.js';
 import { Buffer } from 'buffer';
@@ -19,6 +21,8 @@ import { Buffer } from 'buffer';
 import sortBy from 'lodash/sortBy';
 //@ts-ignore
 import mime from 'mime/lite';
+
+import Fuse from 'fuse.js';
 
 const KIND = {
   FILE: "file",
@@ -131,11 +135,12 @@ class DeFile implements IDeFile {
   }
 }
 
+export type FileOrDir = DeDirectory | DeFile;
+
 /**
  * Decentralized File Manager: Main high-level construct
  * @todo add path builder using this.address
- * @todo verify isFile values
- * @todo on:iteration could possibly consider extending FilestorageClient
+ * @todo could possibly consider extending or melding with filestorage.js
  */
 
 class DeFileManager {
@@ -146,7 +151,7 @@ class DeFileManager {
 
   w3: Object;
   fs: FileStorage;
-  contract: FileStorageContract['contract'];
+  contract: ContractContext;
 
   private rootDir: DeDirectory;
 
@@ -161,7 +166,7 @@ class DeFileManager {
 
     this.w3 = w3;
     this.fs = new FileStorage(w3, true);
-    this.contract = this.fs.contract.contract;
+    this.contract = (this.fs.contract as unknown) as ContractContext;
 
     this.dirLastAction = "";
 
@@ -179,7 +184,7 @@ class DeFileManager {
    */
 
   //@ts-ignore
-  async * entriesGenerator(directory: DeDirectory): Promise<Iterable<DeDirectory | DeFile>> {
+  async * entriesGenerator(directory: DeDirectory): Promise<Iterable<FileOrDir>> {
     let path = (directory.parent) ? this.rootDir.name + "/" + directory.path : this.rootDir.name;
     console.log("* entriesGenerator::", path, this);
     // hit remote
@@ -204,16 +209,19 @@ class DeFileManager {
     return this.rootDir;
   }
 
-  // @todo: implement
+  // @todo: validate correctness
   async accountIsAdmin() {
-    return false;
-    // chain owner?
+    if (!this.account)
+      return false;
+    const ADMIN_ROLE = await this.contract.methods.DEFAULT_ADMIN_ROLE().call();
+    return await this.contract.methods.hasRole(ADMIN_ROLE, this.account);
   }
 
-  // @todo: confirm response..
   async accountIsAllocator() {
-    const ALLOCATOR = "";
-    return await this.contract.methods.hasRole(this.account, ALLOCATOR).call();
+    if (!this.account)
+      return false;
+    const ALLOCATOR_ROLE = await this.contract.methods.ALLOCATOR_ROLE().call();
+    return await this.contract.methods.hasRole(ALLOCATOR_ROLE, this.account).call();
   }
 
   async reserveSpace(address: Address, amount: number) {
@@ -280,30 +288,40 @@ class DeFileManager {
   }
 
   // depth-first
-  private async iterateDirectory(directory: DeDirectory, onEntry: (entry: DeDirectory | DeFile) => any) {
+  private async iterateDirectory(
+    directory: DeDirectory,
+    onEntry: (entry: FileOrDir | Array<FileOrDir>) => any,
+    asArray?: boolean
+  ) {
+    let all = [];
     //@ts-ignore
     for await (const entry of directory.entries()) {
-      if (entry.kind === KIND.FILE) {
-        onEntry(entry);
-      }
       if (entry.kind === KIND.DIRECTORY) {
-        onEntry(entry);
         await this.iterateDirectory(entry, onEntry);
       }
+      (asArray) ? all.push(entry) : onEntry(entry);
+    }
+    if (asArray) {
+      onEntry(all);
     }
   }
 
   // @todo: test and implement fuzzy query
   async search(inDirectory: DeDirectory, query: string) {
-    const results: (DeDirectory | DeFile)[] = [];
+
+    let results: Array<(DeDirectory | DeFile)> = [];
     console.log("filemanager::query", query);
+
     if (!query) return results;
-    const handleMatch = (fileOrDir: DeFile | DeDirectory) => {
-      if (fileOrDir.name.includes(query.trim())) {
-        results.push(fileOrDir);
-      }
+
+    const handleList = (list: any) => {
+      console.log(list);
+      const fuse = new Fuse(list, { keys: ['name'] });
+      const result = fuse.search(query.trim()).map(r => r.item) as FileOrDir[];
+      results = [...results, ...result];
     }
-    await this.iterateDirectory(inDirectory, handleMatch);
+
+    await this.iterateDirectory(inDirectory, handleList, true);
     console.log("filemanager::search_results", results);
     return results;
   }

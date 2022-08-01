@@ -12,22 +12,23 @@ const SmartAddress = (
   const [edit, setEdit] = useState<boolean | undefined>(undefined);
   useLayoutEffect(() => {
     if (edit === false) {
-      console.log("false");
       offEdit();
     }
     if (edit === true) {
-      console.log("true");
       onEdit();
+      inputField.current.focus();
     }
   }, [edit]);
 
   return (
     <div className={className}>
       <p className={(edit === true) ? "hidden" : ""}
-        onClick={e => { setEdit(true); }}
+        onClick={e => {
+          setEdit(true);
+        }}
       >
         <FormattedAddress address={address || ""} pre={5} post={10} /> &emsp;/
-        </p>
+      </p>
       {
         (edit === true) ?
           <p className="flex items-center">
@@ -36,6 +37,7 @@ const SmartAddress = (
               type="text"
               defaultValue={address}
               ref={inputField}
+              onBlur={() => setEdit(false)}
             />
             <div className="relative flex items-center -translate-x-24">
               {

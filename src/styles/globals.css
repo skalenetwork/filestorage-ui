@@ -78,6 +78,9 @@ img {
   @apply border-gray-500 focus:border-gray-500 focus:outline-none;
 }
 
+.label {
+  @apply p-1;
+}
 .label .label-text {
   @apply text-gray-400;
 }

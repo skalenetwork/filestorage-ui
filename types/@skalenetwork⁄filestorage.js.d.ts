@@ -1,14 +1,11 @@
 declare module '@skalenetwork/filestorage.js' {
 
+  import type { ContractContext } from './abi/filestorage-1.0.1.ts';
+  import { Contract } from 'web3-eth-contract';
+
   type FilePath = string;
   type Address = string;
   type PrivateKey = string;
-
-  export type FileStorageContract = {
-    contract: {
-      methods: any
-    }
-  }
 
   export type FileStorageDirectory = {
     name: string;
@@ -26,11 +23,12 @@ declare module '@skalenetwork/filestorage.js' {
   }
 
   export class FilestorageContract {
+    contract: ContractContext
   }
 
   export default class Filestorage {
 
-    contract: FileStorageContract;
+    contract: FilestorageContract;
 
     constructor(
       web3: any,

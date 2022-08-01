@@ -12,7 +12,7 @@ priors
 
 feedback
 
-[ ] close smart address field when off-focus
+[x] close smart address field when off-focus
 [ ] clickable home nav against smart address
 [ ] file preferred direct download, fallback contract call
 [ ] general notifications / errors
