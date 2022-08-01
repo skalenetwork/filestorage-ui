@@ -231,8 +231,7 @@ function useDeFileManager(
       payload: ((account || "").toLowerCase() === address.toLowerCase())
     });
 
-    // @todo complete implementation in fs.js or fm.ts
-    false && (async () => {
+    (async () => {
       let roles = [];
       if (await fm.accountIsAllocator()) {
         roles.push(ROLE.ALLOCATOR);
@@ -264,9 +263,7 @@ function useDeFileManager(
   }, [state.fm, state.directory?.path]);
 
   // tested for uploads under 1mb: file being uploaded not reflected in directory listing via node
-  // instead simulating progress
-  // can be re-enabled later
-  false && useInterval(() => {
+  useInterval(() => {
     for (let dirPath of state.activeUploads.keys()) {
       // @todo make sane
       const absolutePath = state.fm?.rootDirectory().name + ((dirPath) ? ("/" + dirPath) : "");

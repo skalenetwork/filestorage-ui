@@ -5,7 +5,7 @@ priors
 [ ] add field validations
 [ ] finalize role granter flow
 [ ] finalize reserve space flow
-[ ] role checks and conditional view
+[x] role checks and conditional view
 [ ] embedded file preview
 [ ] faster lookups: client-side file listing caching + deep prefetch
 [ ] app-wide error flow (bring in toasts)

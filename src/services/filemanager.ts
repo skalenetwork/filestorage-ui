@@ -1,4 +1,3 @@
-import { FileOrDir } from './filemanager';
 import { ContractContext } from './../../types/abi/filestorage-1.0.1';
 
 /**
@@ -10,18 +9,15 @@ import { ContractContext } from './../../types/abi/filestorage-1.0.1';
  * @todo: rate limiting, cache management
  */
 
-
 import FileStorage, {
   FileStorageDirectory,
   FileStorageFile,
 } from '@skalenetwork/filestorage.js';
-// import type { FileStorageFile, FileStorageDirectory, File  } from '@skalenetwork/filestorage.js';
 import { Buffer } from 'buffer';
 //@ts-ignore
 import sortBy from 'lodash/sortBy';
 //@ts-ignore
 import mime from 'mime/lite';
-
 import Fuse from 'fuse.js';
 
 const KIND = {
@@ -309,7 +305,7 @@ class DeFileManager {
   // @todo: test and implement fuzzy query
   async search(inDirectory: DeDirectory, query: string) {
 
-    let results: Array<(DeDirectory | DeFile)> = [];
+    let results: Array<FileOrDir> = [];
     console.log("filemanager::query", query);
 
     if (!query) return results;

@@ -4,8 +4,8 @@ import { Progress } from "./common";
 import FormattedSize from "./FormattedSize";
 
 const StorageStatus = (
-  { occupiedSpace, reservedSpace }:
-    { occupiedSpace: number, reservedSpace: number }
+  { className = "", occupiedSpace, reservedSpace }:
+    { className: string, occupiedSpace: number, reservedSpace: number }
 ) => {
 
   const [usedSpace, setUsedSpace] = useState(0);
@@ -15,7 +15,7 @@ const StorageStatus = (
   }, [occupiedSpace, reservedSpace]);
 
   return (
-    <div>
+    <div className={className}>
       <p>
         <span className="font-semibold">
           <FormattedSize

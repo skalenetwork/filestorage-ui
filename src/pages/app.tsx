@@ -3,7 +3,7 @@
 import { useState, useEffect, useLayoutEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useFileManagerContext, ContextType } from '@/context/index';
-import type { FileStatus } from '@/context/useDeFileManager';
+import { FileStatus, ROLE } from '@/context/useDeFileManager';
 
 import { Button } from '@/components/common';
 
@@ -128,20 +128,32 @@ const App = () => {
           </header>
           <div className="status-bar flex flex-row justify-between items-center">
             <h1 className="text-3xl font-semibold">Filestorage</h1>
-            <div className="w-80">
+            <div className="flex flex-col justify-end items-end">
               <StorageStatus
+                className="w-80"
                 occupiedSpace={occupiedSpace}
                 reservedSpace={reservedSpace}
               />
-              {
-                (isAuthorized) ?
-                  <Button
-                    className="w-full bg-gray-200 text-black border-none"
-                    onClick={() => setReserveSpaceModal(true)}
-                    color="secondary">Reserve space
-                  </Button>
-                  : null
-              }
+              <div className="flex-none flex flex-row gap-4">
+                {
+                  (accountRoles.includes(ROLE.OWNER)) ?
+                    <Button
+                      className="w-80 bg-gray-200 text-black border-none"
+                      onClick={() => grantRoleModal(true)}
+                      color="secondary">Grant allocator role
+                    </Button>
+                    : null
+                }
+                {
+                  (accountRoles.includes(ROLE.ALLOCATOR)) ?
+                    <Button
+                      className="w-80 bg-gray-200 text-black border-none"
+                      onClick={() => setReserveSpaceModal(true)}
+                      color="secondary">Reserve space
+                    </Button>
+                    : null
+                }
+              </div>
             </div>
           </div>
           <div className="action-bar my-4 gap-4 flex flex-row justify-between items-center">
