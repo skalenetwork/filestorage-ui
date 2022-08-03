@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useReducer, useState } from 'react';
 import { useInterval } from 'react-use';
 import { DeFileManager, DeDirectory, DeFile, DePath, FileOrDir } from '@/services/filemanager';
 import Web3 from 'web3';
+import type { FileStorageFile } from '@skalenetwork/filestorage.js';
 
 export type FileStatus = {
   file: File;
@@ -172,7 +173,7 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
 }
 
 function useDeFileManager(
-  w3Provider: Object, address: string, privateKey?: string
+  w3Provider: any, address: string, privateKey?: string
 ): [DeFileManager, State, Action] {
   const [state, dispatch]: [State, Function] = useReducer(reducer, initialState);
 
@@ -272,7 +273,7 @@ function useDeFileManager(
           const withProgress = uploads?.map(upload => {
             const match = listing.find(f => (dirPath + upload.file.name) === upload.dePath);
             // @todo when progress 100, purge or push to complete for notification
-            return { ...upload, progress: match.uploadingProgress }
+            return { ...upload, progress: (match as FileStorageFile).uploadingProgress }
           });
           dispatch({
             type: ACTION.UPDATE_UPLOADS, payload: {
@@ -303,7 +304,7 @@ function useDeFileManager(
     })
 
   const uploadFiles = (fm && cwd && state.isAuthorized) &&
-    (async (files: Array<File>, directory: DeDirectory = cwd): Array => {
+    (async (files: Array<File>, directory: DeDirectory = cwd): Promise<void> => {
 
       if (!files.length) {
         return;
@@ -383,7 +384,7 @@ function useDeFileManager(
     });
   });
 
-  const search = async (query) => {
+  const search = async (query: string) => {
     dispatch({
       type: ACTION.SET_SEARCH_LOADING,
     });
@@ -396,7 +397,7 @@ function useDeFileManager(
       return;
     }
 
-    const results = await fm?.search(cwd, query);
+    const results = await fm?.search(cwd as DeDirectory, query);
     dispatch({
       type: ACTION.SET_SEARCH_LISTING,
       payload: results

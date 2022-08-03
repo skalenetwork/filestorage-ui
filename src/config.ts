@@ -11,6 +11,7 @@ export type ConfigType = {
   };
   uploader: {
     batchThreshold: number;
+    maxFileDirNameLength: number;
   };
   chains: {
     protocol: string;
@@ -33,7 +34,8 @@ export default <ConfigType>{
     pageLimit: 10
   },
   uploader: {
-    batchThreshold: 5
+    batchThreshold: 5,
+    maxFileDirNameLength: 255
   },
   chains: [
     {

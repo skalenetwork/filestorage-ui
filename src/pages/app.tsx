@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 import { useState, useEffect, useLayoutEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { useFileManagerContext, ContextType } from '@/context/index';
 import { FileStatus, ROLE } from '@/context/useDeFileManager';
 
@@ -54,16 +54,19 @@ const App = () => {
     reserveSpaceAmount: number,
     roleGranteeAddress: string,
   }
-
-  const { register, control, handleSubmit, watch, formState: { errors }, resetField } = useForm({
+  // methods = { register, control, handleSubmit, watch, formState: { errors }, resetField };
+  const appForm = useForm({
+    mode: 'onChange',
     defaultValues: {
       uploads: [],
       directoryName: "",
       reserveSpaceAddress: "",
       reserveSpaceAmount: "",
       roleGranteeAddress: ""
-    } as ActionsFormData
+    } as ActionsFormData,
   });
+
+  const { resetField } = appForm;
 
   useLayoutEffect(() => {
     if (!selectedFile) return;
@@ -199,17 +202,57 @@ const App = () => {
 
       {/* Action widgets, can be iterated on with FormContext */}
 
-      <UploadWidget
-        open={uploadModal}
-        onClose={() => {
-          setUploadModal(false);
-          resetField('uploads');
-        }}
-        formControl={control}
-        formRegister={register}
-        batchThreshold={config.uploader.batchThreshold}
-        onSubmit={handleSubmit(handleConfirmUpload)}
-      />
+      <FormProvider {...appForm}>
+
+        <GrantorWidget
+          open={grantRoleModal}
+          onClose={() => setGrantRoleModal(false)}
+        />
+
+        <ReserveSpaceWidget
+          open={reserveSpaceModal}
+          onClose={() => {
+            setReserveSpaceModal(false);
+            resetField('reserveSpaceAddress');
+            resetField('reserveSpaceAmount');
+          }}
+          onSubmit={
+            ({ address, space }) => {
+              setReserveSpaceModal(false);
+              resetField('reserveSpaceAddress');
+              resetField('reserveSpaceAmount');
+              return address && space && fm?.fs.reserveSpace(fm.address, address, Number(space));
+            }
+          }
+        />
+
+        <CreateDirectoryWidget
+          open={directoryModal}
+          onClose={() => {
+            resetField('directoryName');
+            setDirectoryModal(false);
+          }}
+          onSubmit={
+            ({ directoryName }) => {
+              console.log(`create directory ${directoryName} in`, currentDirectory);
+              setDirectoryModal(false);
+              resetField('directoryName');
+              createDirectory(directoryName);
+            }
+          }
+        />
+
+        <UploadWidget
+          open={uploadModal}
+          onClose={() => {
+            setUploadModal(false);
+            resetField('uploads');
+          }}
+          onSubmit={handleConfirmUpload}
+          batchThreshold={config.uploader.batchThreshold}
+        />
+
+      </FormProvider>
 
       <UploadProgressWidget
         open={activeUploadsModal}
@@ -224,47 +267,6 @@ const App = () => {
         open={failedUploadsModal}
         onClose={() => setFailedUploadsModal(false)}
         failedUploads={failedFiles}
-      />
-
-      <CreateDirectoryWidget
-        open={directoryModal}
-        onClose={() => {
-          resetField('directoryName');
-          setDirectoryModal(false);
-        }}
-        formRegister={register}
-        onSubmit={handleSubmit(
-          ({ directoryName }) => {
-            console.log(`create directory ${directoryName} in`, currentDirectory);
-            setDirectoryModal(false);
-            resetField('directoryName');
-            createDirectory(directoryName);
-          }
-        )}
-      />
-
-      <ReserveSpaceWidget
-        open={reserveSpaceModal}
-        onClose={() => {
-          setReserveSpaceModal(false);
-          resetField('reserveSpaceAddress');
-          resetField('reserveSpaceAmount');
-        }}
-        formRegister={register}
-        onSubmit={handleSubmit(
-          ({ address, space }) => {
-            setReserveSpaceModal(false);
-            resetField('reserveSpaceAddress');
-            resetField('reserveSpaceAmount');
-            return address && space && fm?.fs.reserveSpace(fm.address, address, Number(space));
-          }
-        )}
-      />
-
-      <GrantorWidget
-        open={grantRoleModal}
-        onClose={() => setGrantRoleModal(false)}
-        formRegister={register}
       />
 
       <ViewFileWidget

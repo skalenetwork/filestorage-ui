@@ -1,23 +1,26 @@
-import prettyBytes from 'pretty-bytes';
-import { FormEvent } from 'react';
 import { Button, Input, Modal } from '@/components/common';
 import UploadIcon from '@heroicons/react/outline/UploadIcon';
 
-import { useFieldArray } from 'react-hook-form';
+import { useFieldArray, useFormContext } from 'react-hook-form';
 import { ModalWidgetProps, FormProps } from 'partials';
-import { WidgetMode } from 'fortmatic/dist/cjs/src/core/sdk';
 import WidgetModal from '@/components/WidgetModal';
+import { useFileManagerContext, ContextType } from '../context';
+import { triggerAsyncId } from 'async_hooks';
 
 type Props = ModalWidgetProps & FormProps & {
   batchThreshold: number
 };
 
 const UploadWidget = (
-  { open, formControl, formRegister, batchThreshold, onClose, onSubmit }: Props
+  { open, batchThreshold, onClose, onSubmit }: Props
 ) => {
 
+  const { directory, listing } = useFileManagerContext() as ContextType;
+
+  const { handleSubmit, register, control, formState: { errors }, trigger } = useFormContext();
+
   const { fields, append, prepend, remove, swap, move, insert } = useFieldArray({
-    control: formControl,
+    control,
     name: "uploads",
   });
 
@@ -26,6 +29,14 @@ const UploadWidget = (
       remove(index);
     });
   }
+
+  const fileNameRules = {
+    required: true,
+    validate: (value: string) => {
+      console.log(value);
+      return !listing.some(item => ((item.kind === "file") && item.name === value));
+    }
+  };
 
   return (
     <WidgetModal
@@ -37,7 +48,7 @@ const UploadWidget = (
       heading="Upload files"
     >
       <form onSubmit={(e) => {
-        onSubmit(e);
+        handleSubmit(onSubmit)(e);
         clearFields();
       }}>
         <Modal.Body className="w-full flex flex-col gap-1.5 justify-center items-center min-w-72">
@@ -49,37 +60,30 @@ const UploadWidget = (
                   <p>Batch uploads may take a while, files cannot be renamed.</p>
                 </div>
               )
-              : (fields.length > 1) ?
-
+              : (fields.length > 0) ?
                 (
                   fields
                     .map((field, index) => (
-                      <div key={field.id} className="flex flex-row justify-between">
-                        <input
-                          className="px-2 py-1 grow relative focus:border-gray-500 focus:outline-none"
-                          {...formRegister(`uploads.${index}.name` as any)}
+                      <div key={field.id}>
+                        <label htmlFor="" className="label">
+                          <span className="label-text">Name</span>
+                        </label>
+                        <Input
+                          {...register(`uploads.${index}.name` as any, fileNameRules)}
                         />
+                        { (errors['uploads']?.[index]?.['name']?.type as any) === "validate" &&
+                          <p className={`text-right text-sm py-1 text-red-400`}>
+                            {"File with the name already exists"}
+                          </p>
+                        }
                       </div>
                     ))
                 )
-                : (fields.length === 1) ?
-                  (<>
-                    <div>
-                      <label htmlFor="" className="label">
-                        <span className="label-text">Name</span>
-                      </label>
-                      <Input
-                        type="text"
-                        {...formRegister(`uploads.0.name`)}
-                        required
-                      />
-                    </div>
-                  </>)
-                  :
-                  (<>
-                    <UploadIcon className="h-24 w-24 my-4" strokeWidth={1} />
-                    <p>Select files to upload.</p>
-                  </>)
+                :
+                (<>
+                  <UploadIcon className="h-24 w-24 my-4" strokeWidth={1} />
+                  <p>Select files to upload.</p>
+                </>)
           }
         </Modal.Body>
         <Modal.Actions className="flex justify-center items-center gap-8">
@@ -105,6 +109,7 @@ const UploadWidget = (
                         file
                       });
                     });
+                    trigger();
                   }}
                   multiple
                 />

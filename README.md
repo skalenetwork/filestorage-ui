@@ -16,7 +16,7 @@ Entry point: `pages/-app.tsx`
 - [x] Total usage metrics
 - [x] File Navigator: paginated + sortable + actionable
 - [x] Breadcrumb
-- [ ] Address switch
+- [x] Address switch
 - [x] Search
 
 ## To locate

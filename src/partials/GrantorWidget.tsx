@@ -1,9 +1,7 @@
 import WidgetModal from "@/components/WidgetModal";
-import type { ModalWidgetProps } from "partials";
+import type { FormProps, ModalWidgetProps } from "partials";
 
-type Props = ModalWidgetProps & {
-  open: boolean,
-}
+type Props = ModalWidgetProps & FormProps;
 
 const GrantorWidget = ({
   open,
@@ -16,7 +14,6 @@ const GrantorWidget = ({
   >
 
   </WidgetModal>
-
 }
 
 export default GrantorWidget;

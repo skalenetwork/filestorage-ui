@@ -2,7 +2,7 @@
 
 priors
 
-[ ] add field validations
+[x] add field validations
 [ ] finalize role granter flow
 [ ] finalize reserve space flow
 [x] role checks and conditional view
@@ -17,7 +17,7 @@ feedback
 [ ] file preferred direct download, fallback contract call
 [ ] general notifications / errors
 [ ] by mockups: new toggled list of uploads with each progress (bottom-right)
-[ ] detect duplications in upload form as field validation
+[x] detect duplications in upload form as field validation
 
 frontier
 

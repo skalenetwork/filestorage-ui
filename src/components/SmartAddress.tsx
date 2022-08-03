@@ -7,6 +7,7 @@ import XIcon from '@heroicons/react/solid/XIcon';
 import Web3 from 'web3';
 import { useDebounce } from 'react-use';
 import { ifError } from 'assert';
+import { Input } from './common';
 
 const SmartAddress = (
   { className, address, onEdit, offEdit, onConfirm }:
@@ -67,21 +68,24 @@ const SmartAddress = (
         <FormattedAddress address={address || ""} pre={5} post={10} /> &emsp;/
       </p>
       <div className={`flex items-center ${edit === false ? "hidden" : ""}`}>
-        <div>
-          <input
-            className="input text-base !border-blue-300 !focus:border-blue-300 w-[576px]"
+        <div className="relative w-[576px]">
+          <Input
+            className="relative text-base !border-blue-300 !focus:border-blue-300 w-full"
             {...field}
           />
-          {(errorMessage) && <p className="py-1 px-2 absolute text-red-400 text-sm bg-white rounded">{errorMessage}</p>}
+          {(errorMessage) && <p className="py-1 px-2 absolute right-0 text-red-400 text-sm bg-white rounded">{errorMessage}</p>}
         </div>
 
-        <div className="relative flex items-center -translate-x-24">
-          <span className={`btn btn-square btn-ghost ${(fieldState.error) ? 'hidden' : ''}`} onClick={(e) => {
-            e.preventDefault();
-            console.log("onClick", getValues("address"));
-            onConfirm(getValues("address"));
-            setEdit(false);
-          }}>
+        <div className="relative flex justify-end items-center -translate-x-24 w-24">
+          <span
+            className={`btn btn-square btn-ghost ${(fieldState.error) ? 'hidden' : ''}`}
+            onClick={(e) => {
+              e.preventDefault();
+              console.log("onClick", getValues("address"));
+              onConfirm(getValues("address"));
+              setEdit(false);
+            }}
+          >
             <CheckIcon className="h-5 w-5 text-green-500" />
           </span>
           <span className="btn btn-square btn-ghost"
