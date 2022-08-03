@@ -1,13 +1,12 @@
-// @ts-nocheck
 
 import { useEffect, useLayoutEffect, useReducer, useState } from 'react';
 import { useInterval } from 'react-use';
-import { DeFileManager, DeDirectory, DeFile } from '@/services/filemanager';
+import { DeFileManager, DeDirectory, DeFile, DePath, FileOrDir } from '@/services/filemanager';
 import Web3 from 'web3';
 
 export type FileStatus = {
   file: File;
-  dePath: string;
+  dePath: DePath;
   progress: number;
   error?: {
     name: string;
@@ -21,8 +20,8 @@ export type State = {
   accountRoles: [],
   fm: DeFileManager | undefined;
   directory: DeDirectory | undefined;
-  listing: Array<DeDirectory | DeFile>;
-  searchListing: Array<DeDirectory | DeFile>;
+  listing: Array<FileOrDir>;
+  searchListing: Array<FileOrDir>;
   isSearching: boolean;
   isCreatingDirectory: boolean;
   isLoadingDirectory: boolean;
@@ -167,7 +166,8 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
         ...action.payload
       }
     default:
-      throw new Error();
+      console.log('Unregistered action', action.type);
+      return state;
   }
 }
 
@@ -211,7 +211,6 @@ function useDeFileManager(
 
   useLayoutEffect(() => {
     if (!(w3Provider && address)) return;
-    console.log("useDeFileManager::provider", w3Provider);
 
     let account;
     if (w3Provider.selectedAddress) {
@@ -416,7 +415,7 @@ function useDeFileManager(
     })
   };
 
-  return [fm, state, actions];
+  return [fm as DeFileManager, state, actions];
 }
 
 export default useDeFileManager;

@@ -31,7 +31,7 @@ const ViewFileWidget = ({
             <p>{file.name}</p>
             <div className="w-96 h-[300px] bg-gray-200 text-center flex justify-center items-center">
               Preview WIP <br />
-                Length: {fileData?.byteLength}
+
             </div>
           </div>
           : <></>

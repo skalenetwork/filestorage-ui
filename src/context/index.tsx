@@ -116,12 +116,10 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
 
   const getFileLink = (file: DeFile) => {
     let link = getFsEndpoint((config as ConfigType).chains[0], address, file.path);
-    console.log(file, link);
     return link;
   }
 
   useMount(() => {
-    console.log(appConfig);
     setConfig(appConfig);
   });
 
@@ -144,7 +142,6 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!w3Modal) return;
     connectWallet();
-    console.log('w3Modal', w3Modal);
   }, [w3Modal]);
 
   /// DEV ZONE START ///

@@ -71,7 +71,6 @@ export interface IDeFile {
 
 function pathToRelative(storagePath: DePath) {
   const relative = storagePath.split("/").slice(1).join('/');
-  console.log("pathToRelative::", storagePath, relative);
   return relative;
 }
 
@@ -162,8 +161,8 @@ class DeFileManager {
 
     this.w3 = w3;
     this.fs = new FileStorage(w3, true);
-    this.contract = (this.fs.contract as unknown) as ContractContext;
-
+    this.contract = (this.fs.contract.contract as unknown) as ContractContext;
+    console.log(this.contract);
     this.dirLastAction = "";
 
     const addrWithoutPrefix = this.address.slice(2);
@@ -182,7 +181,6 @@ class DeFileManager {
   //@ts-ignore
   async * entriesGenerator(directory: DeDirectory): Promise<Iterable<FileOrDir>> {
     let path = (directory.parent) ? this.rootDir.name + "/" + directory.path : this.rootDir.name;
-    console.log("* entriesGenerator::", path, this);
     // hit remote
     const entries = await this.loadDirectory(path);
 
@@ -231,7 +229,7 @@ class DeFileManager {
    */
   async loadDirectory(path: string): Promise<Array<FileStorageFile | FileStorageDirectory>> {
     const entries = await this.fs.listDirectory(`${path}`);
-    console.log("fm:loadDirectory", entries);
+    console.log("fm::loadDirectory", entries);
     return sortBy(entries, ((o: FileStorageDirectory | FileStorageFile) => o.isFile === true));
   }
 
@@ -239,9 +237,7 @@ class DeFileManager {
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
     const path = (destDirectory.path === this.rootDir.path) ? name : `${destDirectory.path}/${name}`;
-    console.log("path", path);
     const returnPath = await this.fs.createDirectory(this.account, path, this.accountPrivateKey);
-    console.log("fm::createDirectory", returnPath);
     this.dirLastAction = `${OPERATON.CREATE_DIRECTORY}:${returnPath}`;
     return returnPath;
   }
@@ -306,19 +302,17 @@ class DeFileManager {
   async search(inDirectory: DeDirectory, query: string) {
 
     let results: Array<FileOrDir> = [];
-    console.log("filemanager::query", query);
 
     if (!query) return results;
 
     const handleList = (list: any) => {
-      console.log(list);
       const fuse = new Fuse(list, { keys: ['name'] });
       const result = fuse.search(query.trim()).map(r => r.item) as FileOrDir[];
       results = [...results, ...result];
     }
 
     await this.iterateDirectory(inDirectory, handleList, true);
-    console.log("filemanager::search_results", results);
+    console.log("fm::search_results", results);
     return results;
   }
 
