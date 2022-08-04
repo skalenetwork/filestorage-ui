@@ -30,7 +30,7 @@ const App = () => {
   // modals
 
   const [reserveSpaceModal, setReserveSpaceModal] = useState(false);
-  const [activeUploadsModal, setActiveUploadsModal] = useState(false);
+  const [activeUploadsModal, setActiveUploadsModal] = useState(true);
   const [failedUploadsModal, setFailedUploadsModal] = useState(false);
   const [uploadModal, setUploadModal] = useState(false);
   const [directoryModal, setDirectoryModal] = useState(false);
@@ -39,7 +39,7 @@ const App = () => {
   const {
     config,
     fm, directory: currentDirectory, reservedSpace, occupiedSpace, searchListing,
-    isAuthorized, accountRoles, connectWallet, activeUploads, failedUploads, totalUploadCount, processedUploadCount,
+    isAuthorized, accountRoles, connectWallet, activeUploads, failedUploads, totalUploadCount,
     changeDirectory, uploadFiles, createDirectory, search, isSearching, isCreatingDirectory
   }: ContextType = useFileManagerContext<ContextType>();
 
@@ -260,7 +260,6 @@ const App = () => {
         activeUploads={uploadingFiles}
         failedUploads={failedFiles}
         total={totalUploadCount}
-        processed={processedUploadCount}
       />
 
       <UploadFailedWidget

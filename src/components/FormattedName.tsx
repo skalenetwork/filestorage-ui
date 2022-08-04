@@ -18,7 +18,7 @@ const FileIcon = ({ file, className = "" }: { file: DeFile, className: string })
   )
 };
 
-const FormattedName = ({ item }: { item: DeFile | DeDirectory }) => {
+const FormattedName = ({ item, maxLength }: { item: DeFile | DeDirectory, maxLength?: number }) => {
   return (
     <span className="gap-x-2 flex flex-row items-center cursor-default">
       {
@@ -26,7 +26,9 @@ const FormattedName = ({ item }: { item: DeFile | DeDirectory }) => {
           ? <FolderIcon className="h-5 w-5 text-blue-500" />
           : <FileIcon file={item as DeFile} className="h-5 w-5" />
       }
-      {item.name}
+      {(maxLength) ?
+        item.name.substr(0, maxLength / 2) + '..' + item.name.substr(item.name.length - Math.ceil(maxLength / 2))
+        : item.name}
     </span>
   )
 };

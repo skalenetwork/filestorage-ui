@@ -1,7 +1,11 @@
-import { Modal, Progress } from '@/components/common';
+import { Modal, Progress, SpinnerIcon } from '@/components/common';
+import FormattedName from '@/components/FormattedName';
+import FormattedSize from '@/components/FormattedSize';
 import WidgetModal from '@/components/WidgetModal';
 import { FileStatus } from '@/context/useDeFileManager';
+import { DeDirectory, DeFile, FileOrDir } from '@/services/filemanager';
 import UploadIcon from '@heroicons/react/outline/UploadIcon';
+import XIcon from '@heroicons/react/outline/XIcon';
 import CheckIcon from '@heroicons/react/solid/CheckIcon';
 import type { ModalWidgetProps } from 'partials';
 import prettyBytes from 'pretty-bytes';
@@ -10,15 +14,49 @@ import { useFileManagerContext, ContextType } from '../context';
 type Props = ModalWidgetProps & {
   activeUploads: FileStatus[],
   failedUploads: FileStatus[],
-  total: number,
-  processed: number
+  total: number
+}
+
+const ItemStatus = ({ data }: { data: FileStatus }) => {
+
+  const preDeFile = {
+    kind: "file",
+    name: data.file.name,
+    size: data.file.size,
+    path: data.dePath
+  } as DeFile;
+
+  return (
+    <div className="w-full flex flex-row items-center border-slate-800 border-b py-4">
+      <div className="grow">
+        <FormattedName
+          item={preDeFile}
+          maxLength={12}
+        />
+      </div>
+      <div className="grow">
+        <FormattedSize item={preDeFile} />
+      </div>
+      <div className="flex items-center flex-grow-0">
+        <span className="font-mono">{data.progress} %</span>
+        <span className="ml-2">
+          {
+            (data.error)
+              ? <XIcon className="w-8 h-8 text-red-500" />
+              : (data.progress === 100)
+                ? <CheckIcon className="w-8 h-8 text-green-500" />
+                : <SpinnerIcon className="w-6 h-6" strokeWidth="2" />
+          }
+        </span>
+      </div>
+    </div>
+  )
 }
 
 const UploadProgressWidget = ({
   open,
   onClose,
   total,
-  processed,
   activeUploads,
   failedUploads
 }: Props) => {
@@ -27,29 +65,17 @@ const UploadProgressWidget = ({
     <WidgetModal
       open={open}
       onClose={onClose}
-      heading={(processed === total) ? "Files have been uploaded successfully" : "Uploading"}
+      heading="Uploading"
     >
       <Modal.Body className="w-full flex flex-col gap-1.5 justify-center items-center">
+        <p>This process may take some time</p>
         {
-          (processed < total) ?
-            <>
-              <p>This process may take some time</p>
-              <UploadIcon className="h-24 w-24 my-4" />
-              {
-                activeUploads.map(upload => (upload) ? (
-                  <div key={upload.dePath} className="flex flex-row justify-between items-center gap-2">
-                    <p>{upload.file.name}</p>
-                    <p>{prettyBytes(upload.file.size)}</p>
-                  </div>
-                ) : null)
-              }
-              <Progress
-                className="w-full animate-pulse"
-                value={total === 1 ? undefined : processed} max={total === 1 ? undefined : total}
-              />
-            </>
-            :
-            <p><CheckIcon className="w-16 h-16 text-green-500" /></p>
+          activeUploads.map(upload => (upload) ? (
+            <ItemStatus
+              key={upload.dePath}
+              data={upload}
+            />
+          ) : null)
         }
       </Modal.Body>
     </WidgetModal>

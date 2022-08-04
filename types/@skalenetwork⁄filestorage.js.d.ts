@@ -7,6 +7,12 @@ declare module '@skalenetwork/filestorage.js' {
   type Address = string;
   type PrivateKey = string;
 
+  export enum FileState {
+    NoExist = 0,
+    Created = 1,
+    Uploaded = 2,
+  }
+
   export type FileStorageDirectory = {
     name: string;
     storagePath: string;
@@ -18,7 +24,7 @@ declare module '@skalenetwork/filestorage.js' {
     storagePath: string;
     isFile: boolean;
     size: number;
-    status: number;
+    status: FileState;
     uploadingProgress: number;
   }
 

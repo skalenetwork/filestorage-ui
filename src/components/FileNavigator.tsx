@@ -48,7 +48,7 @@ const DirCrumb = (
               key={item.path}
             >
               <a onClick={(e) => onCrumbClick(item)}>
-                <FormattedName item={item} />
+                <FormattedName item={item} maxLength={6} />
               </a>
             </li>
           ))

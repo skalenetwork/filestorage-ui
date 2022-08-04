@@ -9,6 +9,11 @@ import { ContractContext } from './../../types/abi/filestorage-1.0.1';
  * @todo: rate limiting, cache management
  */
 
+// if searching remains delegated to client-side:
+// later improvement iterations can integrate file trie as index, with current iterator adapting the change
+// as well considering storage options with IndexDB, and advanced uploads management
+// pre-req: standardization of paths as spec from systems up to client-side, exported across SDKs
+
 import FileStorage, {
   FileStorageDirectory,
   FileStorageFile,
@@ -38,8 +43,12 @@ const OPERATON = {
   CREATE_DIRECTORY: 'CREATE_DIRECTORY'
 }
 
+// @todo: improve error coverage, segment some to state, extend with codes
 const ERROR = {
-  NO_ACCOUNT: "FileManager has no signer account"
+  NO_ACCOUNT: "File manager has no signer account",
+  BUSY: "File system is currently busy",
+  UNKNOWN: "Something went wrong",
+  NO_NET: "You are currently offline"
 }
 
 /**
@@ -82,7 +91,6 @@ function memoize(fn: () => void) {
     const result = cache.get(strArgs);
   }
 }
-
 
 class DeDirectory implements IDeDirectory {
   kind: string;
@@ -225,7 +233,7 @@ class DeFileManager {
   }
 
   /**
-   * @todo memoization w/ stale check
+   * @todo memoization w/ stale check, and flag for bypass-cache calls
    */
   async loadDirectory(path: string): Promise<Array<FileStorageFile | FileStorageDirectory>> {
     const entries = await this.fs.listDirectory(`${path}`);

@@ -1,4 +1,3 @@
-
 import { useEffect, useLayoutEffect, useReducer, useState } from 'react';
 import { useInterval } from 'react-use';
 import { DeFileManager, DeDirectory, DeFile, DePath, FileOrDir } from '@/services/filemanager';
@@ -29,9 +28,9 @@ export type State = {
   reservedSpace: number;
   occupiedSpace: number;
   totalUploadCount: number;
-  processedUploadCount: number;
-  activeUploads: Map<DeDirectory, Array<FileStatus>>;
-  failedUploads: Map<DeDirectory, Array<FileStatus>>;
+  activeUploads: Map<DePath, Array<FileStatus>>;
+  completedUploads: Map<DePath, Array<FileStatus>>;
+  failedUploads: Map<DePath, Array<FileStatus>>;
 };
 
 export type Action = {
@@ -57,28 +56,31 @@ const initialState: State = {
   reservedSpace: 0,
   occupiedSpace: 0,
   totalUploadCount: 0,
-  processedUploadCount: 0,
   activeUploads: new Map(),
+  completedUploads: new Map(),
   failedUploads: new Map(),
 };
 
 const ACTION = {
+
   INITIALIZE: 'INITIALIZE',
   SET_ROLES: 'SET_ROLES',
   SET_AUTHORITY: 'SET_AUTHORITY',
+  SET_CAPACITY: 'SET_CAPACITY',
+
   CHANGE_DIRECTORY: 'CHANGE_DIRECTORY',
   SET_LISTING: 'SET_LISTING',
   SET_SEARCH_LISTING: 'SET_SEARCH_LISTING',
   SET_SEARCH_LOADING: 'SET_SEARCH_LOADING',
   SET_DIRECTORY_OP: 'SET_DIRECTORY_OP',
   SET_LOADING_DIRECTORY: 'SET_LOADING_DIRECTORY',
+
   INIT_UPLOADS: 'INIT_UPLOADS',
-  ADD_TO_UPLOADS: 'ADD_TO_UPLOADS',
-  REMOVE_FROM_UPLOADS: 'REMOVE_FROM_UPLOADS',
-  UPDATE_UPLOADS: 'UPDATE_UPLOADS',
+  SET_DIRECTORY_UPLOADS: 'SET_DIRECTORY_UPLOADS',
+  SET_UPLOAD: 'SET_UPLOAD',
+  REMOVE_FROM_UPLOADS: 'REMOVE_FROM_UPLOADS', // @to_deprecate
   RESET_UPLOADS: 'RESET_UPLOADS',
-  RESET_FAILED_UPLOADS: 'RESET_FAILED_UPLOADS',
-  SET_CAPACITY: 'SET_CAPACITY'
+  RESET_FAILED_UPLOADS: 'RESET_FAILED_UPLOADS' // @to_deprecate after prune actions
 };
 
 const reducer = (state: State, action: { type: string, payload: any }) => {
@@ -93,6 +95,12 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
         fm: action.payload.fm,
         directory: action.payload.directory,
       }
+    case ACTION.SET_CAPACITY:
+      return {
+        ...state,
+        ...action.payload
+      }
+
     case ACTION.CHANGE_DIRECTORY:
       return { ...state, directory: action.payload }
     case ACTION.SET_LISTING:
@@ -105,36 +113,47 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
       return { ...state, isLoadingDirectory: action.payload }
     case ACTION.SET_SEARCH_LISTING:
       return { ...state, searchListing: action.payload, isSearching: false }
+
     case ACTION.INIT_UPLOADS:
-      return { ...state, totalUploadCount: state.totalUploadCount + action.payload }
-    case ACTION.RESET_UPLOADS:
+      const { uploads, directory }: { directory: DePath, uploads: FileStatus[] } = action.payload;
+      const activeUploads = new Map(state.activeUploads);
+      const scopeUploads = activeUploads.get(directory) || [];
+      activeUploads.set(directory, [...scopeUploads, ...uploads]);
       return {
         ...state,
-        totalUploadCount: 0,
-        processedUploadCount: 0,
-        activeUploads: initialState.activeUploads
+        activeUploads,
+        totalUploadCount: state.totalUploadCount + uploads.length
       }
-    case ACTION.RESET_FAILED_UPLOADS:
-      return {
-        ...state,
-        failedUploads: initialState.failedUploads
-      }
-    case ACTION.ADD_TO_UPLOADS:
+    case ACTION.SET_UPLOAD:
       {
-        let { directory, file, isFailed } = action.payload;
-        if (isFailed) {
-          const failedUploads = new Map(state.failedUploads);
-          failedUploads.set(directory, [...failedUploads.get(directory) || [], file]);
-          return {
-            ...state,
-            failedUploads,
-          }
-        }
+        let { directory, file }:
+          { directory: DePath, file: FileStatus } = action.payload;
+
         const activeUploads = new Map(state.activeUploads);
-        activeUploads.set(directory, [...activeUploads.get(directory) || [], file]);
+        const scopeUploads = [...activeUploads.get(directory) || []];
+        const index = scopeUploads.findIndex(f => f.dePath === file.dePath);
+
+        if (index < 0) {
+          scopeUploads.push(file);
+        } else {
+          scopeUploads[index] = file;
+        }
+
+        activeUploads.set(directory, scopeUploads);
+
         return {
           ...state,
           activeUploads,
+        }
+      }
+    case ACTION.SET_DIRECTORY_UPLOADS:
+      {
+        let { directory, uploads }: { directory: DePath, uploads: FileStatus[] } = action.payload;
+        const activeUploads = new Map(state.activeUploads);
+        activeUploads.set(directory, uploads);
+        return {
+          ...state,
+          activeUploads
         }
       }
     case ACTION.REMOVE_FROM_UPLOADS:
@@ -147,24 +166,19 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
         activeUploads.set(directory, currentFiles);
         return {
           ...state,
-          activeUploads,
-          processedUploadCount: state.processedUploadCount + 1
-        }
-      }
-    case ACTION.UPDATE_UPLOADS:
-      {
-        let { directory, activeFiles } = action.payload;
-        const activeUploads = new Map(state.activeUploads);
-        activeUploads.set(directory, activeFiles);
-        return {
-          ...state,
           activeUploads
         }
       }
-    case ACTION.SET_CAPACITY:
+    case ACTION.RESET_UPLOADS:
       return {
         ...state,
-        ...action.payload
+        totalUploadCount: 0,
+        activeUploads: initialState.activeUploads
+      }
+    case ACTION.RESET_FAILED_UPLOADS:
+      return {
+        ...state,
+        failedUploads: initialState.failedUploads
       }
     default:
       console.log('Unregistered action', action.type);
@@ -263,27 +277,27 @@ function useDeFileManager(
   }, [state.fm, state.directory?.path]);
 
   // tested for uploads under 1mb: file being uploaded not reflected in directory listing via node
-  useInterval(() => {
+  // periodically fetch relevant directory listings, update active uploads with progress
+  // @todo can be better managed after some restructure involving converging remote + local state vs lookup of remote
+  false && useInterval(() => {
     for (let dirPath of state.activeUploads.keys()) {
-      // @todo make sane
       const absolutePath = state.fm?.rootDirectory().name + ((dirPath) ? ("/" + dirPath) : "");
       fm?.loadDirectory(absolutePath)
         .then(listing => {
           const uploads = state.activeUploads.get(dirPath);
-          const withProgress = uploads?.map(upload => {
+          const uploadsWithProgress = uploads?.map(upload => {
             const match = listing.find(f => (dirPath + upload.file.name) === upload.dePath);
-            // @todo when progress 100, purge or push to complete for notification
             return { ...upload, progress: (match as FileStorageFile).uploadingProgress }
           });
           dispatch({
-            type: ACTION.UPDATE_UPLOADS, payload: {
+            type: ACTION.SET_DIRECTORY_UPLOADS, payload: {
               directory: dirPath,
-              activeUploads: withProgress
+              uploads: uploadsWithProgress
             }
           });
         });
     }
-  }, 1000);
+  }, 2000);
 
   const createDirectory = (fm && cwd && state.isAuthorized) &&
     (async (name: string, directory: DeDirectory = cwd) => {
@@ -310,48 +324,40 @@ function useDeFileManager(
         return;
       }
 
-      dispatch({
-        type: ACTION.RESET_FAILED_UPLOADS,
-      });
-
+      // add to the active uploads with zero progress
       dispatch({
         type: ACTION.INIT_UPLOADS,
-        payload: files.length
+        payload: {
+          directory,
+          uploads: files.map(file => ({
+            file,
+            dePath: directory.path + file.name,
+            progress: 0
+          } as FileStatus
+          ))
+        }
       });
 
-      // upload transactions going serially
+      // upload transactions going serially until nonce management or SDK events allow otherwise
+      // https://github.com/skalenetwork/filestorage-ui/issues/1
+
       for (let index = 0; index < files.length; index++) {
+
         let file = files[index];
-        dispatch({
-          type: ACTION.ADD_TO_UPLOADS,
-          payload: {
-            directory: directory.path,
-            file: { file, dePath: directory.path + file.name, progress: 0 }
-          }
-        });
-        const remove = () => {
-          dispatch({
-            type: ACTION.REMOVE_FROM_UPLOADS,
-            payload: {
-              directory: directory.path,
-              path: directory.path + file.name
-            }
-          });
-        }
+
         await fm.uploadFile(directory, file)
           .then(path => {
-            remove();
-            loadCurrentDirectory();
+            if (directory.path === cwd.path) {
+              loadCurrentDirectory();
+            }
           })
           .catch(err => {
-            console.error(err);
-            remove();
+            console.error("uploadFile::failure", err);
             dispatch({
-              type: ACTION.ADD_TO_UPLOADS,
+              type: ACTION.SET_UPLOAD,
               payload: {
                 directory: directory.path,
-                file: { file: err.file, dePath: directory.path + file.name, progress: 0, error: err.error },
-                isFailed: true
+                file: { file: err.file, dePath: directory.path + file.name, progress: 0, error: err.error }
               }
             });
           })
