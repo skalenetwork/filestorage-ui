@@ -26,7 +26,7 @@ const FormattedName = ({ item, maxLength }: { item: DeFile | DeDirectory, maxLen
           ? <FolderIcon className="h-5 w-5 text-blue-500" />
           : <FileIcon file={item as DeFile} className="h-5 w-5" />
       }
-      {(maxLength) ?
+      {(maxLength && item.name.length > maxLength) ?
         item.name.substr(0, maxLength / 2) + '..' + item.name.substr(item.name.length - Math.ceil(maxLength / 2))
         : item.name}
     </span>

@@ -1,3 +1,4 @@
+import { StoragePath } from './../../types/@skalenetwork⁄filestorage.js.d';
 import { useEffect, useLayoutEffect, useReducer, useState } from 'react';
 import { useInterval } from 'react-use';
 import { DeFileManager, DeDirectory, DeFile, DePath, FileOrDir } from '@/services/filemanager';
@@ -6,7 +7,7 @@ import type { FileStorageFile } from '@skalenetwork/filestorage.js';
 
 export type FileStatus = {
   file: File;
-  dePath: DePath;
+  path: FileStorageFile['storagePath'];
   progress: number;
   error?: {
     name: string;
@@ -131,7 +132,7 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
 
         const activeUploads = new Map(state.activeUploads);
         const scopeUploads = [...activeUploads.get(directory) || []];
-        const index = scopeUploads.findIndex(f => f.dePath === file.dePath);
+        const index = scopeUploads.findIndex(f => f.path === file.path);
 
         if (index < 0) {
           scopeUploads.push(file);
@@ -161,7 +162,7 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
         let { directory, path } = action.payload;
         const activeUploads = new Map(state.activeUploads);
         const currentFiles = [...activeUploads.get(directory) || []];
-        const index = currentFiles?.findIndex(f => f.dePath === path);
+        const index = currentFiles?.findIndex(f => f.path === path);
         const removed = currentFiles.splice(index, 1);
         activeUploads.set(directory, currentFiles);
         return {
@@ -224,6 +225,15 @@ function useDeFileManager(
     });
   }
 
+  // make-shift, integrate to interfaces already! -.-
+  const absolutePath = (relativePath: string): FileStorageFile['storagePath'] => {
+    if (!fm) return '';
+    const absolutePath = fm.rootDirectory().name
+      + ((!relativePath || relativePath.slice(0, 1) === '/') ? '' : '/')
+      + relativePath;
+    return absolutePath;
+  }
+
   useLayoutEffect(() => {
     if (!(w3Provider && address)) return;
 
@@ -279,16 +289,21 @@ function useDeFileManager(
   // tested for uploads under 1mb: file being uploaded not reflected in directory listing via node
   // periodically fetch relevant directory listings, update active uploads with progress
   // @todo can be better managed after some restructure involving converging remote + local state vs lookup of remote
+  // @wip: zoom out and re-implement this
   false && useInterval(() => {
     for (let dirPath of state.activeUploads.keys()) {
-      const absolutePath = state.fm?.rootDirectory().name + ((dirPath) ? ("/" + dirPath) : "");
-      fm?.loadDirectory(absolutePath)
+      if (!state.activeUploads.get(dirPath)?.length)
+        continue;
+      fm?.loadDirectory(absolutePath(dirPath))
         .then(listing => {
-          const uploads = state.activeUploads.get(dirPath);
-          const uploadsWithProgress = uploads?.map(upload => {
-            const match = listing.find(f => (dirPath + upload.file.name) === upload.dePath);
-            return { ...upload, progress: (match as FileStorageFile).uploadingProgress }
-          });
+          const uploadsWithProgress = state.activeUploads.get(dirPath)?.map(upload => {
+            const match = listing.find(f => {
+              console.log("interval:: upload match params", f.storagePath, '===', upload.path);
+              return f.storagePath === upload.path
+            });
+            console.log("interval::upload match", JSON.stringify(match));
+            return { ...upload, progress: (match as FileStorageFile)?.uploadingProgress || 0 }
+          }) || [];
           dispatch({
             type: ACTION.SET_DIRECTORY_UPLOADS, payload: {
               directory: dirPath,
@@ -297,7 +312,7 @@ function useDeFileManager(
           });
         });
     }
-  }, 2000);
+  }, 1000);
 
   const createDirectory = (fm && cwd && state.isAuthorized) &&
     (async (name: string, directory: DeDirectory = cwd) => {
@@ -331,10 +346,10 @@ function useDeFileManager(
       dispatch({
         type: ACTION.INIT_UPLOADS,
         payload: {
-          directory,
+          directory: directory.path,
           uploads: files.map(file => ({
             file,
-            dePath: directory.path + file.name,
+            path: absolutePath(`${directory.path}/${file.name}`),
             progress: 0
           } as FileStatus
           ))
@@ -360,7 +375,12 @@ function useDeFileManager(
               type: ACTION.SET_UPLOAD,
               payload: {
                 directory: directory.path,
-                file: { file: err.file, dePath: directory.path + file.name, progress: 0, error: err.error }
+                file: {
+                  file: err.file,
+                  path: absolutePath(`${directory.path}/${file.name}`),
+                  progress: 0,
+                  error: err.error
+                }
               }
             });
           })

@@ -29,8 +29,8 @@ const App = () => {
 
   // modals
 
-  const [reserveSpaceModal, setReserveSpaceModal] = useState(false);
-  const [activeUploadsModal, setActiveUploadsModal] = useState(true);
+  const [reserveSpaceModal, setReserveSpaceModal] = useState(true);
+  const [activeUploadsModal, setActiveUploadsModal] = useState(false);
   const [failedUploadsModal, setFailedUploadsModal] = useState(false);
   const [uploadModal, setUploadModal] = useState(false);
   const [directoryModal, setDirectoryModal] = useState(false);

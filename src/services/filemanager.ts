@@ -235,7 +235,7 @@ class DeFileManager {
   /**
    * @todo memoization w/ stale check, and flag for bypass-cache calls
    */
-  async loadDirectory(path: string): Promise<Array<FileStorageFile | FileStorageDirectory>> {
+  async loadDirectory(path: FileStorageDirectory['storagePath']): Promise<Array<FileStorageFile | FileStorageDirectory>> {
     const entries = await this.fs.listDirectory(`${path}`);
     console.log("fm::loadDirectory", entries);
     return sortBy(entries, ((o: FileStorageDirectory | FileStorageFile) => o.isFile === true));

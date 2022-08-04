@@ -16,7 +16,8 @@ feedback
 [x] clickable home nav against smart address
 [ ] file preferred direct download, fallback contract call
 [ ] general notifications / errors
-[ ] by mockups: new toggled list of uploads with each progress (bottom-right)
+[x] uploads with each progress
+[ ] by mockups: upload list to bottom right
 [x] detect duplications in upload form as field validation
 
 frontier
