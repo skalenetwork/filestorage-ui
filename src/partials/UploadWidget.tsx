@@ -1,11 +1,10 @@
 import { Button, Input, Modal } from '@/components/common';
 import UploadIcon from '@heroicons/react/outline/UploadIcon';
 
-import { useFieldArray, useFormContext } from 'react-hook-form';
+import { useFieldArray, useForm } from 'react-hook-form';
 import { ModalWidgetProps, FormProps } from 'partials';
 import WidgetModal from '@/components/WidgetModal';
 import { useFileManagerContext, ContextType } from '../context';
-import { triggerAsyncId } from 'async_hooks';
 
 type Props = ModalWidgetProps & FormProps & {
   batchThreshold: number
@@ -17,7 +16,14 @@ const UploadWidget = (
 
   const { directory, listing } = useFileManagerContext() as ContextType;
 
-  const { handleSubmit, register, control, formState: { errors }, trigger } = useFormContext();
+  const { handleSubmit, register, control, formState: { errors }, trigger } = useForm({
+    mode: 'onChange',
+    defaultValues: {
+      uploads: [],
+    } as {
+      uploads: { name: string, file: File }[]
+    },
+  });
 
   const { fields, append, prepend, remove, swap, move, insert } = useFieldArray({
     control,
@@ -47,10 +53,12 @@ const UploadWidget = (
       }}
       heading="Upload files"
     >
-      <form onSubmit={(e) => {
-        handleSubmit(onSubmit)(e);
-        clearFields();
-      }}>
+      <form
+        onSubmit={(e) => {
+          handleSubmit(onSubmit)(e);
+          clearFields();
+        }}
+      >
         <Modal.Body className="w-full flex flex-col gap-1.5 justify-center items-center min-w-72">
           {
             (fields.length > batchThreshold) ?

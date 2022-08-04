@@ -320,7 +320,10 @@ function useDeFileManager(
   const uploadFiles = (fm && cwd && state.isAuthorized) &&
     (async (files: Array<File>, directory: DeDirectory = cwd): Promise<void> => {
 
+      console.log("uploadFiles", files, directory);
+
       if (!files.length) {
+        console.error("uploadFiles:: No files to upload");
         return;
       }
 

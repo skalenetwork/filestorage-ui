@@ -2,7 +2,7 @@ import WidgetModal from "@/components/WidgetModal";
 import type { FormProps, ModalWidgetProps } from "partials";
 import { useEffect, useState } from "react";
 import { Button, Input, Modal } from "react-daisyui";
-import { useFormContext } from "react-hook-form";
+import { useForm, useFormContext } from "react-hook-form";
 
 import config from '../config';
 
@@ -14,7 +14,14 @@ const CreateDirectoryWidget = ({
   onSubmit
 }: Props) => {
 
-  const { handleSubmit, register, formState: { errors } } = useFormContext();
+  const { handleSubmit, register, formState: { errors }, resetField } = useForm({
+    mode: 'onChange',
+    defaultValues: {
+      directoryName: ''
+    } as {
+      directoryName: string
+    }
+  });
 
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -33,7 +40,10 @@ const CreateDirectoryWidget = ({
       onClose={onClose}
       heading="Create new directory"
     >
-      <form className="w-full" onSubmit={handleSubmit(onSubmit)}>
+      <form className="w-full" onSubmit={handleSubmit((e) => {
+        onSubmit(e);
+        resetField('directoryName');
+      })}>
         <Modal.Body className="w-full flex flex-col gap-4 justify-center items-center">
           <p>
             Give your folder a name.

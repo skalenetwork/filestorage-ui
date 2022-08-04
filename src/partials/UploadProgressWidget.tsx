@@ -9,6 +9,7 @@ import XIcon from '@heroicons/react/outline/XIcon';
 import CheckIcon from '@heroicons/react/solid/CheckIcon';
 import type { ModalWidgetProps } from 'partials';
 import prettyBytes from 'pretty-bytes';
+import { useEffect } from 'react';
 import { useFileManagerContext, ContextType } from '../context';
 
 type Props = ModalWidgetProps & {
@@ -23,6 +24,7 @@ const ItemStatus = ({ data }: { data: FileStatus }) => {
     kind: "file",
     name: data.file.name,
     size: data.file.size,
+    type: data.file.type,
     path: data.dePath
   } as DeFile;
 
@@ -60,6 +62,10 @@ const UploadProgressWidget = ({
   activeUploads,
   failedUploads
 }: Props) => {
+
+  useEffect(() => {
+    console.log(activeUploads);
+  }, [activeUploads])
 
   return (
     <WidgetModal
