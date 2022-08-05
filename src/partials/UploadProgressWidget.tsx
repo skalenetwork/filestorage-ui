@@ -25,7 +25,7 @@ const ItemStatus = ({ data }: { data: FileStatus }) => {
     name: data.file.name,
     size: data.file.size,
     type: data.file.type,
-    path: data.dePath
+    path: data.path
   } as DeFile;
 
   return (
@@ -36,7 +36,7 @@ const ItemStatus = ({ data }: { data: FileStatus }) => {
           maxLength={12}
         />
       </div>
-      <div className="grow">
+      <div className="grow-0 shrink-0 basis-16">
         <FormattedSize item={preDeFile} />
       </div>
       <div className="flex items-center flex-grow-0">

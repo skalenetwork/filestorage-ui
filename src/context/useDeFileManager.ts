@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useReducer, useState } from 'react';
 import { useInterval } from 'react-use';
 import { DeFileManager, DeDirectory, DeFile, DePath, FileOrDir } from '@/services/filemanager';
 import Web3 from 'web3';
-import type { FileStorageFile } from '@skalenetwork/filestorage.js';
+import type { FileStorageDirectory, FileStorageFile } from '@skalenetwork/filestorage.js';
 
 export type FileStatus = {
   file: File;
@@ -289,28 +289,37 @@ function useDeFileManager(
   // tested for uploads under 1mb: file being uploaded not reflected in directory listing via node
   // periodically fetch relevant directory listings, update active uploads with progress
   // @todo can be better managed after some restructure involving converging remote + local state vs lookup of remote
-  // @wip: zoom out and re-implement this
-  false && useInterval(() => {
+  useInterval(async () => {
+    if (!fm) return;
     for (let dirPath of state.activeUploads.keys()) {
-      if (!state.activeUploads.get(dirPath)?.length)
+      // no in-progress uploads for directory, skip
+      const dirUploads = state.activeUploads.get(dirPath);
+      if (!dirUploads?.length || dirUploads.every(upload => (upload.error || upload.progress === 100)))
         continue;
-      fm?.loadDirectory(absolutePath(dirPath))
-        .then(listing => {
-          const uploadsWithProgress = state.activeUploads.get(dirPath)?.map(upload => {
-            const match = listing.find(f => {
-              console.log("interval:: upload match params", f.storagePath, '===', upload.path);
-              return f.storagePath === upload.path
-            });
-            console.log("interval::upload match", JSON.stringify(match));
-            return { ...upload, progress: (match as FileStorageFile)?.uploadingProgress || 0 }
-          }) || [];
-          dispatch({
-            type: ACTION.SET_DIRECTORY_UPLOADS, payload: {
-              directory: dirPath,
-              uploads: uploadsWithProgress
-            }
+
+      // get remote listing for directory
+      let listing: (FileStorageFile | FileStorageDirectory)[] = await fm.loadDirectory(absolutePath(dirPath));
+
+      // uploads mapped to progress from remote listing
+      let dirUploadsWithProgress =
+        dirUploads.map(upload => {
+          if (upload.error || upload.progress === 100) {
+            return upload;
+          }
+          const match = listing.find(f => {
+            console.log("interval:: upload match params", f.storagePath, '===', upload.path);
+            return f.storagePath === upload.path
           });
+          console.log("interval::upload match", JSON.stringify(match));
+          return { ...upload, progress: (match as FileStorageFile)?.uploadingProgress || 0 }
         });
+
+      dispatch({
+        type: ACTION.SET_DIRECTORY_UPLOADS, payload: {
+          directory: dirPath,
+          uploads: dirUploadsWithProgress
+        }
+      });
     }
   }, 1000);
 
@@ -385,10 +394,6 @@ function useDeFileManager(
             });
           })
       };
-
-      dispatch({
-        type: ACTION.RESET_UPLOADS
-      });
     });
 
   const deleteFile = (fm && cwd && state.isAuthorized) && (async (file: DeFile, directory: DeDirectory = cwd) => {
