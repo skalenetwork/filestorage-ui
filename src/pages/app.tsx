@@ -32,7 +32,7 @@ const App = () => {
 
   // modals
 
-  const [reserveSpaceModal, setReserveSpaceModal] = useState(true);
+  const [reserveSpaceModal, setReserveSpaceModal] = useState(false);
   const [activeUploadsModal, setActiveUploadsModal] = useState(false);
   const [failedUploadsModal, setFailedUploadsModal] = useState(false);
   const [uploadModal, setUploadModal] = useState(false);
@@ -49,14 +49,6 @@ const App = () => {
   const [uploadingFiles, setUploadingFiles] = useState<FileStatus[]>([]);
   const [failedFiles, setFailedFiles] = useState<FileStatus[]>([]);
   const [selectedFile, setSelectedFile] = useState<DeFile>(undefined);
-
-  type ActionsFormData = {
-    uploads: { name: string, file: File }[],
-    directoryName: string,
-    reserveSpaceAddress: string,
-    reserveSpaceAmount: number,
-    roleGranteeAddress: string,
-  }
 
   useLayoutEffect(() => {
     if (!selectedFile) return;
@@ -192,7 +184,9 @@ const App = () => {
             }
           </div>
         </section>
-        <section style={{ gridArea: 'mgr' }} className="overflow-y-scroll px-36">
+        <section
+          style={{ gridArea: 'mgr' }}
+          className="overflow-y-scroll px-36 scrollbar">
           <FileNavigator
             onSelectFile={setSelectedFile}
           />

@@ -5,6 +5,7 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { ModalWidgetProps, FormProps } from 'partials';
 import WidgetModal from '@/components/WidgetModal';
 import { useFileManagerContext, ContextType } from '../context';
+import { useCallback } from 'react';
 
 type Props = ModalWidgetProps & FormProps & {
   batchThreshold: number
@@ -16,7 +17,7 @@ const UploadWidget = (
 
   const { directory, listing } = useFileManagerContext() as ContextType;
 
-  const { handleSubmit, register, control, formState: { errors }, trigger } = useForm({
+  const { handleSubmit, register, control, formState: { errors, isValid }, trigger } = useForm({
     mode: 'onChange',
     defaultValues: {
       uploads: [],
@@ -30,11 +31,9 @@ const UploadWidget = (
     name: "uploads",
   });
 
-  const clearFields = () => {
-    fields.forEach((field, index) => {
-      remove(index);
-    });
-  }
+  const clearFields = useCallback(() => {
+    remove(fields.map((field, i) => i));
+  }, [fields]);
 
   const fileNameRules = {
     required: true,
@@ -98,7 +97,7 @@ const UploadWidget = (
           {
             fields.length ?
               <>
-                <Button type="submit" className="btn-wide">Upload</Button>
+                <Button type="submit" className="btn-wide" disabled={!isValid}>Upload</Button>
               </>
               :
               <>
@@ -117,7 +116,6 @@ const UploadWidget = (
                         file
                       });
                     });
-                    trigger();
                   }}
                   multiple
                 />

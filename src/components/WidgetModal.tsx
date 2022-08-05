@@ -8,7 +8,7 @@ const WidgetModal = (
 ) => {
   return (
     <Modal
-      className="p-16 first-letter:gap-4 flex flex-col justify-center items-center"
+      className="p-16 first-letter:gap-4 flex flex-col justify-start items-center"
       open={open}
       onClickBackdrop={onClose}
     >

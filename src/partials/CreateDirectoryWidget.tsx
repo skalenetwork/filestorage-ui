@@ -1,9 +1,7 @@
 import WidgetModal from "@/components/WidgetModal";
 import type { FormProps, ModalWidgetProps } from "partials";
-import { useEffect, useState } from "react";
 import { Button, Input, Modal } from "react-daisyui";
-import { useForm, useFormContext } from "react-hook-form";
-import { ErrorMessage } from "@hookform/error-message";
+import { useForm } from "react-hook-form";
 
 import config from '../config';
 import FieldGroup from "@/components/FieldGroup";
@@ -25,12 +23,18 @@ const CreateDirectoryWidget = ({
     }
   });
 
-  const { handleSubmit, formState: { isValid }, resetField } = form;
+  const close = () => {
+    onClose();
+    resetField('directoryName');
+    clearErrors('directoryName');
+  }
+
+  const { handleSubmit, formState: { isValid }, resetField, clearErrors } = form;
 
   return (
     <WidgetModal
       open={open}
-      onClose={onClose}
+      onClose={close}
       heading="Create new directory"
     >
       <form className="w-full" onSubmit={handleSubmit((e) => {

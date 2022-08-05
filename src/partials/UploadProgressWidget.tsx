@@ -75,18 +75,24 @@ const UploadProgressWidget = ({
       onClose={onClose}
       heading={(uploadStatus < 2) ? 'Uploading' : (uploadStatus === 2) ? 'Uploading Complete' : '...'}
     >
-      <Modal.Body className="w-full flex flex-col gap-1.5 justify-center items-center">
-        <p>
+      <Modal.Body
+        className="w-full">
+        <p className="text-center py-1">
           {(uploadStatus < 2) ? 'This process may take some time' : 'All files are done processing'}
         </p>
-        {
-          activeUploads.map(upload => (upload) ? (
-            <ItemStatus
-              key={upload.path}
-              data={upload}
-            />
-          ) : null)
-        }
+        <div
+          className="
+          w-full flex flex-col gap-1.5 max-h-96 px-1 scrollbar
+           justify-start items-center overflow-y-scroll overflow-x-hidden">
+          {
+            activeUploads.reverse().map(upload => (upload) ? (
+              <ItemStatus
+                key={upload.path}
+                data={upload}
+              />
+            ) : null)
+          }
+        </div>
       </Modal.Body>
     </WidgetModal>
   )
