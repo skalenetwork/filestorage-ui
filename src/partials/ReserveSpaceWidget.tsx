@@ -2,7 +2,10 @@ import type { ModalWidgetProps, FormProps } from "partials";
 import { Button, Input, Modal } from "@/components/common";
 import WidgetModal from "@/components/WidgetModal";
 import ArchiveIcon from "@heroicons/react/outline/ArchiveIcon";
-import { useForm } from "react-hook-form";
+import { useForm, UseFormRegisterReturn, UseFormReturn } from "react-hook-form";
+import Web3 from "web3";
+import { ContextType, useFileManagerContext } from "../context";
+import FieldGroup from "@/components/FieldGroup";
 
 type Props = ModalWidgetProps & FormProps;
 
@@ -10,13 +13,15 @@ const ReserveSpaceWidget = ({
   open, onClose, onSubmit
 }: Props) => {
 
-  const { handleSubmit, register, formState: { errors }, resetField } = useForm({
+  const form = useForm({
     mode: 'onChange',
     defaultValues: {
       reserveSpaceAddress: '',
       reserveSpaceAmount: ''
     }
   });
+
+  const { handleSubmit, formState: { isValid }, resetField } = form;
 
   const reset = () => {
     resetField('reserveSpaceAddress');
@@ -44,34 +49,30 @@ const ReserveSpaceWidget = ({
             Enter the address to which the space will be allocated.
           </p>
           <div className="w-full flex flex-col flex-grow">
-            <label className="label" htmlFor="">
-              <span className="label-text">Address</span>
-            </label>
-            <Input
-              type="text"
+            <FieldGroup
+              form={form}
+              name="reserveSpaceAddress"
+              label="Address"
               placeholder="0x..."
-              {
-              ...register('reserveSpaceAddress', {
-                required: true
-              })
-              }
+              validate={(val) => Web3.utils.isAddress(val)}
+              errorMessage="Address is invalid"
             />
-            <label className="label" htmlFor="">
-              <span className="label-text">Space to reserve</span>
-            </label>
-            <Input
-              className="appearance-none"
-              type="number"
-              placeholder="Space to reserve"
-              {...register('reserveSpaceAmount', {
-                required: true
-              })}
+            <FieldGroup
+              form={form}
+              name="reserveSpaceAmount"
+              label="Space to reserve"
+              placeholder="1337"
+              validate={(val) => !isNaN(Number(val))}
+              errorMessage="Space amount is invalid"
             />
           </div>
         </Modal.Body>
         <Modal.Actions className="flex justify-center items-center gap-8">
-          <Button>Reserve</Button>
-          <a className="underline cursor-pointer" onClick={close}>Cancel</a>
+          <Button type="submit" disabled={!isValid}>Reserve</Button>
+          <a className="underline cursor-pointer" onClick={() => {
+            close();
+            reset();
+          }}>Cancel</a>
         </Modal.Actions>
       </form>
     </WidgetModal>

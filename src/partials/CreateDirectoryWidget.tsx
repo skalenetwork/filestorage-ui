@@ -3,8 +3,10 @@ import type { FormProps, ModalWidgetProps } from "partials";
 import { useEffect, useState } from "react";
 import { Button, Input, Modal } from "react-daisyui";
 import { useForm, useFormContext } from "react-hook-form";
+import { ErrorMessage } from "@hookform/error-message";
 
 import config from '../config';
+import FieldGroup from "@/components/FieldGroup";
 
 type Props = ModalWidgetProps & FormProps;
 
@@ -14,7 +16,7 @@ const CreateDirectoryWidget = ({
   onSubmit
 }: Props) => {
 
-  const { handleSubmit, register, formState: { errors }, resetField } = useForm({
+  const form = useForm({
     mode: 'onChange',
     defaultValues: {
       directoryName: ''
@@ -23,16 +25,7 @@ const CreateDirectoryWidget = ({
     }
   });
 
-  const [errorMessage, setErrorMessage] = useState("");
-
-  useEffect(() => {
-    console.log("error", errors['directoryName']);
-    if (errors['directoryName'] && (errors['directoryName']?.type as any) === "validate") {
-      setErrorMessage("Directory name is invalid");
-    } else {
-      setErrorMessage("");
-    }
-  }, [errors['directoryName']?.type])
+  const { handleSubmit, formState: { isValid }, resetField } = form;
 
   return (
     <WidgetModal
@@ -49,25 +42,19 @@ const CreateDirectoryWidget = ({
             Give your folder a name.
           </p>
           <div className="relative w-full flex flex-col flex-grow">
-            <label className="label" htmlFor="">
-              <span className="label-text">Name</span>
-            </label>
-            <Input
-              className="w-full"
-              {...register('directoryName', {
-                required: true,
-                validate: (value) => {
-                  return (value.length <= config.uploader.maxFileDirNameLength) ? true : false;
-                }
-              })}
+            <FieldGroup
+              form={form}
+              name="directoryName"
+              label="Name"
+              validate={(value) => {
+                return (value.length <= config.uploader.maxFileDirNameLength) ? true : false;
+              }}
+              errorMessage="Directory name is invalid"
             />
-            <p className={`text-right text-sm py-1 text-red-400 ${(!errorMessage ? 'opacity-0' : '')}`}>
-              {errorMessage || "-"}
-            </p>
           </div>
         </Modal.Body>
         <Modal.Actions className="flex justify-center items-center gap-8">
-          <Button className="btn-wide" type="submit">Create</Button>
+          <Button className="btn-wide" type="submit" disabled={!isValid}>Create</Button>
         </Modal.Actions>
       </form>
     </WidgetModal>

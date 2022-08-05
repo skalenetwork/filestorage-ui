@@ -57,19 +57,6 @@ const App = () => {
     reserveSpaceAmount: number,
     roleGranteeAddress: string,
   }
-  // methods = { register, control, handleSubmit, watch, formState: { errors }, resetField };
-  const appForm = useForm({
-    mode: 'onChange',
-    defaultValues: {
-      uploads: [],
-      directoryName: "",
-      reserveSpaceAddress: "",
-      reserveSpaceAmount: "",
-      roleGranteeAddress: ""
-    } as ActionsFormData,
-  });
-
-  const { resetField } = appForm;
 
   useLayoutEffect(() => {
     if (!selectedFile) return;
@@ -90,7 +77,6 @@ const App = () => {
       return new File([file], name);
     });
     setUploadModal(false);
-    resetField('uploads');
     setActiveUploadsModal(true);
     return await uploadFiles(filesToUpload);
   }
@@ -215,57 +201,55 @@ const App = () => {
 
       {/* Action widgets, can be iterated on with FormContext */}
 
-      <FormProvider {...appForm}>
+      <GrantorWidget
+        open={grantRoleModal}
+        onClose={() => setGrantRoleModal(false)}
+        onSubmit={
+          async ({ granteeAddress }) => {
+            setGrantRoleModal(false);
+            // @todo move to pichon
+            return granteeAddress && fm?.fs.grantAllocatorRole(fm.address, granteeAddress);
+          }
+        }
+      />
 
-        <GrantorWidget
-          open={grantRoleModal}
-          onClose={() => setGrantRoleModal(false)}
-        />
-
-        <ReserveSpaceWidget
-          open={reserveSpaceModal}
-          onClose={() => {
+      <ReserveSpaceWidget
+        open={reserveSpaceModal}
+        onClose={() => {
+          setReserveSpaceModal(false);
+        }}
+        onSubmit={
+          async ({ reserveSpaceAddress, reserveSpaceAmount }) => {
             setReserveSpaceModal(false);
-            resetField('reserveSpaceAddress');
-            resetField('reserveSpaceAmount');
-          }}
-          onSubmit={
-            ({ address, space }) => {
-              setReserveSpaceModal(false);
-              resetField('reserveSpaceAddress');
-              resetField('reserveSpaceAmount');
-              return address && space && fm?.fs.reserveSpace(fm.address, address, Number(space));
-            }
+            // @todo move to pichon
+            return reserveSpaceAddress && reserveSpaceAmount &&
+              fm?.fs.reserveSpace(fm.address, reserveSpaceAddress, Number(reserveSpaceAmount));
           }
-        />
+        }
+      />
 
-        <CreateDirectoryWidget
-          open={directoryModal}
-          onClose={() => {
-            resetField('directoryName');
+      <CreateDirectoryWidget
+        open={directoryModal}
+        onClose={() => {
+          setDirectoryModal(false);
+        }}
+        onSubmit={
+          async ({ directoryName }) => {
+            console.log(`create directory ${directoryName} in`, currentDirectory);
             setDirectoryModal(false);
-          }}
-          onSubmit={
-            ({ directoryName }) => {
-              console.log(`create directory ${directoryName} in`, currentDirectory);
-              setDirectoryModal(false);
-              resetField('directoryName');
-              createDirectory(directoryName);
-            }
+            return createDirectory(directoryName);
           }
-        />
+        }
+      />
 
-        <UploadWidget
-          open={uploadModal}
-          onClose={() => {
-            setUploadModal(false);
-            resetField('uploads');
-          }}
-          onSubmit={handleConfirmUpload}
-          batchThreshold={config.uploader.batchThreshold}
-        />
-
-      </FormProvider>
+      <UploadWidget
+        open={uploadModal}
+        onClose={() => {
+          setUploadModal(false);
+        }}
+        onSubmit={handleConfirmUpload}
+        batchThreshold={config.uploader.batchThreshold}
+      />
 
       <UploadProgressWidget
         open={activeUploadsModal}

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^1.0.6",
+    "@hookform/error-message": "^2.0.0",
     "@radix-ui/react-context-menu": "^0.1.6",
     "@skalenetwork/filestorage.js": "1.0.1-develop.5",
     "@toruslabs/torus-embed": "^1.27.2",
