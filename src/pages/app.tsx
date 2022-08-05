@@ -24,6 +24,9 @@ import CreateDirectoryWidget from '../partials/CreateDirectoryWidget';
 import ReserveSpaceWidget from '../partials/ReserveSpaceWidget';
 import GrantorWidget from '../partials/GrantorWidget';
 import ViewFileWidget from '../partials/ViewFileWidget';
+import CheckIcon from '@heroicons/react/solid/CheckIcon';
+import UploadIcon from '@heroicons/react/outline/UploadIcon';
+import ArchiveIcon from '@heroicons/react/outline/ArchiveIcon';
 
 const App = () => {
 
@@ -40,7 +43,7 @@ const App = () => {
     config,
     fm, directory: currentDirectory, reservedSpace, occupiedSpace, searchListing,
     isAuthorized, accountRoles, connectWallet, activeUploads, failedUploads, totalUploadCount,
-    changeDirectory, uploadFiles, createDirectory, search, isSearching, isCreatingDirectory
+    changeDirectory, uploadFiles, createDirectory, search, isSearching, isCreatingDirectory, uploadStatus
   }: ContextType = useFileManagerContext<ContextType>();
 
   const [uploadingFiles, setUploadingFiles] = useState<FileStatus[]>([]);
@@ -103,15 +106,25 @@ const App = () => {
             <div className="flex flex-row gap-4">
               {
                 (uploadingFiles.length) ?
-                  <p className="px-4 py-2 relative cursor-pointer rounded bg-yellow-50 border border-yellow-500 text-sm"
+                  <div
+                    className={`
+                    px-4 py-2 relative cursor-pointer rounded text-sm flex items-center 
+                     ${(uploadStatus === 1) ? 'bg-yellow-50 border border-yellow-500' : 'bg-green-50 border-green-500'}
+                    `}
                     onClick={(e) => setActiveUploadsModal(true)}
                   >
-                    <span class="flex h-3 w-3 absolute -right-1 -top-1">
-                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
-                      <span class="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
-                    </span>
-                    Uploading files..
-                  </p>
+                    <ArchiveIcon className="inline-block w-4 h-4 mr-2 text-black opacity-40 mix-blend-hard-light" />
+                    {
+                      uploadStatus === 1 &&
+                      <span class="flex h-3 w-3 absolute -right-1 -top-1">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
+                      </span>
+                    }
+                    {
+                      (uploadStatus === 1) ? 'Uploading files..' : <CheckIcon className="w-5 h-5 text-green-500" />
+                    }
+                  </div>
                   : <></>
               }
               {
@@ -260,6 +273,7 @@ const App = () => {
         activeUploads={uploadingFiles}
         failedUploads={failedFiles}
         total={totalUploadCount}
+        uploadStatus={uploadStatus}
       />
 
       <UploadFailedWidget

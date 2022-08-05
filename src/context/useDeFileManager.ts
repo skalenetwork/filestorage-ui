@@ -1,4 +1,3 @@
-import { StoragePath } from './../../types/@skalenetwork⁄filestorage.js.d';
 import { useEffect, useLayoutEffect, useReducer, useState } from 'react';
 import { useInterval } from 'react-use';
 import { DeFileManager, DeDirectory, DeFile, DePath, FileOrDir } from '@/services/filemanager';
@@ -28,10 +27,12 @@ export type State = {
   isLoadingDirectory: boolean;
   reservedSpace: number;
   occupiedSpace: number;
-  totalUploadCount: number;
+
   activeUploads: Map<DePath, Array<FileStatus>>;
   completedUploads: Map<DePath, Array<FileStatus>>;
   failedUploads: Map<DePath, Array<FileStatus>>;
+  totalUploadCount: number;
+  uploadStatus: number;
 };
 
 export type Action = {
@@ -41,8 +42,6 @@ export const ROLE = {
   ALLOCATOR: 'ALLOCATOR',
   ADMIN: 'ADMIN'
 }
-
-// current operations can be better managed
 
 const initialState: State = {
   isAuthorized: false,
@@ -60,6 +59,7 @@ const initialState: State = {
   activeUploads: new Map(),
   completedUploads: new Map(),
   failedUploads: new Map(),
+  uploadStatus: 0,
 };
 
 const ACTION = {
@@ -81,10 +81,14 @@ const ACTION = {
   SET_UPLOAD: 'SET_UPLOAD',
   REMOVE_FROM_UPLOADS: 'REMOVE_FROM_UPLOADS', // @to_deprecate
   RESET_UPLOADS: 'RESET_UPLOADS',
-  RESET_FAILED_UPLOADS: 'RESET_FAILED_UPLOADS' // @to_deprecate after prune actions
+  RESET_FAILED_UPLOADS: 'RESET_FAILED_UPLOADS', // @to_deprecate after prune actions
+  SET_UPLOADS_PROGRESS: 'SET_UPLOADS_PROGRESS',
 };
 
-const reducer = (state: State, action: { type: string, payload: any }) => {
+const reducer = (
+  state: State,
+  action: { type: string, payload: any }
+): State => {
   switch (action.type) {
     case ACTION.SET_ROLES:
       return { ...state, accountRoles: action.payload }
@@ -115,6 +119,7 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
     case ACTION.SET_SEARCH_LISTING:
       return { ...state, searchListing: action.payload, isSearching: false }
 
+    // 
     case ACTION.INIT_UPLOADS:
       const { uploads, directory }: { directory: DePath, uploads: FileStatus[] } = action.payload;
       const activeUploads = new Map(state.activeUploads);
@@ -181,6 +186,11 @@ const reducer = (state: State, action: { type: string, payload: any }) => {
         ...state,
         failedUploads: initialState.failedUploads
       }
+    case ACTION.SET_UPLOADS_PROGRESS:
+      return {
+        ...state,
+        uploadStatus: action.payload
+      }
     default:
       console.log('Unregistered action', action.type);
       return state;
@@ -233,6 +243,22 @@ function useDeFileManager(
       + relativePath;
     return absolutePath;
   }
+
+  // horridly frequent and expensive, better not done as side-effect
+  // first candidate for improvement after upload actions are better structured
+  useEffect(() => {
+    const allUploads = Array.from(state.activeUploads.values()).flat() || [];
+    const payload = allUploads.length === 0
+      ? 0
+      : (allUploads.every(upload => (upload.error || (upload.progress === 100))))
+        ? 2
+        : 1;
+    // currently only need for flag
+    dispatch({
+      type: ACTION.SET_UPLOADS_PROGRESS,
+      payload
+    });
+  }, [state.activeUploads]);
 
   useLayoutEffect(() => {
     if (!(w3Provider && address)) return;
@@ -324,7 +350,10 @@ function useDeFileManager(
   }, 1000);
 
   const createDirectory = (fm && cwd && state.isAuthorized) &&
-    (async (name: string, directory: DeDirectory = cwd) => {
+    (async (
+      name: string,
+      directory: DeDirectory = cwd
+    ) => {
       dispatch({
         type: ACTION.SET_DIRECTORY_OP,
         payload: true
@@ -342,7 +371,10 @@ function useDeFileManager(
     })
 
   const uploadFiles = (fm && cwd && state.isAuthorized) &&
-    (async (files: Array<File>, directory: DeDirectory = cwd): Promise<void> => {
+    (async (
+      files: Array<File>,
+      directory: DeDirectory = cwd
+    ): Promise<void> => {
 
       console.log("uploadFiles", files, directory);
 

@@ -15,7 +15,8 @@ import { useFileManagerContext, ContextType } from '../context';
 type Props = ModalWidgetProps & {
   activeUploads: FileStatus[],
   failedUploads: FileStatus[],
-  total: number
+  total: number,
+  uploadStatus: number,
 }
 
 const ItemStatus = ({ data }: { data: FileStatus }) => {
@@ -60,7 +61,8 @@ const UploadProgressWidget = ({
   onClose,
   total,
   activeUploads,
-  failedUploads
+  failedUploads,
+  uploadStatus
 }: Props) => {
 
   useEffect(() => {
@@ -71,14 +73,16 @@ const UploadProgressWidget = ({
     <WidgetModal
       open={open}
       onClose={onClose}
-      heading="Uploading"
+      heading={(uploadStatus < 2) ? 'Uploading' : (uploadStatus === 2) ? 'Uploading Complete' : '...'}
     >
       <Modal.Body className="w-full flex flex-col gap-1.5 justify-center items-center">
-        <p>This process may take some time</p>
+        <p>
+          {(uploadStatus < 2) ? 'This process may take some time' : 'All files are done processing'}
+        </p>
         {
           activeUploads.map(upload => (upload) ? (
             <ItemStatus
-              key={upload.dePath}
+              key={upload.path}
               data={upload}
             />
           ) : null)
