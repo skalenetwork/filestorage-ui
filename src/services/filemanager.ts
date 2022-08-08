@@ -159,6 +159,7 @@ class DeFileManager {
   private rootDir: DeDirectory;
 
   dirLastAction: Object;
+  cache: { [key: string]: (FileStorageDirectory | FileStorageFile)[] };
 
   constructor(
     w3: Object, address: Address, account?: Address, accountPrivateKey?: PrivateKey
@@ -170,8 +171,8 @@ class DeFileManager {
     this.w3 = w3;
     this.fs = new FileStorage(w3, true);
     this.contract = (this.fs.contract.contract as unknown) as ContractContext;
-    console.log(this.contract);
     this.dirLastAction = "";
+    this.cache = {};
 
     const addrWithoutPrefix = this.address.slice(2);
 
@@ -185,6 +186,17 @@ class DeFileManager {
   /**
    * File Manager maintains generating filetree iterator
    */
+
+  private purgeCache(directory?: DeDirectory, reload = true) {
+    let path = directory && ((directory.parent) ? this.rootDir.name + "/" + directory.path : this.rootDir.name);
+    if (path) {
+      delete this.cache[path];
+      this.loadDirectory(path);
+    } else {
+      this.cache = {};
+      this.preloadDirectories(this.rootDir);
+    }
+  }
 
   //@ts-ignore
   async * entriesGenerator(directory: DeDirectory): Promise<Iterable<FileOrDir>> {
@@ -235,8 +247,16 @@ class DeFileManager {
   /**
    * @todo memoization w/ stale check, and flag for bypass-cache calls
    */
-  async loadDirectory(path: FileStorageDirectory['storagePath']): Promise<Array<FileStorageFile | FileStorageDirectory>> {
-    const entries = await this.fs.listDirectory(`${path}`);
+  async loadDirectory(
+    path: FileStorageDirectory['storagePath']
+  ): Promise<Array<FileStorageFile | FileStorageDirectory>> {
+    let entries;
+    if (this.cache[path]) {
+      entries = this.cache[path];
+    } else {
+      entries = await this.fs.listDirectory(`${path}`);
+      this.cache[path] = entries;
+    }
     console.log("fm::loadDirectory", entries);
     return sortBy(entries, ((o: FileStorageDirectory | FileStorageFile) => o.isFile === true));
   }
@@ -247,12 +267,14 @@ class DeFileManager {
     const path = (destDirectory.path === this.rootDir.path) ? name : `${destDirectory.path}/${name}`;
     const returnPath = await this.fs.createDirectory(this.account, path, this.accountPrivateKey);
     this.dirLastAction = `${OPERATON.CREATE_DIRECTORY}:${returnPath}`;
+    this.purgeCache(destDirectory);
     return returnPath;
   }
 
   async deleteFile(destDirectory: DeDirectory, file: DeFile): Promise<void> {
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
+    this.purgeCache(destDirectory);
     await this.fs.deleteFile(this.account, file.path, this.accountPrivateKey);
   }
 
@@ -260,6 +282,7 @@ class DeFileManager {
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
     await this.fs.deleteDirectory(this.account, directory.path, this.accountPrivateKey);
+    this.purgeCache(directory);
   }
 
   async uploadFile(destDirectory: DeDirectory, file: File) {
@@ -280,6 +303,7 @@ class DeFileManager {
     console.log("fm::uploadFile:", path);
     // makeshift - for outside watchers
     this.dirLastAction = `${OPERATON.UPLOAD_FILE}:${path}`;
+    this.purgeCache(destDirectory);
     return path;
   }
 
@@ -287,23 +311,44 @@ class DeFileManager {
     return this.fs.downloadToFile(this.rootDir.name + "/" + file.path);
   }
 
-  // depth-first
+  // depth-first // for depth-level support, turn it into callbackish
   private async iterateDirectory(
     directory: DeDirectory,
     onEntry: (entry: FileOrDir | Array<FileOrDir>) => any,
-    asArray?: boolean
-  ) {
-    let all = [];
-    //@ts-ignore
-    for await (const entry of directory.entries()) {
-      if (entry.kind === KIND.DIRECTORY) {
-        await this.iterateDirectory(entry, onEntry);
+    asArray: boolean = false,
+    depth: number = Infinity
+  ): Promise<void> {
+
+    let level = 0;
+
+    const iterator = async (
+      directory: DeDirectory,
+      onEntry: (entry: FileOrDir | Array<FileOrDir>) => any,
+      asArray: boolean = false
+    ): Promise<void> => {
+      let all = [];
+      //@ts-ignore
+      for await (const entry of directory.entries()) {
+        if ((entry.kind === KIND.DIRECTORY) && (level < depth)) {
+          await iterator(entry, onEntry);
+        }
+        (asArray) ? all.push(entry) : onEntry(entry);
       }
-      (asArray) ? all.push(entry) : onEntry(entry);
+      if (asArray) {
+        onEntry(all);
+      }
+      level++;
     }
-    if (asArray) {
-      onEntry(all);
-    }
+
+    return iterator(directory, onEntry, asArray);
+  }
+
+  async preloadDirectories(startDirectory: DeDirectory) {
+    await this.iterateDirectory(
+      startDirectory,
+      (entry) => { },
+    );
+    console.log("filemanager::preload_complete");
   }
 
   // @todo: test and implement fuzzy query

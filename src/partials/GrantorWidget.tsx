@@ -33,21 +33,19 @@ const GrantorWidget = ({
         resetField('granteeAddress');
       })}>
         <Modal.Body className="w-full flex flex-col gap-4 justify-center items-center">
-          <p>
-            Give your folder a name.
-          </p>
           <div className="relative w-full flex flex-col flex-grow">
             <FieldGroup
               form={form}
               name="granteeAddress"
-              label="Name"
+              label="Address"
+              placeholder="0x.."
               validate={(val) => Web3.utils.isAddress(val)}
               errorMessage="Address is invalid"
             />
           </div>
         </Modal.Body>
         <Modal.Actions className="flex justify-center items-center gap-8">
-          <Button className="btn-wide" type="submit" disabled={!isValid}>Create</Button>
+          <Button className="btn-wide" type="submit" disabled={!isValid}>Confirm</Button>
         </Modal.Actions>
       </form>
     </WidgetModal>

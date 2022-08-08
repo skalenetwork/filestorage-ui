@@ -1,5 +1,7 @@
+
 //@ts-nocheck
 
+import { useEffect, useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Input } from "./common";
 
@@ -18,8 +20,17 @@ const FieldGroup = ({
   validate?: (val: string) => void | Object,
   errorMessage?: string
 }) => {
+
   const { formState: { errors } } = form;
-  const error = errors[name];
+
+  const fieldError = name.split('.').reduce((o, key) => o?.[key], errors);
+
+  const [error, setError] = useState(undefined);
+
+  useEffect(() => {
+    setError(fieldError);
+  }, [fieldError]);
+
   return (
     <>
       {
@@ -40,8 +51,8 @@ const FieldGroup = ({
         }
       />
       {
-        errorMessage &&
-        <p className={`text-right text-sm py-1 text-red-400 ${(!error ? 'opacity-0' : '')}`}>
+        (error?.message || errorMessage) &&
+        <p className={`text-right text-sm text-red-500 ${(!error ? 'opacity-0' : '')}`}>
           {error ? (error?.message || errorMessage) : "-"}
         </p>
       }

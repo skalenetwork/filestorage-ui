@@ -1,3 +1,40 @@
+## Week 6
+
+priors
+
+[x] faster lookups: client-side file listing caching + deep prefetch
+[ ] override navigation / search operations 
+
+[ ] squash bugs + netting: final pass widget field validations, form resetting
+[x] pagination: fix no collapse
+[ ] preview + download file: finalize
+[ ] upload-progress: set initial progress as undefined, ui: waiting icon
+[x] upload-progress: fix line item alignments
+[x] cwd reload: silent refresh without loading state
+
+[ ] toast when background errors / notifications (offline etc)
+[ ] configure trustwallet and fortmatic
+[ ] back-channel pvt key validation against connected account
+[ ] watch on wallet address change etc.
+
+[ ] upload:edge: bulk upload: list conflicted names for editing
+[ ] upload:edge: also detect conflicts within selected uploads (can happen due to renaming)
+[ ] upload:edge: enable other cases (ex: upload on upload) by adding queues, isolate dequeue logic
+[ ] all:improvement: bring queuing to everything
+
+feedback
+
+[ ] by mockups: upload list to bottom right
+[ ] upload-progress: failed item -> click cross -> retry icon (hover::green) -> click to retry
+[ ] reserve-widget: unit select for space and relevant validation
+[ ] widgets: where address input, confirm and correctly validate prefix 0x (make common validate and transform utils)
+[x] neater file shortening
+
+post-MVP
+
+[ ] enablement: bulk / batch / parallelized transactions: TBD
+[ ] upload-progress:edge: with above, simulate increasing progress after upload init event
+
 ## Week 5
 
 priors

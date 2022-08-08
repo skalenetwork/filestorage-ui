@@ -5,10 +5,9 @@ import { Button, Modal } from '@/components/common';
 import WidgetModal from '@/components/WidgetModal';
 import type { DeFile } from '@/services/filemanager';
 import { ModalWidgetProps } from 'partials';
-import ArchiveIcon from '@heroicons/react/outline/ArchiveIcon';
 import { ContextType, useFileManagerContext } from '../context';
 import DocumentTextIcon from '@heroicons/react/outline/DocumentTextIcon';
-import VolumeUpIcon from '@heroicons/react/outline/VolumeUpIcon';
+import { mimeData } from '../utils';
 
 type Props = ModalWidgetProps & { file: DeFile };
 
@@ -24,13 +23,14 @@ const ViewFileWidget = ({
 
   const { getFileLink }: ContextType = useFileManagerContext();
 
+  const { Icon, type, color, label, category } = mimeData(file.type);
 
   const pre = file.type.split("/")[0];
   const link = getFileLink(file);
-  const className = "w-6 h-6 text-gray-400"
 
   return (
     <WidgetModal
+      className="!max-w-[600px]"
       open={open}
       onClose={onClose}
       heading={file.name}
@@ -38,14 +38,20 @@ const ViewFileWidget = ({
       {
         (file) ?
           <div>
-            <div className="w-96 h-36 border border-gray-100 text-center flex justify-center items-center">
+            <div
+              className="
+              w-96 h-48 borde text-center
+              flex justify-center items-center">
               {
-                (pre === "application") ? <DocumentTextIcon className={className} />
-                  : (pre === "text") ? <DocumentTextIcon className={className} />
-                    : (pre === "image") ? <img src={link} alt="" className="max-h-32" />
-                      : (pre === "audio") ? <VolumeUpIcon className={className + " !text-green-500"} />
-                        : (pre === "video") ? <video src={link} className="max-h-32"></video>
-                          : <DocumentTextIcon className={className} />
+                (pre === "image") ? <img src={link} alt="" className="max-h-48" />
+                  : (pre === "audio") ?
+                    <audio controls>
+                      <source src={link} type={type} />
+                    </audio>
+                    :
+                    (pre === "video") ?
+                      <video src={link} controls className="max-h-48"></video>
+                      : <Icon className="w-24 h-24 text-gray-400" />
               }
             </div>
           </div>
@@ -53,7 +59,7 @@ const ViewFileWidget = ({
       }
       <Modal.Actions>
         <div className="flex justify-center align-center">
-          <a href={link} className="btn" download target="_blank">Download</a>
+          <a href={link} className="btn" download>Download</a>
         </div>
       </Modal.Actions>
     </WidgetModal>

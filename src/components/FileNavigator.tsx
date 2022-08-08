@@ -5,10 +5,8 @@ import { useMount, useDebounce } from 'react-use';
 
 import { useFileManagerContext, ContextType } from '../context';
 import { DeFile, DeDirectory } from '@/services/filemanager';
-import { downloadUrl } from '../utils';
 
 import orderBy from 'lodash/orderBy';
-import sortBy from 'lodash/sortBy';
 
 import DocumentRemoveIcon from '@heroicons/react/solid/DocumentRemoveIcon';
 import DocumentDownloadIcon from '@heroicons/react/solid/DocumentDownloadIcon';
@@ -259,13 +257,15 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
             nextLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border text-gray-400 border-gray-300 rounded text-sm"
             previousLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center font-medium border text-gray-400 border-gray-300 rounded text-sm"
             disabledClassName="flex items-center justify-center p-2 w-8 h-8 text-center font-medium border text-gray-200 border-gray-300 rounded text-sm bg-gray-300 cursor-pointer"
+            breakClassName="flex items-center justify-center p-2 w-8 h-8 text-center border border-gray-300 rounded text-sm font-medium"
             breakLabel="..."
             nextLabel={
               <ChevronRightIcon className="h-8 w-8" />}
             previousLabel={
               <ChevronLeftIcon className="h-8 w-8" />
             }
-            pageRangeDisplayed={5}
+            pageRangeDisplayed={2}
+            marginPagesDisplayed={2}
             pageCount={Math.ceil(sortedListing.length / config.navigator.pageLimit)}
             onPageChange={(e) => {
               setCurrentPage(e.selected);

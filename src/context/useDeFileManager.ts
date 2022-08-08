@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useReducer, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
 import { useInterval } from 'react-use';
 import { DeFileManager, DeDirectory, DeFile, DePath, FileOrDir } from '@/services/filemanager';
 import Web3 from 'web3';
@@ -215,25 +215,38 @@ function useDeFileManager(
     });
   }
 
-  const loadCurrentDirectory = async () => {
-    dispatch({
+  // assuming isRefresh is used outside effects
+  const loadCurrentDirectory = async (isRefresh?: boolean) => {
+    let dir = (isRefresh) ? cwdRef.current : cwd;
+    if (!dir) return;
+
+    !isRefresh && dispatch({
       type: ACTION.SET_LOADING_DIRECTORY,
       payload: true
     });
-    const entries = await state?.directory?.entries();
+
+    const entries = await dir.entries();
     let listing = [];
-    for await (let item of entries || []) {
+    for await (let item of (entries || [])) {
       listing.push(item);
     }
     dispatch({
       type: ACTION.SET_LISTING,
       payload: listing
     });
-    dispatch({
+
+    !isRefresh && dispatch({
       type: ACTION.SET_LOADING_DIRECTORY,
       payload: false
     });
-  }
+  };
+
+  const maybeRefreshCwd = async (directory: DeDirectory) => {
+    if (!cwdRef.current) return;
+    if (directory.path === cwdRef.current.path) {
+      loadCurrentDirectory(true);
+    }
+  };
 
   // make-shift, integrate to interfaces already! -.-
   const absolutePath = (relativePath: string): FileStorageFile['storagePath'] => {
@@ -243,6 +256,8 @@ function useDeFileManager(
       + relativePath;
     return absolutePath;
   }
+
+  const cwdRef = useRef(cwd);
 
   // horridly frequent and expensive, better not done as side-effect
   // first candidate for improvement after upload actions are better structured
@@ -303,14 +318,18 @@ function useDeFileManager(
     updateCapacity();
   }, [fm]);
 
+  useEffect(() => {
+    cwdRef.current = cwd;
+  }, [cwd?.path]);
+
   useLayoutEffect(() => {
-    if (!state.directory) return;
+    if (!cwd) return;
     dispatch({
       type: ACTION.SET_LISTING,
       payload: []
     });
     loadCurrentDirectory();
-  }, [state.fm, state.directory?.path]);
+  }, [state.fm, cwd?.path]);
 
   // tested for uploads under 1mb: file being uploaded not reflected in directory listing via node
   // periodically fetch relevant directory listings, update active uploads with progress
@@ -347,27 +366,26 @@ function useDeFileManager(
         }
       });
     }
-  }, 1000);
+  }, 2000);
 
   const createDirectory = (fm && cwd && state.isAuthorized) &&
     (async (
       name: string,
       directory: DeDirectory = cwd
     ) => {
+
       dispatch({
-        type: ACTION.SET_DIRECTORY_OP,
-        payload: true
+        type: ACTION.SET_DIRECTORY_OP, payload: true
       });
+
       await fm.createDirectory(directory, name)
-        .then(async () => {
-          if (directory.path === cwd.path) {
-            loadCurrentDirectory();
-          }
-        });
+        .then(() => directory)
+        .then(maybeRefreshCwd);
+
       dispatch({
-        type: ACTION.SET_DIRECTORY_OP,
-        payload: false
+        type: ACTION.SET_DIRECTORY_OP, payload: false
       });
+
     })
 
   const uploadFiles = (fm && cwd && state.isAuthorized) &&
@@ -405,11 +423,7 @@ function useDeFileManager(
         let file = files[index];
 
         await fm.uploadFile(directory, file)
-          .then(path => {
-            if (directory.path === cwd.path) {
-              loadCurrentDirectory();
-            }
-          })
+          .then(() => maybeRefreshCwd(directory))
           .catch(err => {
             console.error("uploadFile::failure", err);
             dispatch({

@@ -5,7 +5,8 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { ModalWidgetProps, FormProps } from 'partials';
 import WidgetModal from '@/components/WidgetModal';
 import { useFileManagerContext, ContextType } from '../context';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
+import FieldGroup from '@/components/FieldGroup';
 
 type Props = ModalWidgetProps & FormProps & {
   batchThreshold: number
@@ -17,87 +18,97 @@ const UploadWidget = (
 
   const { directory, listing } = useFileManagerContext() as ContextType;
 
-  const { handleSubmit, register, control, formState: { errors, isValid }, trigger } = useForm({
+  const form = useForm({
     mode: 'onChange',
     defaultValues: {
       uploads: [],
     } as {
       uploads: { name: string, file: File }[]
-    },
+    }
   });
 
-  const { fields, append, prepend, remove, swap, move, insert } = useFieldArray({
+  const { handleSubmit, control, formState: { errors, isValid }, trigger, watch, reset } = form;
+
+  const { fields, append, prepend, remove, insert } = useFieldArray({
     control,
     name: "uploads",
   });
 
+  // culprit for handleSubmit glitching out, replaced by reset()
   const clearFields = useCallback(() => {
     remove(fields.map((field, i) => i));
   }, [fields]);
 
-  const fileNameRules = {
-    required: true,
-    validate: (value: string) => {
-      console.log(value);
-      return !listing.some(item => ((item.kind === "file") && item.name === value));
-    }
-  };
+  useEffect(() => {
+    console.log("#error-change", errors['uploads']);
+  }, [errors['uploads']]);
+
+  useEffect(() => {
+    trigger('uploads');
+  }, [fields]);
 
   return (
     <WidgetModal
       open={open}
       onClose={() => {
-        clearFields();
+        reset();
         onClose();
       }}
       heading="Upload files"
     >
       <form
+        className="w-full"
         onSubmit={(e) => {
-          handleSubmit(onSubmit)(e);
-          clearFields();
+          handleSubmit(onSubmit, console.error)(e);
+          reset();
         }}
       >
         <Modal.Body className="w-full flex flex-col gap-1.5 justify-center items-center min-w-72">
           {
             (fields.length > batchThreshold) ?
               (
-                <div>
+                <div className="w-full">
                   <p>You're batch uploading {fields.length} files.</p>
                   <p>Batch uploads may take a while, files cannot be renamed.</p>
                 </div>
               )
               : (fields.length > 0) ?
-                (
-                  fields
-                    .map((field, index) => (
-                      <div key={field.id}>
-                        <label htmlFor="" className="label">
-                          <span className="label-text">Name</span>
-                        </label>
-                        <Input
-                          {...register(`uploads.${index}.name` as any, fileNameRules)}
+                (<div className="w-full flex flex-col">
+                  {
+                    fields
+                      .map((field, index) => (
+                        <FieldGroup
+                          key={field.id}
+                          form={form}
+                          name={`uploads.${index}.name`}
+                          label="Name"
+                          validate={(value: string) => {
+                            const existsOnRemote = listing.some(item => ((item.kind === "file") && item.name === value));
+                            const existsOnUploads = fields.some(item => (item.name === value)); // incosistent:debug
+                            console.log(value, !existsOnRemote ? "VALID" : "INVALID");
+                            return !existsOnRemote;
+                          }}
+                          errorMessage="File with name already exists"
                         />
-                        { (errors['uploads']?.[index]?.['name']?.type as any) === "validate" &&
-                          <p className={`text-right text-sm py-1 text-red-400`}>
-                            {"File with the name already exists"}
-                          </p>
-                        }
-                      </div>
-                    ))
-                )
+                      ))
+                  }
+                </div>)
                 :
                 (<>
                   <UploadIcon className="h-24 w-24 my-4" strokeWidth={1} />
                   <p>Select files to upload.</p>
-                </>)
+                </>
+                )
           }
         </Modal.Body>
         <Modal.Actions className="flex justify-center items-center gap-8">
           {
             fields.length ?
               <>
-                <Button type="submit" className="btn-wide" disabled={!isValid}>Upload</Button>
+                <Button
+                  type="submit"
+                  className="btn-wide"
+                  disabled={!isValid}>Upload</Button>
               </>
               :
               <>
