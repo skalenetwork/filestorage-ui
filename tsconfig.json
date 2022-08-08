@@ -30,7 +30,10 @@
       "@/context/*": [
         "context/*"
       ]
-    }
+    },
+    "types": [
+      "vitest/importMeta"
+    ],
   },
   "include": [
     "./types/**/*.d.ts",
