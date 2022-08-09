@@ -18,6 +18,9 @@ import FileStorage, {
   FileStorageDirectory,
   FileStorageFile,
 } from '@skalenetwork/filestorage.js';
+
+import { BehaviorSubject } from 'rxjs';
+
 import { Buffer } from 'buffer';
 //@ts-ignore
 import sortBy from 'lodash/sortBy';
@@ -36,11 +39,13 @@ const ROLE = {
   CHAIN_OWNER: 'CHAIN_OWNER'
 }
 
-const OPERATON = {
+const OPERATION = {
   UPLOAD_FILE: 'UPLOAD_FILE',
   DELETE_FILE: 'DELETE_FILE',
   DELETE_DIRECTORY: 'DELETE_DIRECTORY',
-  CREATE_DIRECTORY: 'CREATE_DIRECTORY'
+  CREATE_DIRECTORY: 'CREATE_DIRECTORY',
+  GRANT_ROLE: 'GRANT_ROLE',
+  RESERVE_SPACE: 'RESERVE_SPACE'
 }
 
 // @todo: improve error coverage, segment some to state, extend with codes
@@ -75,7 +80,7 @@ export interface IDeFile {
   type: string;
   size: number;
   timestamp?: string;
-  arrayBuffer: () => Promise<ArrayBuffer>;
+  arrayBuffer(): Promise<ArrayBuffer>;
 }
 
 function pathToRelative(storagePath: DePath) {
@@ -161,6 +166,8 @@ class DeFileManager {
   dirLastAction: Object;
   cache: { [key: string]: (FileStorageDirectory | FileStorageFile)[] };
 
+  store: BehaviorSubject<{}>;
+
   constructor(
     w3: Object, address: Address, account?: Address, accountPrivateKey?: PrivateKey
   ) {
@@ -173,6 +180,8 @@ class DeFileManager {
     this.contract = (this.fs.contract.contract as unknown) as ContractContext;
     this.dirLastAction = "";
     this.cache = {};
+
+    this.store = new BehaviorSubject({});
 
     const addrWithoutPrefix = this.address.slice(2);
 
@@ -266,8 +275,11 @@ class DeFileManager {
       throw Error(ERROR.NO_ACCOUNT);
     const path = (destDirectory.path === this.rootDir.path) ? name : `${destDirectory.path}/${name}`;
     const returnPath = await this.fs.createDirectory(this.account, path, this.accountPrivateKey);
-    this.dirLastAction = `${OPERATON.CREATE_DIRECTORY}:${returnPath}`;
+    this.dirLastAction = `${OPERATION.CREATE_DIRECTORY}:${returnPath}`;
     this.purgeCache(destDirectory);
+    this.store.next({
+      key: OPERATION.CREATE_DIRECTORY
+    });
     return returnPath;
   }
 
@@ -302,7 +314,7 @@ class DeFileManager {
     }
     console.log("fm::uploadFile:", path);
     // makeshift - for outside watchers
-    this.dirLastAction = `${OPERATON.UPLOAD_FILE}:${path}`;
+    this.dirLastAction = `${OPERATION.UPLOAD_FILE}:${path}`;
     this.purgeCache(destDirectory);
     return path;
   }

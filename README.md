@@ -3,16 +3,17 @@ yarn
 yarn dev
 ```
 
-Entry point: `pages/-app.tsx`
+Start from: `pages/app.tsx` and `context/index.tsx`.
 
-![](https://i.imgur.com/yTDydFu.png)
+![](https://i.imgur.com/ACfouYg.png)
+
 
 ## UI Components - Overview
 
 - [x] Wallet picker
 - [x] Multi-file uploader
 - [x] Space reservation 
-- [ ] Space allocation 
+- [x] Role allocation
 - [x] Total usage metrics
 - [x] File Navigator: paginated + sortable + actionable
 - [x] Breadcrumb
@@ -24,19 +25,61 @@ Entry point: `pages/-app.tsx`
 - [ ] Chain owner
 - [ ] Timestamps not found in contracts (possibility: history watch + cache / indexing-at-node)
 
-## Codebase: heads up for templating
-
-- Project uses tailwind class-based styling.. for those not familiar but seasoned with CSS, you can pick pace in ~3h, after that it's intuitive with occasional doc-check. For backend devs doing minor template updates, come with a temporary counter-DRY mindset, and you'll find less friction.
-
-## Learnings from failed sprints
-
-- There is no stable single solution for embedded arbitrary file viewing, solution lies in identifying media type and using 2-3 libraries.
-
-Wallet provider DX
+## Wallet provider DX
 
 - `wagmi` + `rainbowkit` is a neat choice but `rainbowkit` doesn't yet support many wallets.
 
 - `wagmi` doesn't easily interoperate with `web3modal`.
+
+## Codebase: Structure
+
+### src/context
+
+App contexts mainly using Context API, includes File Manager context hook that can isolated away later.
+
+### src/pages
+
+Contains pages, initially single app.tsx is central and sufficient
+
+### src/components
+
+Components either re-used across the application, or small enough to be re-used.
+
+### src/partials
+
+HOCs on groups of components, could be later merged into `src/components`
+
+### src/services
+
+Modules consumed by the app to perform domain-specific operations. Currently, includes only `filemanager.ts` which is to be isolated away as a package.
+
+### src/styles
+
+Contains global styling files, and tailwind imports, initially limited use for overrides.
+
+### main.tsx
+
+Main entry point that mounts the app with context.
+
+### src/config.ts
+
+Global configuration file is loaded into app context, allowing use of static defaults declared client-side and types for extendability.
+
+### polyfill.ts
+
+Polyfills to non-browser-native libraries, vite does not automatically bundle these.
+
+### utils.ts
+
+Utility functions usable across the app
+
+## Codebase: heads up for templating
+
+Project uses tailwind class-based styling.
+
+- For those not familiar but seasoned with CSS, you can pick pace in ~3h, after that it's intuitive with occasional doc-check.
+
+- For backend devs doing minor template updates, come with a temporary counter-DRY mindset, and you'll find less friction.
 
 ----
 
@@ -47,7 +90,6 @@ Wallet provider DX
 - [Filestorage.js](https://github.com/skalenetwork/filestorage.js/tree/1.0.1-develop.5)
 - [Filestorage.js examples](https://docs.skale.network/filestorage.js/1.0.x/) 
 - [skale-demo](https://github.com/skalenetwork/skale-demo/tree/master/file-storage)
-
 
 ## Batching UX : relevant - future above water
 

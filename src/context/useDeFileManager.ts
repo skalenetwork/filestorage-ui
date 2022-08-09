@@ -275,6 +275,7 @@ function useDeFileManager(
     });
   }, [state.activeUploads]);
 
+  // initialize root as current directory, roles and authorization
   useLayoutEffect(() => {
     if (!(w3Provider && address)) return;
 
@@ -314,14 +315,18 @@ function useDeFileManager(
 
   }, [w3Provider, address, privateKey]);
 
+  // setup storage metadata
   useLayoutEffect(() => {
     updateCapacity();
   }, [fm]);
 
+
+  // keep current directory synced to ref
   useEffect(() => {
     cwdRef.current = cwd;
   }, [cwd?.path]);
 
+  // load listing based on current directory
   useLayoutEffect(() => {
     if (!cwd) return;
     dispatch({
@@ -331,8 +336,8 @@ function useDeFileManager(
     loadCurrentDirectory();
   }, [state.fm, cwd?.path]);
 
-  // tested for uploads under 1mb: file being uploaded not reflected in directory listing via node
   // periodically fetch relevant directory listings, update active uploads with progress
+  // tested for uploads under 1mb: file being uploaded not reflected in directory listing via node
   // @todo can be better managed after some restructure involving converging remote + local state vs lookup of remote
   useInterval(async () => {
     if (!fm) return;
@@ -373,6 +378,8 @@ function useDeFileManager(
       name: string,
       directory: DeDirectory = cwd
     ) => {
+
+      // push to queue and return here
 
       dispatch({
         type: ACTION.SET_DIRECTORY_OP, payload: true

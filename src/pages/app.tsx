@@ -62,12 +62,16 @@ const App = () => {
     setFailedFiles(Array.from(failedUploads.values()).flat());
   }, [failedUploads]);
 
-  const handleConfirmUpload = async (data: { uploads: Array<{ name: string, file: File }> }) => {
+  const handleConfirmUpload = async (
+    data: { uploads: Array<{ name: string, file: File }> },
+    callback?: () => any
+  ) => {
     console.log("file to upload", data.uploads);
     if (!(currentDirectory && data.uploads && data.uploads.length)) return;
     const filesToUpload: File[] = data.uploads.map(({ name, file }) => {
       return new File([file], name);
     });
+    callback && callback();
     setUploadModal(false);
     setActiveUploadsModal(true);
     return await uploadFiles(filesToUpload);

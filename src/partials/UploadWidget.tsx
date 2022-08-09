@@ -59,8 +59,10 @@ const UploadWidget = (
       <form
         className="w-full"
         onSubmit={(e) => {
-          handleSubmit(onSubmit, console.error)(e);
-          reset();
+          handleSubmit((data) => {
+            // @ts-ignore
+            onSubmit(data, reset);
+          }, console.error)(e);
         }}
       >
         <Modal.Body className="w-full flex flex-col gap-1.5 justify-center items-center min-w-72">
@@ -134,7 +136,7 @@ const UploadWidget = (
           }
         </Modal.Actions>
       </form>
-    </WidgetModal>
+    </WidgetModal >
   )
 }
 
