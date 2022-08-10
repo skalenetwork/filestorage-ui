@@ -44,9 +44,9 @@ const App = () => {
 
   const {
     config,
-    fm, directory: currentDirectory, reservedSpace, occupiedSpace, searchListing,
+    fm, directory: currentDirectory, reservedSpace, occupiedSpace,
     isAuthorized, accountRoles, connectWallet, activeUploads, failedUploads, totalUploadCount,
-    changeDirectory, uploadFiles, createDirectory, search, isSearching, isCreatingDirectory, uploadStatus
+    changeDirectory, uploadFiles, createDirectory, isCreatingDirectory, uploadStatus
   }: ContextType = useFileManagerContext<ContextType>();
 
   const [uploadingFiles, setUploadingFiles] = useState<FileStatus[]>([]);
@@ -160,8 +160,6 @@ const App = () => {
           <div className="action-bar my-4 gap-4 flex flex-row justify-between items-center">
             <Search
               className="grow relative"
-              isSearching={isSearching}
-              onInput={search}
               onFileClick={setSelectedFile}
             />
             {

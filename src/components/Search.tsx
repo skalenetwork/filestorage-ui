@@ -1,10 +1,8 @@
 // @ts-nocheck
 
-import { DeDirectory, DeFile } from "@/services/filemanager";
+import { DeFile } from "@/services/filemanager";
 import XIcon from "@heroicons/react/outline/XIcon";
 import SearchIcon from "@heroicons/react/solid/SearchIcon";
-import { useRef, useState } from "react";
-import { useDebounce } from "react-use";
 import { useFileManagerContext } from "../context";
 import { Input, SpinnerIcon } from "./common";
 import FormattedName from "./FormattedName";
@@ -13,34 +11,17 @@ import SelectSearch from "react-select-search";
 
 type SearchProps = {
   className: string,
-  isSearching: boolean,
-  onInput: (value: string) => void,
   onFileClick: (file: DeFile) => void
 }
 
-const SearchList = (
-  { listing, onFileClick, onDirectoryClick }:
-    { listing: (DeFile | DeDirectory)[], onFileClick: (file: DeFile) => void, onDirectoryClick: (directory: DeDirectory) => void }
-) => {
-  return (listing && listing.length) ? (
-    <div className="absolute top-[100%] bg-slate-100 rounded mt-2 py-2 z-[1001] w-full">
-      <ul>
-        {
-          listing.map((item) => renderItem(item, onFileClick, onDirectoryClick))
-        }
-      </ul>
-    </div>
-  ) : <></>
-}
-
 const Search = (
-  { className, isSearching, onInput, onFileClick }: SearchProps
+  { className, onFileClick }: SearchProps
 ) => {
 
   const classes = {
     container: className,
     input: "input w-full border border-gray-500 font-medium p-l-4",
-    options: "absolute max-h-[500px] top-[100%] bg-slate-100 rounded mt-2 z-[1001] w-full overflow-y-scroll scrollbar"
+    options: "absolute max-h-[500px] top-[100%] bg-slate-100 rounded mt-2 z-[1001] w-full scrollbar overflow-y-auto"
   }
 
   const { changeDirectory, fm } = useFileManagerContext();
@@ -58,7 +39,7 @@ const Search = (
 
     return item && (
       <li
-        className={`px-4 py-2 mx-2 rounded cursor-default hover:bg-white ${optionData.index == 0 ? 'mt-2' : ''}`}
+        className={`px-4 py-2 mx-2 rounded cursor-default hover:bg-white first-of-type:mt-2 last-of-type:mb-2 ${optionData.index == 0 ? 'mt-2' : ''}`}
         tabIndex={optionProps.tabIndex}
         // {...optionProps}
         onClick={(e) => {
@@ -82,12 +63,12 @@ const Search = (
       }))}
       debounce={500}
       renderValue={(valueProps, snapshot, className) => {
-        console.log(valueProps, snapshot)
+        console.log(valueProps, snapshot, snapshot.searching);
         return (
           <div>
             <div className="mr-4 pointer-events-none absolute top-1/2 transform -translate-y-1/2 left-4">
               {
-                snapshot.searching
+                snapshot.fetching
                   ? <SpinnerIcon className="h-6 w-6" />
                   : <SearchIcon className="h-6 w-6" />
               }

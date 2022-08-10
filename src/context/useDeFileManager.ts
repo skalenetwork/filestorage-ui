@@ -349,7 +349,7 @@ function useDeFileManager(
         continue;
 
       // get remote listing for directory
-      let listing: (FileStorageFile | FileStorageDirectory)[] = await fm.loadDirectory(absolutePath(dirPath));
+      let listing: (FileStorageFile | FileStorageDirectory)[] = await fm.loadDirectory(absolutePath(dirPath), true);
 
       // uploads mapped to progress from remote listing
       let dirUploadsWithProgress =
@@ -452,24 +452,32 @@ function useDeFileManager(
 
   const deleteFile = (fm && cwd && state.isAuthorized) && (async (file: DeFile, directory: DeDirectory = cwd) => {
     await fm.deleteFile(directory, file);
-    let listing = [...state.listing];
-    const index = listing.findIndex(item => item.path === file.path);
-    listing.splice(index, 1);
-    dispatch({
-      type: ACTION.SET_LISTING,
-      payload: listing
-    });
+    if (!cwdRef.current) return;
+    if (directory.path === cwdRef.current.path) {
+      let listing = [...state.listing];
+      const index = listing.findIndex(item => item.path === file.path);
+      if (!index) return;
+      listing.splice(index, 1);
+      dispatch({
+        type: ACTION.SET_LISTING,
+        payload: listing
+      });
+    }
   });
 
   const deleteDirectory = (fm && cwd && state.isAuthorized) && (async (directory: DeDirectory) => {
     await fm.deleteDirectory(directory);
-    let listing = [...state.listing];
-    const index = listing.findIndex(item => item.path === directory.path);
-    listing.splice(index, 1);
-    dispatch({
-      type: ACTION.SET_LISTING,
-      payload: listing
-    });
+    if (!cwdRef.current) return;
+    if (directory.parent?.path === cwdRef.current.path) {
+      let listing = [...state.listing];
+      const index = listing.findIndex(item => item.path === directory.path);
+      if (!index) return;
+      listing.splice(index, 1);
+      dispatch({
+        type: ACTION.SET_LISTING,
+        payload: listing
+      });
+    }
   });
 
   const search = async (query: string) => {

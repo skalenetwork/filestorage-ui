@@ -58,7 +58,7 @@ const ViewFileWidget = ({
                   (pre === "video") ?
                     <video src={link} controls className="max-h-52"></video>
                     : <>
-                      <p>To see the full file, please down it first.</p>
+                      <p>To see the full file, please download it first.</p>
                       <Icon className="w-36 h-36 text-gray-900" />
                     </>
             }

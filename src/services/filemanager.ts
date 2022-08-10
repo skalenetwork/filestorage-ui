@@ -205,6 +205,7 @@ class DeFileManager {
       this.cache = {};
       this.preloadDirectories(this.rootDir);
     }
+    console.log("purged", path);
   }
 
   //@ts-ignore
@@ -257,10 +258,11 @@ class DeFileManager {
    * @todo memoization w/ stale check, and flag for bypass-cache calls
    */
   async loadDirectory(
-    path: FileStorageDirectory['storagePath']
+    path: FileStorageDirectory['storagePath'],
+    noCache: boolean = false
   ): Promise<Array<FileStorageFile | FileStorageDirectory>> {
     let entries;
-    if (this.cache[path]) {
+    if (this.cache[path] && !noCache) {
       entries = this.cache[path];
     } else {
       entries = await this.fs.listDirectory(`${path}`);
@@ -276,24 +278,26 @@ class DeFileManager {
     const returnPath = await this.fs.createDirectory(this.account, path, this.accountPrivateKey);
     this.dirLastAction = `${OPERATION.CREATE_DIRECTORY}:${returnPath}`;
     this.purgeCache(destDirectory);
-    this.store.next({
-      key: OPERATION.CREATE_DIRECTORY
-    });
+    // this.store.next({
+    //   key: OPERATION.CREATE_DIRECTORY
+    // });
     return returnPath;
   }
 
   async deleteFile(destDirectory: DeDirectory, file: DeFile): Promise<void> {
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
-    this.purgeCache(destDirectory);
     await this.fs.deleteFile(this.account, file.path, this.accountPrivateKey);
+    this.purgeCache(destDirectory);
   }
 
   async deleteDirectory(directory: DeDirectory): Promise<void> {
+    if (directory.path === this.rootDir.path)
+      throw Error(ERROR.UNKNOWN);
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
     await this.fs.deleteDirectory(this.account, directory.path, this.accountPrivateKey);
-    this.purgeCache(directory);
+    this.purgeCache(directory.parent);
   }
 
   async uploadFile(destDirectory: DeDirectory, file: File) {

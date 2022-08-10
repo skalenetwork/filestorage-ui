@@ -8,6 +8,8 @@ import XIcon from '@heroicons/react/outline/XIcon';
 import CheckIcon from '@heroicons/react/solid/CheckIcon';
 import type { ModalWidgetProps } from 'partials';
 import { useEffect } from 'react';
+//@ts-ignore
+import mime from 'mime/lite';
 
 type Props = ModalWidgetProps & {
   activeUploads: FileStatus[],
@@ -22,7 +24,7 @@ const ItemStatus = ({ data }: { data: FileStatus }) => {
     kind: "file",
     name: data.file.name,
     size: data.file.size,
-    type: data.file.type,
+    type: mime.getType(data.file.name),
     path: data.path
   } as DeFile;
 
@@ -38,9 +40,7 @@ const ItemStatus = ({ data }: { data: FileStatus }) => {
         <FormattedSize item={preDeFile} />
       </div>
       <div className="grow-0 shrink-0 basis-24 flex items-center justify-end">
-        {
-          data.progress ? <span className="font-mono">{data.progress} %</span> : null
-        }
+        <span className="font-mono">{data.progress || 0} %</span>
         <span className="ml-2">
           {
             (data.error)
