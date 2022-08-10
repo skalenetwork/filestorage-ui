@@ -16,9 +16,9 @@ const SmartAddress = (
   const [edit, setEdit] = useState<boolean | undefined>(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const { control, setFocus, resetField, getValues } = useForm({
+  const { control, setFocus, resetField, getValues, reset } = useForm({
     defaultValues: {
-      address: address
+      address: ""
     },
     mode: "onChange"
   });
@@ -50,13 +50,13 @@ const SmartAddress = (
   useLayoutEffect(() => {
     if (edit === false) {
       offEdit();
-      resetField("address"); /// you are here
+      reset({ address: address });
     }
     if (edit === true) {
       onEdit();
       setFocus("address");
     }
-  }, [edit]);
+  }, [edit + address]);
 
   return (
     <div className={className}>

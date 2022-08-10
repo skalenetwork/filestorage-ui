@@ -3,16 +3,14 @@
 priors
 
 [x] faster lookups: client-side file listing caching + deep prefetch
-[ ] override navigation / search operations 
 
 [ ] squash bugs + netting: final pass widget field validations, form resetting
 [x] pagination: fix no collapse
-[ ] preview + download file: finalize
-[ ] upload-progress: set initial progress as undefined, ui: waiting icon
+[x] preview + download file: finalize
 [x] upload-progress: fix line item alignments
 [x] cwd reload: silent refresh without loading state
 
-[ ] toast when background errors / notifications (offline etc)
+[x] toast when background errors / notifications (offline etc)
 [ ] configure trustwallet and fortmatic
 [ ] back-channel pvt key validation against connected account
 [ ] watch on wallet address change etc.
@@ -27,7 +25,7 @@ feedback
 [ ] by mockups: upload list to bottom right
 [ ] upload-progress: failed item -> click cross -> retry icon (hover::green) -> click to retry
 [ ] reserve-widget: unit select for space and relevant validation
-[ ] widgets: where address input, confirm and correctly validate prefix 0x (make common validate and transform utils)
+[x] widgets: where address input, confirm and correctly validate prefix 0x (make common validate and transform utils)
 [x] neater file shortening
 
 post-MVP
