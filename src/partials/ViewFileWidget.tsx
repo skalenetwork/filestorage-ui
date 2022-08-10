@@ -9,6 +9,8 @@ import { ContextType, useFileManagerContext } from '../context';
 import DocumentTextIcon from '@heroicons/react/outline/DocumentTextIcon';
 import { mimeData } from '../utils';
 
+import { toast } from 'react-toastify';
+
 type Props = ModalWidgetProps & { file: DeFile };
 
 const ViewFileWidget = ({
@@ -59,7 +61,14 @@ const ViewFileWidget = ({
       }
       <Modal.Actions>
         <div className="flex justify-center align-center">
-          <a href={link} className="btn" download>Download</a>
+          <button className="btn" onClick={(e) => {
+            e.preventDefault();
+            toast.promise(file.manager.downloadFile(file), {
+              pending: `Preparing file - ${file.name}`,
+              success: `Downloading file - ${file.name}`,
+              error: `Failed to fetch file - ${file.name}`
+            }, { autoClose: 2000 });
+          }}>Download</button>
         </div>
       </Modal.Actions>
     </WidgetModal>

@@ -10,8 +10,8 @@ import './styles/globals.css';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-      <ContextWrapper>
-        <App />
-      </ContextWrapper>
+    <ContextWrapper>
+      <App />
+    </ContextWrapper>
   </React.StrictMode>
 )

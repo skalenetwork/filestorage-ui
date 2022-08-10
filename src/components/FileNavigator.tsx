@@ -23,6 +23,8 @@ import FormattedSize from './FormattedSize';
 import SmartAddress from './SmartAddress';
 import { SpinnerIcon } from './common';
 
+import { toast } from 'react-toastify';
+
 const makeDirTrail = (directory: DeDirectory) => {
   let trail = [];
   let item = directory;
@@ -89,25 +91,17 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
 
   useDebounce(() => {
     console.log("debounce:addressInput", addressInput);
+    if (!addressInput) return;
     updateAddress(addressInput);
   }, 500, [addressInput]);
 
+  // sorting method and order
   useMount(() => {
     setSortByKey("size");
     setSortByOrder("desc");
   });
 
-  useEffect(() => {
-    setTrail(makeDirTrail(currentDirectory));
-    setItemOffset(0);
-    setCurrentPage(1);
-  }, [currentDirectory?.path]);
-
-  useLayoutEffect(() => {
-    const endOffset = itemOffset + config.navigator.pageLimit;
-    setPageListing(sortedListing.slice(itemOffset, endOffset));
-  }, [itemOffset, sortedListing])
-
+  // sorted listing
   useLayoutEffect(() => {
     if (!(listing && sortByKey && sortByOrder)) return;
     let newListing = orderBy(
@@ -118,6 +112,18 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
     setSortedListing(newListing);
   }, [listing, sortByKey, sortByOrder]);
 
+  // dircrumb and pagination
+  useEffect(() => {
+    setTrail(makeDirTrail(currentDirectory));
+    setItemOffset(0);
+    setCurrentPage(1);
+  }, [currentDirectory?.path]);
+
+  // current page listing
+  useLayoutEffect(() => {
+    const endOffset = itemOffset + config.navigator.pageLimit;
+    setPageListing(sortedListing.slice(itemOffset, endOffset));
+  }, [itemOffset, sortedListing])
 
 
   const sortElement = (key: string) => (
@@ -167,7 +173,11 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
           (item.kind === "file") ?
             <li
               onClick={(e) => {
-                fm?.downloadFile(item as DeFile);
+                toast.promise(fm?.downloadFile(item as DeFile), {
+                  pending: `Preparing file - ${item.name}`,
+                  success: `Downloading file - ${item.name}`,
+                  error: `Failed to fetch file - ${item.name}`
+                });
                 (tableElement.current?.querySelector(":focus") as HTMLElement).blur();
               }}
             >
@@ -180,9 +190,21 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
             <li
               onClick={(e: SyntheticEvent) => {
                 if (item.kind === "file") {
-                  deleteFile(item as DeFile)
+                  toast.promise(deleteFile(item as DeFile), {
+                    pending: `Deleting file: ${item.name}`,
+                    success: `Deleted file: ${item.name}`,
+                    error: `Failed to delete file: ${item.name}`
+                  }, {
+                    autoClose: 1000
+                  });
                 } else {
-                  deleteDirectory(item as DeDirectory);
+                  toast.promise(deleteDirectory(item as DeDirectory), {
+                    pending: `Deleting directory: ${item.name}`,
+                    success: `Deleted directory: ${item.name}`,
+                    error: `Failed to delete directory: ${item.name}`
+                  }, {
+                    autoClose: 1000
+                  });
                 }
                 (tableElement.current?.querySelector(":focus") as HTMLElement).blur();
               }}

@@ -28,6 +28,9 @@ import CheckIcon from '@heroicons/react/solid/CheckIcon';
 import UploadIcon from '@heroicons/react/outline/UploadIcon';
 import ArchiveIcon from '@heroicons/react/outline/ArchiveIcon';
 
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 const App = () => {
 
   // modals
@@ -270,6 +273,10 @@ const App = () => {
           setSelectedFile(undefined)
         }}
         file={selectedFile}
+      />
+
+      <ToastContainer
+        position="bottom-right"
       />
 
     </div>

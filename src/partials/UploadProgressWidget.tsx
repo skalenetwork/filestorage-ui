@@ -38,7 +38,9 @@ const ItemStatus = ({ data }: { data: FileStatus }) => {
         <FormattedSize item={preDeFile} />
       </div>
       <div className="grow-0 shrink-0 basis-24 flex items-center justify-end">
-        <span className="font-mono">{data.progress} %</span>
+        {
+          data.progress ? <span className="font-mono">{data.progress} %</span> : null
+        }
         <span className="ml-2">
           {
             (data.error)

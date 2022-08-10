@@ -2,6 +2,8 @@
 import config from '../config';
 import type { ConfigType } from '../config';
 
+import { sanitizeAddress } from '../utils';
+
 import Web3 from 'web3';
 import Web3Modal from 'web3modal';
 
@@ -30,11 +32,12 @@ const getRpcEndpoint = (data: ConfigType['chains'][0]) => {
   return `${data.protocol}://${data.nodeDomain}/${data.version}/${data.sChainName}`
 }
 
-const getFsEndpoint = (data: ConfigType['chains'][0], address: string = "", path: string = "") => {
-  let root = address.toLowerCase();
-  if (root.slice(0, 2) === "0x") {
-    root = root.slice(2);
-  }
+const getFsEndpoint = (
+  data: ConfigType['chains'][0],
+  address: string = "",
+  path: string = ""
+) => {
+  let root = sanitizeAddress(address, { prefix: false, checksum: false });
   return `${data.protocol}://${data.nodeDomain}/fs/${data.sChainName}${(root) ? "/" + root : ""}${(path) ? "/" + path : ""}`;
 }
 
@@ -58,19 +61,19 @@ const addNetwork = (web3: any, chain: ConfigType['chains'][0]) => {
 
 const providerOptions = {
   walletconnect: {
-    package: WalletConnectProvider, // required
+    package: WalletConnectProvider,
     options: {
-      infuraId: "INFURA_ID" // required
+      infuraId: "8f049459cf5b4f209b4fef05d08ffcf0"
     }
   },
   fortmatic: {
-    package: Fortmatic, // required
+    package: Fortmatic,
     options: {
-      key: "FORTMATIC_KEY", // required
+      key: "pk_test_1064A1F97DFB9DC2",
       network: {
         rpcUrl: RPC_ENDPOINT,
         chainId: CHAIN_ID
-      } // if we don't pass it, it will default to localhost:8454
+      }
     }
   }
 }
@@ -89,8 +92,8 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
   const [inputAddress, setInputAddress] = useState<string>("");
 
   const updateAddress = (address: string) => {
-    address = (address.slice(0, 2) === "0x") ? address : "0x" + address;
-    if (!Web3.utils.isAddress(address)) {
+    address = sanitizeAddress(address);
+    if (!address) {
       throw Error(`Address is invalid ${address}`);
     }
     setAddress(address);
@@ -131,8 +134,6 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
       return;
     }
     setW3Modal(new Web3Modal({
-      network: "testnet", // optional
-      cacheProvider: false, // optional
       disableInjectedProvider: false,
       providerOptions: providerOptions// required
     }));
