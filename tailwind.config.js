@@ -30,8 +30,10 @@ module.exports = {
           "--rounded-btn": "0.25rem",
           "--btn-text-case": "default",
           "--btn-focus-scale": "0.98"
-        }
-      }
+        },
+
+      },
+      "night"
     ]
   },
 }

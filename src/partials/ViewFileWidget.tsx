@@ -32,34 +32,40 @@ const ViewFileWidget = ({
 
   return (
     <WidgetModal
-      className="!max-w-[600px]"
+      style={{
+        maxWidth: '50vw',
+        maxHeight: '60vh',
+        height: '100%'
+      }}
+      className="justify-between"
       open={open}
       onClose={onClose}
       heading={file.name}
     >
       {
         (file) ?
-          <div>
-            <div
-              className="
-              w-96 h-48 borde text-center
-              flex justify-center items-center">
-              {
-                (pre === "image") ? <img src={link} alt="" className="max-h-48" />
-                  : (pre === "audio") ?
-                    <audio controls>
-                      <source src={link} type={type} />
-                    </audio>
-                    :
-                    (pre === "video") ?
-                      <video src={link} controls className="max-h-48"></video>
-                      : <Icon className="w-24 h-24 text-gray-400" />
-              }
-            </div>
+          <div
+            className="
+              text-center
+              flex flex-col justify-center items-center gap-6 flex-grow">
+            {
+              (pre === "image") ? <img src={link} alt="" className="max-h-52" />
+                : (pre === "audio") ?
+                  <audio controls>
+                    <source src={link} type={type} />
+                  </audio>
+                  :
+                  (pre === "video") ?
+                    <video src={link} controls className="max-h-52"></video>
+                    : <>
+                      <p>To see the full file, please down it first.</p>
+                      <Icon className="w-36 h-36 text-gray-900" />
+                    </>
+            }
           </div>
           : <></>
       }
-      <Modal.Actions>
+      < Modal.Actions >
         <div className="flex justify-center align-center">
           <button className="btn" onClick={(e) => {
             e.preventDefault();
@@ -70,8 +76,8 @@ const ViewFileWidget = ({
             }, { autoClose: 2000 });
           }}>Download</button>
         </div>
-      </Modal.Actions>
-    </WidgetModal>
+      </Modal.Actions >
+    </WidgetModal >
   )
 }
 

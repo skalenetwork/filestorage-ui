@@ -63,7 +63,7 @@ img {
 .input {
   @apply px-4 py-2 m-0;
   @apply rounded;
-  @apply bg-white;
+  @apply bg-base-100;
   @apply border-gray-500 focus:border-gray-500 focus:outline-none;
 }
 

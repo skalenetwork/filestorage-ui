@@ -5,6 +5,7 @@ import DocumentTextIcon from "@heroicons/react/outline/DocumentTextIcon";
 import FilmIcon from "@heroicons/react/outline/FilmIcon";
 import VolumeUpIcon from "@heroicons/react/outline/VolumeUpIcon";
 import PhotographIcon from "@heroicons/react/solid/PhotographIcon";
+import CubeIcon from "@heroicons/react/outline/CubeIcon";
 import Web3 from 'web3';
 
 type MimeMetaData = {
@@ -35,7 +36,7 @@ const mimeDataRepo: MimeMetaDataRepo = {
     color: 'gray'
   },
   'application': {
-    Icon: DocumentTextIcon,
+    Icon: CubeIcon,
     color: 'red'
   },
   'image': {

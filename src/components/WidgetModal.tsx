@@ -1,13 +1,14 @@
-import { ReactNode } from 'react';
+import { CSSProperties, ReactNode } from 'react';
 import { Modal } from '@/components/common';
 import XIcon from '@heroicons/react/outline/XIcon';
 
 const WidgetModal = (
-  { className, children, open, onClose, heading }:
-    { className?: string, children: ReactNode, open: boolean, onClose: () => void, heading?: string }
+  { style, className, children, open, onClose, heading }:
+    { style?: CSSProperties, className?: string, children: ReactNode, open: boolean, onClose: () => void, heading?: string }
 ) => {
   return (
     <Modal
+      style={style}
       className={`p-16 first-letter:gap-4 flex flex-col justify-start items-center ${className || ''}`}
       open={open}
       onClickBackdrop={onClose}

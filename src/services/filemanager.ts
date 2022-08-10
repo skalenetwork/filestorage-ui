@@ -266,7 +266,6 @@ class DeFileManager {
       entries = await this.fs.listDirectory(`${path}`);
       this.cache[path] = entries;
     }
-    console.log("fm::loadDirectory", entries);
     return sortBy(entries, ((o: FileStorageDirectory | FileStorageFile) => o.isFile === true));
   }
 

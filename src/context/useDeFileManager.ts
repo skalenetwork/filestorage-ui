@@ -318,6 +318,7 @@ function useDeFileManager(
   // setup storage metadata
   useLayoutEffect(() => {
     updateCapacity();
+    fm?.preloadDirectories(fm.rootDirectory());
   }, [fm]);
 
 

@@ -48,7 +48,7 @@ const DirCrumb = (
               key={item.path}
             >
               <a onClick={(e) => onCrumbClick(item)}>
-                <FormattedName item={item} maxLength={6} />
+                <FormattedName item={item} />
               </a>
             </li>
           ))
@@ -148,7 +148,7 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
   const BackItem = () => (
     currentDirectory?.parent ?
       <tr
-        className="focus:bg-slate-100 hover:bg-slate-50"
+        className="focus:bg-slate-100 hover:bg-base-200"
         onClick={(e) => {
           handleRowClick(currentDirectory.parent as DeDirectory);
           e.stopPropagation();
@@ -219,14 +219,14 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
 
   const Item = ({ item, skeleton }: { item: DeFile | DeDirectory, skeleton: boolean }) => (skeleton) ?
     <tr className="animate-pulse">
-      <td><p className="w-16 h-2 rounded bg-gray-200"></p></td>
+      <td><p className="w-16 h-2 rounded bg-base-300"></p></td>
       <td></td>
-      <td><p className="w-5 h-2 rounded bg-gray-200"></p></td>
-      <td><DotsVerticalIcon className="h-5 w-5 text-gray-200" /></td>
+      <td><p className="w-5 h-2 rounded bg-base-300"></p></td>
+      <td><DotsVerticalIcon className="h-5 w-5 text-primary-content" /></td>
     </tr>
     :
     (
-      <tr className="focus:bg-slate-100 hover:bg-slate-50" onClick={
+      <tr className="focus:bg-slate-100 hover:bg-base-200" onClick={
         (e) => {
           item.kind === "directory"
             ? handleRowClick(item as DeDirectory)
@@ -243,7 +243,7 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
 
   return (
     <div>
-      <div className="flex flex-row justify-between items-center border-y border-slate-800 py-4 sticky top-0 bg-white z-[998]">
+      <div className="flex flex-row justify-between items-center border-y border-slate-800 py-4 sticky top-0 bg-base-100 z-[998]">
         <div className="h-8 flex flex-row items-center gap-2 px-4">
           <HomeIcon className="w-5 h-5 cursor-pointer text-blue-500" onClick={(e) => changeDirectory(fm?.rootDirectory())} />
           <SmartAddress
@@ -278,7 +278,7 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
             activeLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border border-gray-500 rounded text-sm font-medium"
             nextLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border text-gray-400 border-gray-300 rounded text-sm"
             previousLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center font-medium border text-gray-400 border-gray-300 rounded text-sm"
-            disabledClassName="flex items-center justify-center p-2 w-8 h-8 text-center font-medium border text-gray-200 border-gray-300 rounded text-sm bg-gray-300 cursor-pointer"
+            disabledClassName="flex items-center justify-center p-2 w-8 h-8 text-center font-medium border text-gray-200 border-gray-300 rounded text-sm bg-base-300 cursor-pointer"
             breakClassName="flex items-center justify-center p-2 w-8 h-8 text-center border border-gray-300 rounded text-sm font-medium"
             breakLabel="..."
             nextLabel={
