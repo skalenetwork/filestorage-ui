@@ -22,7 +22,7 @@ Start from: `pages/app.tsx` and `context/index.tsx`.
 
 ## To locate
 
-- [ ] Chain owner
+- [x] Chain owner
 - [ ] Timestamps not found in contracts (possibility: history watch + cache / indexing-at-node)
 
 ## Wallet provider DX
@@ -49,9 +49,9 @@ Components either re-used across the application, or small enough to be re-used.
 
 HOCs on groups of components, could be later merged into `src/components`
 
-### src/services
+### src/packages
 
-Modules consumed by the app to perform domain-specific operations. Currently, includes only `filemanager.ts` which is to be isolated away as a package.
+Modules prepared or being prepared to be published standalone.
 
 ### src/styles
 
@@ -81,6 +81,21 @@ Project uses tailwind class-based styling.
 
 - For backend devs doing minor template updates, come with a temporary counter-DRY mindset, and you'll find less friction.
 
+## UX: Wallet flows
+
+Currently, a shortcut prompts for private key, prior to deployments, this must be restricted to session-only.
+
+Within the UI, a hotkey lets a prompt take in private key and use it against connected wallet. Not very friendly by design.
+
+Certain custodial wallets may naturally allow batching, but need to be identified and evaluated against contract functionality for integration.
+
+Following is an EIP that opens better UX across all EVM ecosystems, it should be lobbied for at community level.
+
+[EIP-2255](https://eips.ethereum.org/EIPS/eip-2255)
+
+projection by metamask
+![](https://pbs.twimg.com/media/EIKULr5XsAASISn?format=jpg)
+
 ----
 
 ## Related
@@ -90,10 +105,3 @@ Project uses tailwind class-based styling.
 - [Filestorage.js](https://github.com/skalenetwork/filestorage.js/tree/1.0.1-develop.5)
 - [Filestorage.js examples](https://docs.skale.network/filestorage.js/1.0.x/) 
 - [skale-demo](https://github.com/skalenetwork/skale-demo/tree/master/file-storage)
-
-## Batching UX : relevant - future above water
-
-[EIP-2255](https://eips.ethereum.org/EIPS/eip-2255)
-
-projection by MM
-![](https://pbs.twimg.com/media/EIKULr5XsAASISn?format=jpg)

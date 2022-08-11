@@ -1,4 +1,4 @@
-## Week 6
+## Week 6 + 7
 
 priors
 
@@ -17,6 +17,7 @@ priors
 
 [ ] upload:edge: bulk upload: list conflicted names for editing
 [ ] upload:edge: also detect conflicts within selected uploads (can happen due to renaming)
+
 [ ] upload:edge: enable other cases (ex: upload on upload) by adding queues, isolate dequeue logic
 [ ] all:improvement: bring queuing to everything
 

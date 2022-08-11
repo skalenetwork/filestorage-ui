@@ -29,6 +29,7 @@ import sortBy from 'lodash/sortBy';
 import mime from 'mime/lite';
 import Fuse from 'fuse.js';
 import utils from './utils';
+import Web3 from 'web3';
 const { sanitizeAddress } = utils;
 
 const KIND = {
@@ -86,14 +87,14 @@ export interface IDeFile {
   arrayBuffer(): Promise<ArrayBuffer>;
 }
 
-function pathToRelative(storagePath: DePath) {
-  const relative = storagePath.split("/").slice(1).join('/');
-  return relative;
+// DePath start
+// path transforms to be replaced with new DePath prototype here
+
+function pathToRelative(storagePath: string) {
+  return storagePath.split("/").slice(1).join('/');
 }
 
-function pathToAbsolute() {
-
-}
+/// DePath end
 
 class DeDirectory implements IDeDirectory {
   kind: string;
@@ -140,7 +141,10 @@ class DeFile implements IDeFile {
   }
 
   async arrayBuffer(): Promise<ArrayBuffer> {
-    const buffer = await this.manager.fs.downloadToBuffer(this.manager.rootDirectory().name + "/" + this.path);
+    const buffer = await this.manager.fs
+      .downloadToBuffer(
+        this.manager.rootDirectory().name + "/" + this.path
+      );
     const arrayBuffer = buffer.buffer.slice(
       buffer.byteOffset, buffer.byteOffset + buffer.byteLength
     );
@@ -174,18 +178,21 @@ class DeFileManager {
   store: BehaviorSubject<{}>;
 
   constructor(
-    w3: Object, address: Address, account?: Address, accountPrivateKey?: PrivateKey
+    w3: Object,
+    address: Address,
+    account?: Address,
+    accountPrivateKey?: PrivateKey
   ) {
     this.address = sanitizeAddress(address, { checksum: false });
-    this.account = account;
+    this.account = sanitizeAddress(account);
     this.accountPrivateKey = accountPrivateKey;
 
     this.w3 = w3;
     this.fs = new FileStorage(w3, true);
     this.contract = (this.fs.contract.contract as unknown) as ContractContext;
+
     this.dirLastAction = "";
     this.cache = {};
-
     this.store = new BehaviorSubject({});
 
     const addrWithoutPrefix = sanitizeAddress(address, {
@@ -209,12 +216,23 @@ class DeFileManager {
       this.cache = {};
       this.preloadDirectories(this.rootDir);
     }
-    console.log("purged", path);
+    console.log("filemanager::purgeCache:path", path);
+  }
+
+  absolutePath(fileOrDir: FileOrDir): string {
+    if (fileOrDir.kind === KIND.FILE) {
+      return this.rootDir.name + '/' + fileOrDir.path;
+    }
+    if (fileOrDir.kind === KIND.DIRECTORY) {
+      return this.rootDir.name + (((fileOrDir as DeDirectory).parent) ? "/" + fileOrDir.path : "");
+    }
+    return '';
   }
 
   //@ts-ignore
   async * entriesGenerator(directory: DeDirectory): Promise<Iterable<FileOrDir>> {
-    let path = (directory.parent) ? this.rootDir.name + "/" + directory.path : this.rootDir.name;
+    let path = this.absolutePath(directory);
+
     // hit remote
     const entries = await this.loadDirectory(path);
 
@@ -259,7 +277,9 @@ class DeFileManager {
   }
 
   /**
-   * @todo memoization w/ stale check, and flag for bypass-cache calls
+   * Load directory listing by absolute path, supported by cache
+   * @param path 
+   * @param noCache 
    */
   async loadDirectory(
     path: FileStorageDirectory['storagePath'],
@@ -275,6 +295,11 @@ class DeFileManager {
     return sortBy(entries, ((o: FileStorageDirectory | FileStorageFile) => o.isFile === true));
   }
 
+  /**
+   * Create a directory within destination directory
+   * @param destDirectory 
+   * @param name 
+   */
   async createDirectory(destDirectory: DeDirectory, name: string): Promise<DePath> {
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
@@ -288,6 +313,11 @@ class DeFileManager {
     return returnPath;
   }
 
+  /**
+   * Delete a file in destination directory
+   * @param destDirectory 
+   * @param file 
+   */
   async deleteFile(destDirectory: DeDirectory, file: DeFile): Promise<void> {
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
@@ -295,6 +325,10 @@ class DeFileManager {
     this.purgeCache(destDirectory);
   }
 
+  /**
+   * Delete a directory 
+   * @param directory 
+   */
   async deleteDirectory(directory: DeDirectory): Promise<void> {
     if (directory.path === this.rootDir.path)
       throw Error(ERROR.UNKNOWN);
@@ -304,6 +338,11 @@ class DeFileManager {
     this.purgeCache(directory.parent);
   }
 
+  /**
+   * Upload a file in destination directory using File object
+   * @param destDirectory 
+   * @param file 
+   */
   async uploadFile(destDirectory: DeDirectory, file: File) {
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
@@ -319,18 +358,27 @@ class DeFileManager {
         error: e
       }
     }
-    console.log("fm::uploadFile:", path);
-    // makeshift - for outside watchers
-    this.dirLastAction = `${OPERATION.UPLOAD_FILE}:${path}`;
+    console.log("filemanager::uploadFile:path", path);
+    this.dirLastAction = `${OPERATION.UPLOAD_FILE}:${path}`; // placeholder for events
     this.purgeCache(destDirectory);
     return path;
   }
 
+  /**
+   * Download a file
+   * @param file 
+   */
   async downloadFile(file: DeFile) {
     return this.fs.downloadToFile(this.rootDir.name + "/" + file.path);
   }
 
-  // depth-first // for depth-level support, turn it into callbackish
+  /**
+   * Iterate a directory by depth and perform list or item operations
+   * @param directory 
+   * @param onEntry 
+   * @param asArray 
+   * @param depth 
+   */
   private async iterateDirectory(
     directory: DeDirectory,
     onEntry: (entry: FileOrDir | Array<FileOrDir>) => any,
@@ -367,10 +415,14 @@ class DeFileManager {
       startDirectory,
       (entry) => { },
     );
-    console.log("filemanager::preload_complete");
+    console.log("filemanager::preloadDirectories: complete");
   }
 
-  // @todo: test and implement fuzzy query
+  /**
+   * Fuzzy search across the directory tree with a starting node
+   * @param inDirectory 
+   * @param query 
+   */
   async search(inDirectory: DeDirectory, query: string) {
 
     let results: Array<FileOrDir> = [];
@@ -384,24 +436,36 @@ class DeFileManager {
     }
 
     await this.iterateDirectory(inDirectory, handleList, true);
-    console.log("fm::search_results", results);
+    console.log("filemanager::search:results", results);
     return results;
   }
 
+  /**
+   * Get space occupied by the current address
+   */
   async occupiedSpace() {
     return (await this.fs.getOccupiedSpace(this.address));
   }
 
+  /**
+   * Get space reserved for the current address
+   */
+  async reservedSpace() {
+    return (await this.fs.getReservedSpace(this.address));
+  }
+
+  /**
+   * Get space reserved on the entire file system
+   */
   async totalReservedSpace() {
     return (await this.fs.getTotalReservedSpace());
   }
 
+  /**
+   * Get total space available on the file system
+   */
   async totalSpace() {
     return (await this.fs.getTotalSpace());
-  }
-
-  async reservedSpace() {
-    return (await this.fs.getReservedSpace(this.address));
   }
 }
 
