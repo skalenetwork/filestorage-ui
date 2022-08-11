@@ -3,7 +3,7 @@ import FormattedName from '@/components/FormattedName';
 import FormattedSize from '@/components/FormattedSize';
 import WidgetModal from '@/components/WidgetModal';
 import { FileStatus } from '@/context/useDeFileManager';
-import { DeDirectory, DeFile, FileOrDir } from '@/services/filemanager';
+import { DeDirectory, DeFile, FileOrDir } from '@/packages/filemanager';
 import XIcon from '@heroicons/react/outline/XIcon';
 import CheckIcon from '@heroicons/react/solid/CheckIcon';
 import type { ModalWidgetProps } from 'partials';

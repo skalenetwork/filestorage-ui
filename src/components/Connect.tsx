@@ -8,7 +8,7 @@ const Connect = (
 
   return (account) ?
     <p
-      className="w-80 flex items-center justify-between px-4 py-2 rounded bg-base-300 overflow-hidden"
+      className="w-80 flex items-center justify-between px-4 py-2 rounded bg-base-200 overflow-hidden"
     >
       <span>Account</span><FormattedAddress address={account} pre={5} post={10} />
     </p>

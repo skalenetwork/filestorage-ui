@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button, Modal } from '@/components/common';
 import WidgetModal from '@/components/WidgetModal';
-import type { DeFile } from '@/services/filemanager';
+import type { DeFile } from '@/packages/filemanager';
 import { ModalWidgetProps } from 'partials';
 import { ContextType, useFileManagerContext } from '../context';
 import DocumentTextIcon from '@heroicons/react/outline/DocumentTextIcon';

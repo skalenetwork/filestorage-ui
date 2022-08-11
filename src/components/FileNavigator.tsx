@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, SyntheticEvent, useLayoutEffect } from 're
 import { useMount, useDebounce } from 'react-use';
 
 import { useFileManagerContext, ContextType } from '../context';
-import { DeFile, DeDirectory } from '@/services/filemanager';
+import { DeFile, DeDirectory } from '@/packages/filemanager';
 
 import orderBy from 'lodash/orderBy';
 

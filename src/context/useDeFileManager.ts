@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
 import { useInterval } from 'react-use';
-import { DeFileManager, DeDirectory, DeFile, DePath, FileOrDir } from '@/services/filemanager';
+import { DeFileManager, DeDirectory, DeFile, DePath, FileOrDir } from '@/packages/filemanager';
 import Web3 from 'web3';
 import type { FileStorageDirectory, FileStorageFile } from '@skalenetwork/filestorage.js';
 

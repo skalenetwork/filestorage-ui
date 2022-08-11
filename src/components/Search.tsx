@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { DeFile } from "@/services/filemanager";
+import { DeFile } from "@/packages/filemanager";
 import XIcon from "@heroicons/react/outline/XIcon";
 import SearchIcon from "@heroicons/react/solid/SearchIcon";
 import { useFileManagerContext } from "../context";

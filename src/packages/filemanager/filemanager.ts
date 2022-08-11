@@ -1,4 +1,5 @@
-import { ContractContext } from './../../types/abi/filestorage-1.0.1';
+// replace with already published or later published equivalent
+import { ContractContext } from '@/packages/types/abi/filestorage-1.0.1';
 
 /**
  * @module
@@ -27,6 +28,8 @@ import sortBy from 'lodash/sortBy';
 //@ts-ignore
 import mime from 'mime/lite';
 import Fuse from 'fuse.js';
+import utils from './utils';
+const { sanitizeAddress } = utils;
 
 const KIND = {
   FILE: "file",
@@ -88,13 +91,8 @@ function pathToRelative(storagePath: DePath) {
   return relative;
 }
 
-// @todo implement
-function memoize(fn: () => void) {
-  const cache = new Map();
-  return (...args: any) => {
-    const strArgs = JSON.stringify(args);
-    const result = cache.get(strArgs);
-  }
+function pathToAbsolute() {
+
 }
 
 class DeDirectory implements IDeDirectory {
@@ -104,7 +102,11 @@ class DeDirectory implements IDeDirectory {
   manager: DeFileManager;
   parent?: DeDirectory;
 
-  constructor(data: FileStorageDirectory, manager: DeFileManager, parent?: DeDirectory) {
+  constructor(
+    data: FileStorageDirectory,
+    manager: DeFileManager,
+    parent?: DeDirectory
+  ) {
     this.kind = KIND.DIRECTORY;
     this.name = data.name;
     this.path = pathToRelative(data.storagePath);
@@ -125,7 +127,10 @@ class DeFile implements IDeFile {
   type: string;
   manager: DeFileManager;
 
-  constructor(data: FileStorageFile, manager: DeFileManager) {
+  constructor(
+    data: FileStorageFile,
+    manager: DeFileManager
+  ) {
     this.kind = KIND.FILE;
     this.name = data.name;
     this.path = pathToRelative(data.storagePath);
@@ -171,7 +176,7 @@ class DeFileManager {
   constructor(
     w3: Object, address: Address, account?: Address, accountPrivateKey?: PrivateKey
   ) {
-    this.address = address.toLowerCase();
+    this.address = sanitizeAddress(address, { checksum: false });
     this.account = account;
     this.accountPrivateKey = accountPrivateKey;
 
@@ -183,7 +188,10 @@ class DeFileManager {
 
     this.store = new BehaviorSubject({});
 
-    const addrWithoutPrefix = this.address.slice(2);
+    const addrWithoutPrefix = sanitizeAddress(address, {
+      checksum: false,
+      prefix: false
+    });
 
     this.rootDir = new DeDirectory({
       name: addrWithoutPrefix, // do-not-change: heavy dependency
@@ -191,10 +199,6 @@ class DeFileManager {
       isFile: false,
     }, this);
   }
-
-  /**
-   * File Manager maintains generating filetree iterator
-   */
 
   private purgeCache(directory?: DeDirectory, reload = true) {
     let path = directory && ((directory.parent) ? this.rootDir.name + "/" + directory.path : this.rootDir.name);
@@ -238,7 +242,7 @@ class DeFileManager {
     if (!this.account)
       return false;
     const ADMIN_ROLE = await this.contract.methods.DEFAULT_ADMIN_ROLE().call();
-    return await this.contract.methods.hasRole(ADMIN_ROLE, this.account);
+    return await this.contract.methods.hasRole(ADMIN_ROLE, this.account).call();
   }
 
   async accountIsAllocator() {

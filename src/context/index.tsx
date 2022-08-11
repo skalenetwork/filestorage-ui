@@ -2,7 +2,8 @@
 import config from '../config';
 import type { ConfigType } from '../config';
 
-import { sanitizeAddress } from '../utils';
+import { utils } from '@/packages/filemanager';
+const { sanitizeAddress } = utils;
 
 import Web3 from 'web3';
 import Web3Modal from 'web3modal';
@@ -10,7 +11,7 @@ import Web3Modal from 'web3modal';
 import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import { useMount, useKey, useLocalStorage } from 'react-use';
 
-import { DeFileManager, DeDirectory, DeFile } from '@/services/filemanager';
+import { DeFileManager, DeDirectory, DeFile } from '@/packages/filemanager';
 import useDeFileManager, { Action, State } from '@/context/useDeFileManager';
 
 import WalletConnectProvider from "@walletconnect/web3-provider";

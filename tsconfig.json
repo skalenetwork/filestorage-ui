@@ -21,15 +21,15 @@
     // "incremental": true,
     "baseUrl": "./src",
     "paths": {
-      "@/components/*": [
-        "components/*"
-      ],
-      "@/services/*": [
-        "services/*"
+      "@/packages/*": [
+        "packages/*"
       ],
       "@/context/*": [
         "context/*"
-      ]
+      ],
+      "@/components/*": [
+        "components/*"
+      ],
     },
     "types": [
       "vitest/importMeta"

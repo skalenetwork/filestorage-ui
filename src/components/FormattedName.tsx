@@ -1,6 +1,5 @@
-import { DeDirectory, DeFile } from '@/services/filemanager';
+import { DeDirectory, DeFile } from '@/packages/filemanager';
 import FolderIcon from '@heroicons/react/solid/FolderIcon';
-import { useMemo } from 'react';
 import { mimeData } from '../utils';
 
 const FormattedName = ({ item, maxLength }: { item: DeFile | DeDirectory, maxLength?: number }) => {
