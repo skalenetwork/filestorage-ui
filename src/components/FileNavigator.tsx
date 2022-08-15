@@ -15,7 +15,9 @@ import ArrowSmUpIcon from '@heroicons/react/solid/ArrowSmUpIcon';
 import ArrowSmDownIcon from '@heroicons/react/solid/ArrowSmDownIcon';
 import ChevronRightIcon from '@heroicons/react/solid/ChevronRightIcon';
 import ChevronLeftIcon from '@heroicons/react/solid/ChevronLeftIcon';
-import HomeIcon from '@heroicons/react/solid/HomeIcon';
+import HomeIcon from '@heroicons/react/outline/HomeIcon';
+import ReceiptRefundIcon from '@heroicons/react/outline/ReceiptRefundIcon';
+import FolderIcon from '@heroicons/react/solid/FolderIcon';
 
 import Pagination from 'react-paginate';
 import FormattedName from './FormattedName';
@@ -38,20 +40,32 @@ const makeDirTrail = (directory: DeDirectory) => {
 const DirCrumb = (
   { trail, preLimit, postLimit, onCrumbClick }:
     { trail: DeDirectory[], preLimit?: number, postLimit?: number, onCrumbClick: Function }) => {
+  const isActive = (index) => (index === trail.length - 1);
+
+  let maxLimit;
+  if (preLimit && postLimit) {
+    maxLimit = preLimit + postLimit;
+  }
+
+  let crumbs = (maxLimit && trail.length > maxLimit) ?
+    [...trail.slice(0, preLimit), {}, ...trail.slice(trail.length - postLimit)]
+    : trail;
+
   return (
     <div className="breadcrumbs m-0 p-0">
       <ul>
         {
-          trail.map(item => (
+          crumbs.map((item, index) => ((item.name) ? (
             <li
-              className="decoration-blue-500 text-blue-500 underline cursor-pointer"
+              className={`decoration-blue-500 text-blue-500 cursor-pointer ${(!isActive(index)) ? 'underline ' : 'decoration-none'}`}
               key={item.path}
             >
               <a onClick={(e) => onCrumbClick(item)}>
-                <FormattedName item={item} />
+                <FormattedName item={item} active={isActive(index)} maxLength={12} />
               </a>
             </li>
-          ))
+          ) : (<li>...</li>))
+          )
         }
       </ul>
     </div>
@@ -63,7 +77,7 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
   const {
     config,
     fm, directory: currentDirectory, listing, searchListing, isLoadingDirectory,
-    changeDirectory, deleteFile, deleteDirectory, updateAddress, getFileLink
+    changeDirectory, deleteFile, deleteDirectory, loadAddress, getFileLink
   }: ContextType = useFileManagerContext<ContextType>();
 
   const tableElement = useRef<HTMLTableElement>();
@@ -92,7 +106,7 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
   useDebounce(() => {
     console.log("debounce:addressInput", addressInput);
     if (!addressInput) return;
-    updateAddress(addressInput);
+    loadAddress(addressInput);
   }, 500, [addressInput]);
 
   // sorting method and order
@@ -128,7 +142,7 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
 
   const sortElement = (key: string) => (
     <span>
-      {(key !== sortByKey) ? "·" : ((sortByOrder === "asc") ?
+      {(((sortByOrder === "asc") && (sortByKey === key)) ?
         <ArrowSmUpIcon className="h-5 w-5 inline-block" /> :
         <ArrowSmDownIcon className="h-5 w-5 inline-block" />
       )}
@@ -245,19 +259,43 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
     <div>
       <div className="flex flex-row justify-between items-center border-y border-slate-800 py-4 sticky top-0 bg-base-100 z-[998]">
         <div className="h-8 flex flex-row items-center gap-2 px-4">
-          <HomeIcon className="w-5 h-5 cursor-pointer text-blue-500" onClick={(e) => changeDirectory(fm?.rootDirectory())} />
+          {
+            fm.account &&
+            <HomeIcon
+              className="w-5 h-5 cursor-pointer hover:text-blue-500"
+              onClick={(e) => loadAddress(fm.account)}
+            />
+          }
+
+          <ReceiptRefundIcon
+            className="w-5 h-5 cursor-pointer hover:text-blue-500"
+            onClick={(e) => loadAddress(fm?.account())}
+          />
           <SmartAddress
             className="cursor-cell"
             address={fm?.rootDirectory().name || ""}
             onEdit={() => setIsAddressEditing(true)}
             offEdit={() => setIsAddressEditing(false)}
-            onConfirm={updateAddress}
+            onConfirm={loadAddress}
           />
           {
             (isAddressEditing === false) ?
-              <DirCrumb trail={
-                (trail.length > 5) ? [trail[0]].concat(trail.slice(trail.length - 3)) : trail
-              } onCrumbClick={changeDirectory} />
+              <>
+                &emsp;
+                 <a onClick={(e) => changeDirectory(fm?.rootDirectory())}>
+                  <FormattedName
+                    item={{ name: '', kind: 'directory' }}
+                    active={!currentDirectory.parent}
+                  />
+                </a>
+                <span className="font-mono px-1">/</span>
+                <DirCrumb
+                  trail={trail}
+                  onCrumbClick={changeDirectory}
+                  preLimit={1}
+                  postLimit={4}
+                />
+              </>
               :
               <></>
           }

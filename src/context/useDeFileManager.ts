@@ -1,8 +1,9 @@
-import Web3 from 'web3';
 import { useEffect, useLayoutEffect, useReducer, useRef } from 'react';
 import { useInterval } from 'react-use';
-import { DeFileManager, DeDirectory, DeFile, DePath, FileOrDir } from '@/packages/filemanager';
+import { DeFileManager, DeDirectory, DeFile, DePath, FileOrDir, utils } from '@/packages/filemanager';
 import type { FileStorageDirectory, FileStorageFile } from '@skalenetwork/filestorage.js';
+
+const { sanitizeAddress } = utils;
 
 export type FileStatus = {
   file: File;
@@ -15,27 +16,44 @@ export type FileStatus = {
   };
 };
 
-export type State = {
-  isAuthorized: boolean;
-  accountRoles: [],
+type MainState = {
+  // instantiation on signer+address
   fm: DeFileManager | undefined;
+
+  // signer relative to chain
+  accountRoles: [];
+
+  // signer relative to address
+  isAuthorized: boolean;
+
+  // current file navigation state
   directory: DeDirectory | undefined;
   listing: Array<FileOrDir>;
-  searchListing: Array<FileOrDir>;
-  isSearching: boolean;
-  isCreatingDirectory: boolean;
   isLoadingDirectory: boolean;
+
+  // address specific
   reservedSpace: number;
   occupiedSpace: number;
+}
 
+type OperationState = {
+  // operations on address by signer
+  isCreatingDirectory: boolean;
   activeUploads: Map<DePath, Array<FileStatus>>;
   completedUploads: Map<DePath, Array<FileStatus>>;
   failedUploads: Map<DePath, Array<FileStatus>>;
   totalUploadCount: number;
   uploadStatus: number;
-};
+}
+
+export type State = MainState & OperationState;
 
 export type Action = {
+  createDirectory: (name: string, directory?: DeDirectory) => Promise<void>;
+  uploadFiles: (files: Array<File>, directory: DeDirectory) => Promise<void>;
+  deleteFile: (file: DeFile, directory: DeDirectory) => Promise<void>;
+  deleteDirectory: (directory: DeDirectory) => Promise<void>;
+  changeDirectory: (directory: DeDirectory) => unknown;
 }
 
 export const ROLE = {
@@ -49,8 +67,6 @@ const initialState: State = {
   fm: undefined,
   directory: undefined,
   listing: [],
-  searchListing: [],
-  isSearching: false,
   isCreatingDirectory: false,
   isLoadingDirectory: false,
   reservedSpace: 0,
@@ -71,8 +87,6 @@ const ACTION = {
 
   CHANGE_DIRECTORY: 'CHANGE_DIRECTORY',
   SET_LISTING: 'SET_LISTING',
-  SET_SEARCH_LISTING: 'SET_SEARCH_LISTING',
-  SET_SEARCH_LOADING: 'SET_SEARCH_LOADING',
   SET_DIRECTORY_OP: 'SET_DIRECTORY_OP',
   SET_LOADING_DIRECTORY: 'SET_LOADING_DIRECTORY',
 
@@ -110,14 +124,10 @@ const reducer = (
       return { ...state, directory: action.payload }
     case ACTION.SET_LISTING:
       return { ...state, listing: action.payload }
-    case ACTION.SET_SEARCH_LOADING:
-      return { ...state, isSearching: true }
     case ACTION.SET_DIRECTORY_OP:
       return { ...state, isCreatingDirectory: action.payload }
     case ACTION.SET_LOADING_DIRECTORY:
       return { ...state, isLoadingDirectory: action.payload }
-    case ACTION.SET_SEARCH_LISTING:
-      return { ...state, searchListing: action.payload, isSearching: false }
 
     // 
     case ACTION.INIT_UPLOADS:
@@ -200,6 +210,7 @@ const reducer = (
 function useDeFileManager(
   w3Provider: any, address: string, privateKey?: string
 ): [DeFileManager, State, Action] {
+
   const [state, dispatch]: [State, Function] = useReducer(reducer, initialState);
 
   const { fm, directory: cwd } = state;
@@ -281,7 +292,7 @@ function useDeFileManager(
 
     let account;
     if (w3Provider.selectedAddress) {
-      account = Web3.utils.toChecksumAddress(w3Provider.selectedAddress || "");
+      account = w3Provider.selectedAddress;
     }
 
     const fm = new DeFileManager(w3Provider, address, account, privateKey);
@@ -374,83 +385,92 @@ function useDeFileManager(
     }
   }, 2000);
 
-  const createDirectory = (fm && cwd && state.isAuthorized) &&
-    (async (
-      name: string,
-      directory: DeDirectory = cwd
-    ) => {
+  const createDirectory = async (
+    name: string,
+    directory: DeDirectory = (cwd as DeDirectory)
+  ) => {
 
-      // push to queue and return here
+    if (!(fm && cwd && state.isAuthorized)) {
+      throw Error("Not authorized");
+    }
 
-      dispatch({
-        type: ACTION.SET_DIRECTORY_OP, payload: true
-      });
+    // push to queue and return here
 
-      await fm.createDirectory(directory, name)
-        .then(() => directory)
-        .then(maybeRefreshCwd);
-
-      dispatch({
-        type: ACTION.SET_DIRECTORY_OP, payload: false
-      });
-
-    })
-
-  const uploadFiles = (fm && cwd && state.isAuthorized) &&
-    (async (
-      files: Array<File>,
-      directory: DeDirectory = cwd
-    ): Promise<void> => {
-
-      console.log("uploadFiles", files, directory);
-
-      if (!files.length) {
-        console.error("uploadFiles:: No files to upload");
-        return;
-      }
-
-      // add to the active uploads with zero progress
-      dispatch({
-        type: ACTION.INIT_UPLOADS,
-        payload: {
-          directory: directory.path,
-          uploads: files.map(file => ({
-            file,
-            path: absolutePath(`${directory.path}/${file.name}`),
-            progress: 0
-          } as FileStatus
-          ))
-        }
-      });
-
-      // upload transactions going serially until nonce management or SDK events allow otherwise
-      // https://github.com/skalenetwork/filestorage-ui/issues/1
-
-      for (let index = 0; index < files.length; index++) {
-
-        let file = files[index];
-
-        await fm.uploadFile(directory, file)
-          .then(() => maybeRefreshCwd(directory))
-          .catch(err => {
-            console.error("uploadFile::failure", err);
-            dispatch({
-              type: ACTION.SET_UPLOAD,
-              payload: {
-                directory: directory.path,
-                file: {
-                  file: err.file,
-                  path: absolutePath(`${directory.path}/${file.name}`),
-                  progress: 0,
-                  error: err.error
-                }
-              }
-            });
-          })
-      };
+    dispatch({
+      type: ACTION.SET_DIRECTORY_OP, payload: true
     });
 
-  const deleteFile = (fm && cwd && state.isAuthorized) && (async (file: DeFile, directory: DeDirectory = cwd) => {
+    await fm.createDirectory(directory, name)
+      .then(() => directory)
+      .then(maybeRefreshCwd);
+
+    dispatch({
+      type: ACTION.SET_DIRECTORY_OP, payload: false
+    });
+
+  }
+
+  const uploadFiles = async (
+    files: Array<File>,
+    directory: DeDirectory = (cwd as DeDirectory)
+  ): Promise<void> => {
+
+    if (!(fm && cwd && state.isAuthorized)) {
+      throw Error("Not authorized");
+    }
+
+    console.log("uploadFiles", files, directory);
+
+    if (!files.length) {
+      console.error("uploadFiles:: No files to upload");
+      return;
+    }
+
+    // add to the active uploads with zero progress
+    dispatch({
+      type: ACTION.INIT_UPLOADS,
+      payload: {
+        directory: directory.path,
+        uploads: files.map(file => ({
+          file,
+          path: absolutePath(`${directory.path}/${file.name}`),
+          progress: 0
+        } as FileStatus
+        ))
+      }
+    });
+
+    // upload transactions going serially until nonce management or SDK events allow otherwise
+    // https://github.com/skalenetwork/filestorage-ui/issues/1
+
+    for (let index = 0; index < files.length; index++) {
+
+      let file = files[index];
+
+      await fm.uploadFile(directory, file)
+        .then(() => maybeRefreshCwd(directory))
+        .catch(err => {
+          console.error("uploadFile::failure", err);
+          dispatch({
+            type: ACTION.SET_UPLOAD,
+            payload: {
+              directory: directory.path,
+              file: {
+                file: err.file,
+                path: absolutePath(`${directory.path}/${file.name}`),
+                progress: 0,
+                error: err.error
+              }
+            }
+          });
+        })
+    };
+  };
+
+  const deleteFile = async (file: DeFile, directory: DeDirectory = (cwd as DeDirectory)) => {
+    if (!(fm && cwd && state.isAuthorized)) {
+      throw Error("Not authorized");
+    }
     await fm.deleteFile(directory, file);
     if (!cwdRef.current) return;
     if (directory.path === cwdRef.current.path) {
@@ -463,9 +483,12 @@ function useDeFileManager(
         payload: listing
       });
     }
-  });
+  };
 
-  const deleteDirectory = (fm && cwd && state.isAuthorized) && (async (directory: DeDirectory) => {
+  const deleteDirectory = async (directory: DeDirectory) => {
+    if (!(fm && cwd && state.isAuthorized)) {
+      throw Error("Not authorized");
+    }
     await fm.deleteDirectory(directory);
     if (!cwdRef.current) return;
     if (directory.parent?.path === cwdRef.current.path) {
@@ -478,34 +501,13 @@ function useDeFileManager(
         payload: listing
       });
     }
-  });
+  };
 
-  const search = async (query: string) => {
-    dispatch({
-      type: ACTION.SET_SEARCH_LOADING,
-    });
-
-    if (!query) {
-      dispatch({
-        type: ACTION.SET_SEARCH_LISTING,
-        payload: []
-      });
-      return;
-    }
-
-    const results = await fm?.search(cwd as DeDirectory, query);
-    dispatch({
-      type: ACTION.SET_SEARCH_LISTING,
-      payload: results
-    })
-  }
-
-  const actions = {
+  const actions: Action = {
     uploadFiles,
     deleteFile,
     createDirectory,
     deleteDirectory,
-    search,
     changeDirectory: (directory: DeDirectory) => dispatch({
       type: ACTION.CHANGE_DIRECTORY,
       payload: directory

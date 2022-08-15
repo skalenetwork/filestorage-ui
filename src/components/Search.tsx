@@ -21,7 +21,7 @@ const Search = (
   const classes = {
     container: className,
     input: "input w-full border border-gray-500 font-medium p-l-4",
-    options: "absolute max-h-[500px] top-[100%] bg-slate-100 rounded mt-2 z-[1001] w-full scrollbar overflow-y-auto"
+    options: "absolute max-h-[500px] top-[100%] bg-base-200 rounded mt-2 z-[1001] w-full scrollbar overflow-y-auto"
   }
 
   const { changeDirectory, fm } = useFileManagerContext();
@@ -39,7 +39,7 @@ const Search = (
 
     return item && (
       <li
-        className={`px-4 py-2 mx-2 rounded cursor-default hover:bg-white first-of-type:mt-2 last-of-type:mb-2 ${optionData.index == 0 ? 'mt-2' : ''}`}
+        className={`px-4 py-2 mx-2 rounded cursor-default hover:bg-white hover:text-slate-500 first-of-type:mt-2 last-of-type:mb-2 ${optionData.index == 0 ? 'mt-2' : ''}`}
         tabIndex={optionProps.tabIndex}
         // {...optionProps}
         onClick={(e) => {

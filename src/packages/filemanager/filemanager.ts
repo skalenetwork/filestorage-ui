@@ -28,8 +28,8 @@ import sortBy from 'lodash/sortBy';
 //@ts-ignore
 import mime from 'mime/lite';
 import Fuse from 'fuse.js';
+
 import utils from './utils';
-import Web3 from 'web3';
 const { sanitizeAddress } = utils;
 
 const KIND = {
@@ -253,6 +253,14 @@ class DeFileManager {
 
   rootDirectory() {
     return this.rootDir;
+  }
+
+  loadAddress(
+    address: Address = (this.account || "")
+  ) {
+    if (address) {
+      this.address = sanitizeAddress(address, { checksum: false });
+    }
   }
 
   // @todo: validate correctness

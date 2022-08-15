@@ -31,9 +31,15 @@ module.exports = {
           "--btn-text-case": "default",
           "--btn-focus-scale": "0.98"
         },
-
-      },
-      "night"
+        night: {
+          ...require("daisyui/src/colors/themes")["[data-theme=night]"],
+          "--b1": "222 47% 8%",
+          "--bc": "222 66% 92%",
+          "--rounded-btn": "0.25rem",
+          "--btn-text-case": "default",
+          "--btn-focus-scale": "0.98"
+        }
+      }
     ]
   },
 }

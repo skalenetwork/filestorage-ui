@@ -22,7 +22,7 @@ import CheckCircleIcon from '@heroicons/react/solid/CheckCircleIcon';
 
 export type ContextType = State & Action & {
   connectWallet: Function;
-  updateAddress: Function;
+  loadAddress: Function;
   getFileLink: Function;
   config: ConfigType;
 };
@@ -89,23 +89,27 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
   const [w3Modal, setW3Modal] = useState<Web3Modal | undefined>();
 
   const [w3Provider, setW3Provider] = useState<any>();
+  const [prevAddress, setPrevAddress] = useState<string>("");
   const [address, setAddress] = useState<string>("");
   const [inputAddress, setInputAddress] = useState<string>("");
 
-  const updateAddress = (address: string) => {
+  const loadAddress = (address: string) => {
     address = sanitizeAddress(address);
     if (!address) {
       throw Error(`Address is invalid ${address}`);
     }
     setAddress(address);
+    setPrevAddress(address);
   }
+
+
 
   const connectWallet = async () => {
     try {
       const web3Provider = await w3Modal?.connect();
       const web3 = new Web3(web3Provider);
       setW3Provider(web3Provider);
-      updateAddress(web3Provider.selectedAddress);
+      loadAddress(web3Provider.selectedAddress);
       await addNetwork(web3, (config as ConfigType).chains[0]);
       console.log('web3Provider', web3Provider, 'web3Instance', web3);
     }
@@ -170,7 +174,7 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
       ...fmState, ...fmAction,
       demoMode,
       connectWallet,
-      updateAddress,
+      loadAddress,
       getFileLink,
       config
     }}>
@@ -191,7 +195,7 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
           />
           <button
             className="btn"
-            onClick={(e) => updateAddress(inputAddress)}
+            onClick={(e) => loadAddress(inputAddress)}
           >
             <CheckCircleIcon className="w-5 h-5" />
           </button>

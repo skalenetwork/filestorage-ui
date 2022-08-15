@@ -1,8 +1,9 @@
 import { DeDirectory, DeFile } from '@/packages/filemanager';
 import FolderIcon from '@heroicons/react/solid/FolderIcon';
+import FolderOpenIcon from '@heroicons/react/solid/FolderOpenIcon';
 import { mimeData } from '../utils';
 
-const FormattedName = ({ item, maxLength }: { item: DeFile | DeDirectory, maxLength?: number }) => {
+const FormattedName = ({ item, maxLength, active = false }: { item: DeFile | DeDirectory, maxLength?: number, active?: boolean }) => {
 
   if (!item) {
     return <></>
@@ -13,7 +14,7 @@ const FormattedName = ({ item, maxLength }: { item: DeFile | DeDirectory, maxLen
     color
   } = (item.kind === "file")
       ? mimeData((item as DeFile).type)
-      : { Icon: FolderIcon, color: 'blue' };
+      : { Icon: (!active) ? FolderIcon : FolderOpenIcon, color: 'blue' };
 
   return (
     <span className="gap-x-2 flex flex-row items-center cursor-default">
@@ -21,11 +22,11 @@ const FormattedName = ({ item, maxLength }: { item: DeFile | DeDirectory, maxLen
       {(maxLength && (item.name.length > maxLength)) ?
         (
           <>
-            { item.name.substr(0, maxLength / 2)}<span className="text-gray-500">...</span>{item.name.substr(item.name.length - Math.ceil(maxLength / 2))}
+            { item.name.substr(0, maxLength / 2)}...{item.name.substr(item.name.length - Math.ceil(maxLength / 2))}
           </>
         )
         : item.name}
-    </span>
+    </span >
   )
 };
 

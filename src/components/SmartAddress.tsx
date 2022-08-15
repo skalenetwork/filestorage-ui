@@ -5,8 +5,6 @@ import { useController, useForm } from "react-hook-form";
 import CheckIcon from '@heroicons/react/solid/CheckIcon';
 import XIcon from '@heroicons/react/solid/XIcon';
 import Web3 from 'web3';
-import { useDebounce } from 'react-use';
-import { ifError } from 'assert';
 import { Input } from './common';
 
 const SmartAddress = (
@@ -65,7 +63,7 @@ const SmartAddress = (
           setEdit(true);
         }}
       >
-        <FormattedAddress address={address || ""} pre={5} post={10} /> &emsp;/
+        <FormattedAddress address={address || ""} pre={5} post={10} />
       </p>
       <div className={`flex items-center ${edit === false ? "hidden" : ""}`}>
         <div className="relative w-[576px]">

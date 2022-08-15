@@ -30,6 +30,7 @@ import ArchiveIcon from '@heroicons/react/outline/ArchiveIcon';
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import DarkModeToggle from '@/components/DarkModeToggle';
 
 const App = () => {
 
@@ -121,6 +122,7 @@ const App = () => {
                   </p>
                   : <></>
               }
+              <DarkModeToggle />
               <Connect
                 account={fm?.account}
                 onConnectClick={connectWallet}
@@ -174,13 +176,13 @@ const App = () => {
                     <DocumentAddIcon className="h-5 w-5 mr-4" /> Upload file
                   </Button>
                   <Button
-                    className={`btn w-80 text-white ${(isCreatingDirectory) ? 'loading' : ''}`}
+                    className={`btn w-80 ${(isCreatingDirectory) ? 'loading' : ''}`}
                     onClick={() => setDirectoryModal(true)}
                     disabled={isCreatingDirectory}
                   >
                     {
                       !isCreatingDirectory ?
-                        (<><FolderAddIcon className="h-5 w-5 mr-4 text-white" /> Create directory</>) :
+                        (<><FolderAddIcon className="h-5 w-5 mr-4" /> Create directory</>) :
                         <>Creating directory..</>
                     }
                   </Button>
