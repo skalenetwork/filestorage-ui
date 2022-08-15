@@ -8,7 +8,7 @@ const { sanitizeAddress } = utils;
 import Web3 from 'web3';
 import Web3Modal from 'web3modal';
 
-import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useMount, useKey, useLocalStorage } from 'react-use';
 
 import { DeFileManager, DeDirectory, DeFile } from '@/packages/filemanager';
@@ -93,16 +93,19 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
   const [address, setAddress] = useState<string>("");
   const [inputAddress, setInputAddress] = useState<string>("");
 
-  const loadAddress = (address: string) => {
-    address = sanitizeAddress(address);
-    if (!address) {
+  const loadAddress = useCallback((newAddress: string, prev?: false) => {
+    if (prev) {
+      setPrevAddress(address);
+      setAddress(prevAddress);
+      return;
+    }
+    newAddress = sanitizeAddress(newAddress);
+    if (!newAddress) {
       throw Error(`Address is invalid ${address}`);
     }
-    setAddress(address);
     setPrevAddress(address);
-  }
-
-
+    setAddress(newAddress);
+  }, [address, prevAddress]);
 
   const connectWallet = async () => {
     try {

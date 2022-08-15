@@ -77,7 +77,7 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
   const {
     config,
     fm, directory: currentDirectory, listing, searchListing, isLoadingDirectory,
-    changeDirectory, deleteFile, deleteDirectory, loadAddress, getFileLink
+    changeDirectory, deleteFile, deleteDirectory, loadAddress, getFileLink, isAuthorized
   }: ContextType = useFileManagerContext<ContextType>();
 
   const tableElement = useRef<HTMLTableElement>();
@@ -262,14 +262,13 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
           {
             fm.account &&
             <HomeIcon
-              className="w-5 h-5 cursor-pointer hover:text-blue-500"
-              onClick={(e) => loadAddress(fm.account)}
+              className={`w-5 h-5 ${!isAuthorized ? 'cursor-pointer hover:text-blue-500' : 'text-blue-500'}`}
+              onClick={(e) => (!isAuthorized && loadAddress(fm.account))}
             />
           }
-
           <ReceiptRefundIcon
             className="w-5 h-5 cursor-pointer hover:text-blue-500"
-            onClick={(e) => loadAddress(fm?.account())}
+            onClick={(e) => loadAddress("", true)}
           />
           <SmartAddress
             className="cursor-cell"

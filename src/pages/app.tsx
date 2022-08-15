@@ -84,7 +84,7 @@ const App = () => {
   return (
     <div className="mx-auto max-h-[100vh] h-[100vh] overflow-hidden">
       <main>
-        <section className="px-36" style={{ gridArea: 'frame' }}>
+        <section className="px-32" style={{ gridArea: 'frame' }}>
           <header className="header py-2 flex justify-between items-center">
             <Branding logoUrl={config.branding.logoUrl}>
               <span className="text-xl font-bold">SKALE<sup className="font-medium">fs</sup></span>
@@ -193,7 +193,7 @@ const App = () => {
         </section>
         <section
           style={{ gridArea: 'mgr' }}
-          className="overflow-y-scroll px-36 scrollbar">
+          className="overflow-y-scroll px-32 scrollbar">
           <FileNavigator
             onSelectFile={setSelectedFile}
           />

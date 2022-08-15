@@ -16,7 +16,7 @@ const DarkModeToggle = () => {
   }, [mode]);
 
   return (
-    <div className="relative rounded-full flex flex-row justify-between items-center bg-base-200 cursor-pointer">
+    <div className="relative rounded-full flex flex-row justify-between items-center bg-base-200 cursor-pointer border-4 border-base-200">
       <div className={`absolute z-0  box-content rounded-full bg-base-content w-5 h-5 p-2 transition-all ${(mode === THEME.DAY) ? 'translate-x-0' : 'translate-x-full'}`}>.</div>
       <div className={`relative z-10 p-2 rounded-full`} onClick={() => setMode(THEME.DAY)}>
         <SunIcon
