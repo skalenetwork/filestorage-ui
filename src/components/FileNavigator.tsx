@@ -57,12 +57,12 @@ const DirCrumb = (
         {
           crumbs.map((item, index) => ((item.name) ? (
             <li
-              className={`decoration-blue-500 text-blue-500 cursor-pointer ${(!isActive(index)) ? 'underline ' : 'decoration-none'}`}
+              className={`decoration-blue-500 text-blue-500 ${(!isActive(index)) ? 'underline' : 'no-underline'}`}
               key={item.path}
             >
-              <a onClick={(e) => onCrumbClick(item)}>
+              <span onClick={(e) => onCrumbClick(item)}>
                 <FormattedName item={item} active={isActive(index)} maxLength={12} />
-              </a>
+              </span>
             </li>
           ) : (<li>...</li>))
           )
@@ -281,7 +281,7 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
             (isAddressEditing === false) ?
               <>
                 &emsp;
-                 <a onClick={(e) => changeDirectory(fm?.rootDirectory())}>
+                <a onClick={(e) => changeDirectory(fm?.rootDirectory())}>
                   <FormattedName
                     item={{ name: '', kind: 'directory' }}
                     active={!currentDirectory.parent}

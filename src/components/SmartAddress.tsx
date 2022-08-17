@@ -71,7 +71,7 @@ const SmartAddress = (
             className="relative text-base !border-blue-300 !focus:border-blue-300 w-full"
             {...field}
           />
-          {(errorMessage) && <p className="py-1 px-2 absolute right-0 text-red-400 text-sm bg-white rounded">{errorMessage}</p>}
+          {(errorMessage) && <p className="py-1 px-2 absolute right-0 text-red-500 text-sm bg-base-100 rounded">{errorMessage}</p>}
         </div>
 
         <div className="relative flex justify-end items-center -translate-x-24 w-24">
@@ -91,7 +91,7 @@ const SmartAddress = (
               setEdit(false);
             }}
           >
-            <XIcon className="h-5 w-5 text-gray-500" />
+            <XIcon className="h-5 w-5 text-base-content-200" />
           </span>
         </div>
       </div>
