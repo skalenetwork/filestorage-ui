@@ -63,7 +63,6 @@ const Search = (
       }))}
       debounce={500}
       renderValue={(valueProps, snapshot, className) => {
-        console.log(valueProps, snapshot, snapshot.searching);
         return (
           <div>
             <div className="mr-4 pointer-events-none absolute top-1/2 transform -translate-y-1/2 left-4">
@@ -92,7 +91,6 @@ const Search = (
       search
       placeholder="Search files..."
       onChange={(val, option) => {
-        console.log(val, option);
       }}
     />
   </>

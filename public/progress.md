@@ -13,7 +13,7 @@ priors
 [x] toast when background errors / notifications (offline etc)
 [ ] configure trustwallet and fortmatic
 [ ] back-channel pvt key validation against connected account
-[ ] watch on wallet address change etc.
+[x] watch on wallet address change etc.
 
 [ ] upload:edge: bulk upload: list conflicted names for editing
 [ ] upload:edge: also detect conflicts within selected uploads (can happen due to renaming)

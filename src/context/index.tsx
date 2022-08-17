@@ -46,6 +46,8 @@ const RPC_ENDPOINT = getRpcEndpoint(config.chains[0]);
 const CHAIN_ID = config.chains[0].chainId;
 const TEST_ADDRESS = '0x5A4AB05FBB140eb6A51e7D13a528A6Aa35a5ef4A';
 
+const baseProvider = new Web3.providers.HttpProvider(RPC_ENDPOINT);
+
 const addNetwork = (web3: any, chain: ConfigType['chains'][0]) => {
   return web3.currentProvider.request({
     method: "wallet_addEthereumChain",
@@ -111,28 +113,58 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
     try {
       const web3Provider = await w3Modal?.connect();
       const web3 = new Web3(web3Provider);
+      await addNetwork(web3, (config as ConfigType).chains[0]);
       setW3Provider(web3Provider);
       loadAddress(web3Provider.selectedAddress);
-      await addNetwork(web3, (config as ConfigType).chains[0]);
       console.log('web3Provider', web3Provider, 'web3Instance', web3);
     }
 
     catch (e) {
       console.log("Connecting Wallet", e);
       if (!w3Provider) {
-        setW3Provider(new Web3.providers.HttpProvider(RPC_ENDPOINT));
+        setW3Provider(baseProvider);
       }
     }
   }
 
-  const getFileLink = (file: DeFile) => {
+  const getFileLink = useCallback((file: DeFile) => {
     let link = getFsEndpoint((config as ConfigType).chains[0], address, file.path);
     return link;
-  }
+  }, [config]);
 
   useMount(() => {
     setConfig(appConfig);
   });
+
+  useEffect(() => {
+    if (!(w3Provider && w3Provider.on)) return;
+
+    // Subscribe to accounts change
+    w3Provider.on("accountsChanged", (accounts: string[]) => {
+      console.log("accountsChanged", accounts);
+      if (accounts.length === 0) {
+        setW3Provider(baseProvider);
+      }
+    });
+
+    // Subscribe to chainId change
+    w3Provider.on("chainChanged", (chainId: number) => {
+      console.log("chainChanged", chainId.toString());
+      if (chainId.toString() !== CHAIN_ID) {
+        setW3Provider(baseProvider);
+      }
+    });
+
+    // Subscribe to provider connection
+    w3Provider.on("connect", (info: { chainId: number }) => {
+      console.log("connect", info);
+    });
+
+    // Subscribe to provider disconnection
+    w3Provider.on("disconnect", (error: { code: number; message: string }) => {
+      console.log("disconnect", error);
+    });
+  }, [w3Provider]);
 
   // por demo
   useEffect(() => {
