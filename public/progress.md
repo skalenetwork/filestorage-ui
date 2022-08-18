@@ -16,10 +16,10 @@ priors
 [x] watch on wallet address change etc.
 
 [ ] upload:edge: bulk upload: list conflicted names for editing
-[ ] upload:edge: also detect conflicts within selected uploads (can happen due to renaming)
+[x] upload:edge: also detect conflicts within selected uploads (can happen due to renaming)
 
-[ ] upload:edge: enable other cases (ex: upload on upload) by adding queues, isolate dequeue logic
-[ ] all:improvement: bring queuing to everything
+[x] upload:edge: enable other cases (ex: upload on upload) by adding queues, isolate dequeue logic
+[x] all:improvement: bring queuing to everything
 
 feedback
 

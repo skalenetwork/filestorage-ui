@@ -27,7 +27,7 @@ const UploadWidget = (
     }
   });
 
-  const { handleSubmit, control, formState: { errors, isValid }, trigger, watch, reset } = form;
+  const { handleSubmit, control, formState: { errors, isValid }, trigger, watch, reset, getValues } = form;
 
   const { fields, append, prepend, remove, insert } = useFieldArray({
     control,
@@ -46,6 +46,14 @@ const UploadWidget = (
   useEffect(() => {
     trigger('uploads');
   }, [fields]);
+
+  const isNameValid = useCallback((value: string) => {
+    const existsOnRemote = listing.some(item => ((item.kind === "file") && item.name === value));
+    console.log(getValues("uploads"));
+    const existsOnUploads = getValues("uploads").filter(item => (item.name === value)).length > 1;
+    console.log(value, !(existsOnRemote || existsOnUploads) ? "VALID" : "INVALID");
+    return !(existsOnRemote || existsOnUploads);
+  }, [listing, fields]);
 
   return (
     <WidgetModal
@@ -84,12 +92,7 @@ const UploadWidget = (
                           form={form}
                           name={`uploads.${index}.name`}
                           label="Name"
-                          validate={(value: string) => {
-                            const existsOnRemote = listing.some(item => ((item.kind === "file") && item.name === value));
-                            const existsOnUploads = fields.some(item => (item.name === value)); // incosistent:debug
-                            console.log(value, !existsOnRemote ? "VALID" : "INVALID");
-                            return !existsOnRemote;
-                          }}
+                          validate={isNameValid}
                           errorMessage="File with name already exists"
                         />
                       ))

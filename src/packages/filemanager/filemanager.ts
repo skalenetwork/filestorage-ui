@@ -156,6 +156,13 @@ class DeFile implements IDeFile {
 
 export type FileOrDir = DeDirectory | DeFile;
 
+type OperationPayload = {
+  key: string,
+  promise: () => Promise<any>,
+  onSuccess?: () => OperationResponse['result'],
+  onError?: () => OperationResponse['result']
+}
+
 export type OperationResponse = {
   type: string;
   status: string;
@@ -183,7 +190,7 @@ class DeFileManager {
   dirLastAction: Object;
   cache: { [key: string]: (FileStorageDirectory | FileStorageFile)[] };
 
-  store: BehaviorSubject<Observable<() => Promise<OperationResponse>>>;
+  store: BehaviorSubject<Observable<() => OperationPayload>>;
   bus: Observable<any>;
 
   constructor(
@@ -202,19 +209,35 @@ class DeFileManager {
 
     this.dirLastAction = "";
     this.cache = {};
-    this.store = new BehaviorSubject(of(() => Promise.resolve({
-      type: 'INIT',
-      status: 'success',
-      result: {}
-    } as OperationResponse)));
+    this.store = new BehaviorSubject(of(
+      () => ({
+        promise: () => Promise.resolve("INIT")
+      } as OperationPayload)
+    ));
 
     this.bus = this.store.pipe(
       concatMap(async (event, index) => {
         console.log("fm:bus:concatMap::event", event, index);
-        const callable = await event.toPromise();
-        const returnValue = await (callable && callable());
+
+        const obj = event && (await event.toPromise())();
+        console.log("fm:bus:concatMap::obj", obj);
+
+        console.log(obj);
+
+        const { key, promise, onSuccess, onError } = obj;
+        if (!promise) {
+          console.log("fm:bus:concatMap::object.promise::: nothing");
+          return
+        };
+
+        let returnValue = await promise()
+          .then(onSuccess)
+          .catch(onError);
+
         console.log("fm:bus:concatMap::event:::returnValue", returnValue);
-        returnValue.result.destDirectory && this.purgeCache(returnValue.result.destDirectory);
+        returnValue.result &&
+          returnValue.result.destDirectory &&
+          this.purgeCache(returnValue.result.destDirectory);
         return returnValue;
       })
     );
@@ -245,22 +268,25 @@ class DeFileManager {
 
   private queueOp(
     key: string,
-    promise: Promise<any>,
+    promise: () => Promise<any>,
     onSuccess?: (res: any) => OperationResponse['result'],
     onError?: (res: any) => OperationResponse['result']
   ) {
-    this.store.next(of(() => promise
-      .then((res) => ({
+    this.store.next(of(() => ({
+      key,
+      promise,
+      onSuccess: (res: any) => ({
         type: key,
         status: 'success',
         result: onSuccess && onSuccess(res)
-      }))
-      .catch((err) => ({
+      }),
+      onError: (err: any) => ({
         type: key,
         status: 'error',
         result: onError && onError(err)
-      }))
-    ));
+      })
+    } as OperationPayload))
+    );
   }
 
   absolutePath(fileOrDir: FileOrDir): string {
@@ -328,7 +354,7 @@ class DeFileManager {
     const signer = this.account || "";
     this.queueOp(
       OPERATION.RESERVE_SPACE,
-      this.fs.reserveSpace(signer, address, amount, this.accountPrivateKey),
+      () => this.fs.reserveSpace(signer, address, amount, this.accountPrivateKey),
     );
   }
 
@@ -344,7 +370,7 @@ class DeFileManager {
     if (role) {
       this.queueOp(
         OPERATION.GRANT_ROLE,
-        this.fs.grantAllocatorRole(signer, address, this.accountPrivateKey)
+        () => this.fs.grantAllocatorRole(signer, address, this.accountPrivateKey)
       );
     }
   }
@@ -383,7 +409,7 @@ class DeFileManager {
 
     this.queueOp(
       OPERATION.CREATE_DIRECTORY,
-      this.fs.createDirectory(signer, path, this.accountPrivateKey),
+      () => this.fs.createDirectory(signer, path, this.accountPrivateKey),
       (storagePath) => ({
         destDirectory,
         directory: new DeDirectory({ storagePath, name, isFile: false }, this, destDirectory)
@@ -402,7 +428,7 @@ class DeFileManager {
     const signer = this.account || "";
     this.queueOp(
       OPERATION.DELETE_FILE,
-      this.fs.deleteFile(signer, file.path, this.accountPrivateKey),
+      () => this.fs.deleteFile(signer, file.path, this.accountPrivateKey),
       (res) => ({
         destDirectory,
         file
@@ -426,7 +452,7 @@ class DeFileManager {
 
     this.queueOp(
       OPERATION.DELETE_DIRECTORY,
-      this.fs.deleteDirectory(signer, directory.path, this.accountPrivateKey),
+      () => this.fs.deleteDirectory(signer, directory.path, this.accountPrivateKey),
       (res) => ({
         destDirectory: directory.parent,
         directory
@@ -455,7 +481,7 @@ class DeFileManager {
 
     this.queueOp(
       OPERATION.UPLOAD_FILE,
-      this.fs.uploadFile(signer, uploadPath, buffer, this.accountPrivateKey),
+      () => this.fs.uploadFile(signer, uploadPath, buffer, this.accountPrivateKey),
       (storagePath) => ({
         destDirectory,
         file: new DeFile({

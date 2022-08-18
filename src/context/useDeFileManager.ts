@@ -404,10 +404,10 @@ function useDeFileManager(
             return upload;
           }
           const match = listing.find(f => {
-            console.log("interval:: upload match params", f.storagePath, '===', upload.path);
+            // console.log("interval:: upload match params", f.storagePath, '===', upload.path);
             return f.storagePath === upload.path
           });
-          console.log("interval::upload match", JSON.stringify(match));
+          // console.log("interval::upload match", JSON.stringify(match));
           return { ...upload, progress: (match as FileStorageFile)?.uploadingProgress || 0 }
         });
 
