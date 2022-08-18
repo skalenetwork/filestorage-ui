@@ -20,7 +20,8 @@ import FileStorage, {
   FileStorageFile,
 } from '@skalenetwork/filestorage.js';
 
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { concatMap } from 'rxjs/operators';
 
 import { Buffer } from 'buffer';
 //@ts-ignore
@@ -30,6 +31,7 @@ import mime from 'mime/lite';
 import Fuse from 'fuse.js';
 
 import utils from './utils';
+import { STATUS_CODES } from 'http';
 const { sanitizeAddress } = utils;
 
 const KIND = {
@@ -154,6 +156,12 @@ class DeFile implements IDeFile {
 
 export type FileOrDir = DeDirectory | DeFile;
 
+export type StoreResponse = {
+  type: string;
+  status: string;
+  result?: any
+};
+
 /**
  * Decentralized File Manager: Main high-level construct
  * @todo add path builder using this.address
@@ -175,7 +183,8 @@ class DeFileManager {
   dirLastAction: Object;
   cache: { [key: string]: (FileStorageDirectory | FileStorageFile)[] };
 
-  store: BehaviorSubject<{}>;
+  store: BehaviorSubject<Observable<() => Promise<StoreResponse>>>;
+  bus: Observable<any>;
 
   constructor(
     w3: Object,
@@ -193,7 +202,22 @@ class DeFileManager {
 
     this.dirLastAction = "";
     this.cache = {};
-    this.store = new BehaviorSubject({});
+    this.store = new BehaviorSubject(of(() => Promise.resolve({
+      type: 'INIT',
+      status: 'success',
+      result: {}
+    } as StoreResponse)));
+
+    this.bus = this.store.pipe(
+      concatMap(async (event, index) => {
+        console.log("fm:bus:concatMap::event", event, index);
+        const callable = await event.toPromise();
+        const returnValue = await (callable && callable());
+        console.log("fm:bus:concatMap::event:::returnValue", returnValue);
+        returnValue.result.destDirectory && this.purgeCache(returnValue.result.destDirectory);
+        return returnValue;
+      })
+    );
 
     const addrWithoutPrefix = sanitizeAddress(address, {
       checksum: false,
@@ -281,7 +305,8 @@ class DeFileManager {
   async reserveSpace(address: Address, amount: number) {
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
-    return this.fs.reserveSpace(this.account, address, amount, this.accountPrivateKey);
+    const signer = this.account || "";
+    return this.fs.reserveSpace(signer, address, amount, this.accountPrivateKey);
   }
 
   /**
@@ -308,17 +333,25 @@ class DeFileManager {
    * @param destDirectory 
    * @param name 
    */
-  async createDirectory(destDirectory: DeDirectory, name: string): Promise<DePath> {
+  async createDirectory(destDirectory: DeDirectory, name: string): Promise<void> {
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
-    const path = (destDirectory.path === this.rootDir.path) ? name : `${destDirectory.path}/${name}`;
-    const returnPath = await this.fs.createDirectory(this.account, path, this.accountPrivateKey);
-    this.dirLastAction = `${OPERATION.CREATE_DIRECTORY}:${returnPath}`;
-    this.purgeCache(destDirectory);
-    // this.store.next({
-    //   key: OPERATION.CREATE_DIRECTORY
-    // });
-    return returnPath;
+    const signer = this.account || "";
+    const path = (destDirectory.path === this.rootDir.path)
+      ? name
+      : `${destDirectory.path}/${name}`;
+
+    this.store.next(of(
+      () => this.fs.createDirectory(signer, path, this.accountPrivateKey)
+        .then(storagePath => ({
+          type: OPERATION.CREATE_DIRECTORY,
+          status: 'success',
+          result: {
+            destDirectory,
+            directory: new DeDirectory({ storagePath, name, isFile: false }, this, destDirectory)
+          }
+        }))
+    ));
   }
 
   /**
@@ -329,7 +362,8 @@ class DeFileManager {
   async deleteFile(destDirectory: DeDirectory, file: DeFile): Promise<void> {
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
-    await this.fs.deleteFile(this.account, file.path, this.accountPrivateKey);
+    const signer = this.account || "";
+    await this.fs.deleteFile(signer, file.path, this.accountPrivateKey);
     this.purgeCache(destDirectory);
   }
 
@@ -342,7 +376,8 @@ class DeFileManager {
       throw Error(ERROR.UNKNOWN);
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
-    await this.fs.deleteDirectory(this.account, directory.path, this.accountPrivateKey);
+    const signer = this.account || "";
+    await this.fs.deleteDirectory(signer, directory.path, this.accountPrivateKey);
     this.purgeCache(directory.parent);
   }
 
@@ -354,22 +389,42 @@ class DeFileManager {
   async uploadFile(destDirectory: DeDirectory, file: File) {
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
+    const signer = this.account || "";
+
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const uploadPath = (destDirectory.path === this.rootDir.path) ? file.name : `${destDirectory.path}/${file.name}`;
-    let path;
-    try {
-      path = await this.fs.uploadFile(this.account, uploadPath, buffer, this.accountPrivateKey);
-    } catch (e) {
-      throw {
-        file,
-        error: e
-      }
-    }
-    console.log("filemanager::uploadFile:path", path);
-    this.dirLastAction = `${OPERATION.UPLOAD_FILE}:${path}`; // placeholder for events
-    this.purgeCache(destDirectory);
-    return path;
+    const uploadPath = (destDirectory.path === this.rootDir.path)
+      ? file.name
+      : `${destDirectory.path}/${file.name}`;
+
+    this.store.next(of(
+      () => this.fs.uploadFile(signer, uploadPath, buffer, this.accountPrivateKey)
+        .then(storagePath => ({
+          type: OPERATION.UPLOAD_FILE,
+          status: 'success',
+          result: {
+            destDirectory,
+            file: new DeFile({
+              storagePath,
+              name: file.name,
+              isFile: true,
+              size: file.size,
+              status: 2,
+              uploadingProgress: 100
+            }, this)
+          }
+        }))
+        .catch(err => ({
+          type: OPERATION.UPLOAD_FILE,
+          status: 'error',
+          result: {
+            destDirectory,
+            file,
+            error: err,
+          }
+        }))
+    ));
+    this.dirLastAction = `${OPERATION.UPLOAD_FILE}`; // placeholder for events
   }
 
   /**
@@ -478,6 +533,7 @@ class DeFileManager {
 }
 
 export {
+  OPERATION,
   DeFileManager,
   DeFile,
   DeDirectory

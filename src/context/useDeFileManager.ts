@@ -1,9 +1,8 @@
 import { useEffect, useLayoutEffect, useReducer, useRef } from 'react';
 import { useInterval } from 'react-use';
-import { DeFileManager, DeDirectory, DeFile, DePath, FileOrDir, utils } from '@/packages/filemanager';
-import type { FileStorageDirectory, FileStorageFile } from '@skalenetwork/filestorage.js';
 
-const { sanitizeAddress } = utils;
+import type { FileStorageDirectory, FileStorageFile } from '@skalenetwork/filestorage.js';
+import { DeFileManager, DeDirectory, DeFile, DePath, FileOrDir, utils, OPERATION } from '@/packages/filemanager';
 
 export type FileStatus = {
   file: File;
@@ -79,7 +78,6 @@ const initialState: State = {
 };
 
 const ACTION = {
-
   INITIALIZE: 'INITIALIZE',
   SET_ROLES: 'SET_ROLES',
   SET_AUTHORITY: 'SET_AUTHORITY',
@@ -296,6 +294,45 @@ function useDeFileManager(
     }
 
     const fm = new DeFileManager(w3Provider, address, account, privateKey);
+    fm.bus.subscribe(event => {
+      console.log("event", event);
+      if (event.status === "success" && event.result.destDirectory) {
+        maybeRefreshCwd(event.result.destDirectory);
+      }
+      switch (event.type) {
+        case OPERATION.CREATE_DIRECTORY:
+          dispatch({
+            type: ACTION.SET_DIRECTORY_OP, payload: false
+          });
+          break;
+        case OPERATION.UPLOAD_FILE:
+          if (event.status === "error") {
+            console.error("uploadFile::failure", event.result.error);
+            const { error, destDirectory, file } = event.result;
+            dispatch({
+              type: ACTION.SET_UPLOAD,
+              payload: {
+                directory: destDirectory.path,
+                file: {
+                  file: event.result.file,
+                  path: absolutePath(`${destDirectory.path}/${file.name}`),
+                  progress: 0,
+                  error: error.error
+                }
+              }
+            });
+          }
+          break;
+        case OPERATION.DELETE_FILE:
+          break;
+        case OPERATION.DELETE_DIRECTORY:
+          break;
+        case OPERATION.RESERVE_SPACE:
+          break;
+        case OPERATION.GRANT_ROLE:
+          break;
+      }
+    })
 
     dispatch({
       type: ACTION.INITIALIZE, payload: {
@@ -394,20 +431,10 @@ function useDeFileManager(
       throw Error("Not authorized");
     }
 
-    // push to queue and return here
-
+    await fm.createDirectory(directory, name);
     dispatch({
       type: ACTION.SET_DIRECTORY_OP, payload: true
     });
-
-    await fm.createDirectory(directory, name)
-      .then(() => directory)
-      .then(maybeRefreshCwd);
-
-    dispatch({
-      type: ACTION.SET_DIRECTORY_OP, payload: false
-    });
-
   }
 
   const uploadFiles = async (
@@ -444,26 +471,8 @@ function useDeFileManager(
     // https://github.com/skalenetwork/filestorage-ui/issues/1
 
     for (let index = 0; index < files.length; index++) {
-
       let file = files[index];
-
-      await fm.uploadFile(directory, file)
-        .then(() => maybeRefreshCwd(directory))
-        .catch(err => {
-          console.error("uploadFile::failure", err);
-          dispatch({
-            type: ACTION.SET_UPLOAD,
-            payload: {
-              directory: directory.path,
-              file: {
-                file: err.file,
-                path: absolutePath(`${directory.path}/${file.name}`),
-                progress: 0,
-                error: err.error
-              }
-            }
-          });
-        })
+      await fm.uploadFile(directory, file);
     };
   };
 
