@@ -4,7 +4,7 @@ priors
 
 [x] faster lookups: client-side file listing caching + deep prefetch
 
-[ ] squash bugs + netting: final pass widget field validations, form resetting
+[x] squash bugs + netting: final pass widget field validations, form resetting
 [x] pagination: fix no collapse
 [x] preview + download file: finalize
 [x] upload-progress: fix line item alignments

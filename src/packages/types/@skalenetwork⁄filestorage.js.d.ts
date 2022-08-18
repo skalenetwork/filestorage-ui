@@ -51,7 +51,7 @@ declare module '@skalenetwork/filestorage.js' {
     deleteFile(
       address: Address,
       filePath: string,
-      privateKey?: PrivateKey): Promise<void>; // confirmed
+      privateKey?: PrivateKey): Promise<void>;
 
     createDirectory(
       address: Address,

@@ -91,7 +91,6 @@ const ACTION = {
   INIT_UPLOADS: 'INIT_UPLOADS',
   SET_DIRECTORY_UPLOADS: 'SET_DIRECTORY_UPLOADS',
   SET_UPLOAD: 'SET_UPLOAD',
-  REMOVE_FROM_UPLOADS: 'REMOVE_FROM_UPLOADS', // @to_deprecate
   RESET_UPLOADS: 'RESET_UPLOADS',
   RESET_FAILED_UPLOADS: 'RESET_FAILED_UPLOADS', // @to_deprecate after prune actions
   SET_UPLOADS_PROGRESS: 'SET_UPLOADS_PROGRESS',
@@ -165,19 +164,6 @@ const reducer = (
         let { directory, uploads }: { directory: DePath, uploads: FileStatus[] } = action.payload;
         const activeUploads = new Map(state.activeUploads);
         activeUploads.set(directory, uploads);
-        return {
-          ...state,
-          activeUploads
-        }
-      }
-    case ACTION.REMOVE_FROM_UPLOADS:
-      {
-        let { directory, path } = action.payload;
-        const activeUploads = new Map(state.activeUploads);
-        const currentFiles = [...activeUploads.get(directory) || []];
-        const index = currentFiles?.findIndex(f => f.path === path);
-        const removed = currentFiles.splice(index, 1);
-        activeUploads.set(directory, currentFiles);
         return {
           ...state,
           activeUploads
@@ -324,8 +310,20 @@ function useDeFileManager(
           }
           break;
         case OPERATION.DELETE_FILE:
-          break;
         case OPERATION.DELETE_DIRECTORY:
+          if (event.status === "error") return;
+          if (!cwdRef.current) return;
+          const { destDirectory, file, directory } = event.result;
+          if (destDirectory.path === cwdRef.current.path) {
+            let listing = [...state.listing];
+            const index = listing.findIndex(item => item.path === (file || directory).path);
+            if (!index) return;
+            listing.splice(index, 1);
+            dispatch({
+              type: ACTION.SET_LISTING,
+              payload: listing
+            });
+          }
           break;
         case OPERATION.RESERVE_SPACE:
           break;
@@ -476,40 +474,23 @@ function useDeFileManager(
     };
   };
 
-  const deleteFile = async (file: DeFile, directory: DeDirectory = (cwd as DeDirectory)) => {
+  const deleteFile = async (
+    file: DeFile,
+    directory: DeDirectory = (cwd as DeDirectory)
+  ) => {
     if (!(fm && cwd && state.isAuthorized)) {
       throw Error("Not authorized");
     }
-    await fm.deleteFile(directory, file);
-    if (!cwdRef.current) return;
-    if (directory.path === cwdRef.current.path) {
-      let listing = [...state.listing];
-      const index = listing.findIndex(item => item.path === file.path);
-      if (!index) return;
-      listing.splice(index, 1);
-      dispatch({
-        type: ACTION.SET_LISTING,
-        payload: listing
-      });
-    }
+    fm.deleteFile(directory, file);
   };
 
-  const deleteDirectory = async (directory: DeDirectory) => {
+  const deleteDirectory = async (
+    directory: DeDirectory
+  ) => {
     if (!(fm && cwd && state.isAuthorized)) {
       throw Error("Not authorized");
     }
-    await fm.deleteDirectory(directory);
-    if (!cwdRef.current) return;
-    if (directory.parent?.path === cwdRef.current.path) {
-      let listing = [...state.listing];
-      const index = listing.findIndex(item => item.path === directory.path);
-      if (!index) return;
-      listing.splice(index, 1);
-      dispatch({
-        type: ACTION.SET_LISTING,
-        payload: listing
-      });
-    }
+    fm.deleteDirectory(directory);
   };
 
   const actions: Action = {

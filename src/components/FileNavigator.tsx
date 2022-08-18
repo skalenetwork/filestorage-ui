@@ -204,21 +204,9 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
             <li
               onClick={(e: SyntheticEvent) => {
                 if (item.kind === "file") {
-                  toast.promise(deleteFile(item as DeFile), {
-                    pending: `Deleting file: ${item.name}`,
-                    success: `Deleted file: ${item.name}`,
-                    error: `Failed to delete file: ${item.name}`
-                  }, {
-                    autoClose: 1000
-                  });
+                  deleteFile(item as DeFile);
                 } else {
-                  toast.promise(deleteDirectory(item as DeDirectory), {
-                    pending: `Deleting directory: ${item.name}`,
-                    success: `Deleted directory: ${item.name}`,
-                    error: `Failed to delete directory: ${item.name}`
-                  }, {
-                    autoClose: 1000
-                  });
+                  deleteDirectory(item as DeDirectory);
                 }
                 (tableElement.current?.querySelector(":focus") as HTMLElement).blur();
               }}
