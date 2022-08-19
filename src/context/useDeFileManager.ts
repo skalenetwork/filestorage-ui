@@ -3,6 +3,7 @@ import { useInterval } from 'react-use';
 
 import type { FileStorageDirectory, FileStorageFile } from '@skalenetwork/filestorage.js';
 import { DeFileManager, DeDirectory, DeFile, DePath, FileOrDir, utils, OPERATION } from '@/packages/filemanager';
+import { OperationEvent } from '@/packages/filemanager/filemanager';
 
 export type FileStatus = {
   file: File;
@@ -280,7 +281,7 @@ function useDeFileManager(
     }
 
     const fm = new DeFileManager(w3Provider, address, account, privateKey);
-    fm.bus.subscribe(event => {
+    fm.bus.subscribe((event: OperationEvent) => {
       console.log("event", event);
       if (event.status === "success" && event.result.destDirectory) {
         maybeRefreshCwd(event.result.destDirectory);
@@ -464,9 +465,6 @@ function useDeFileManager(
         ))
       }
     });
-
-    // upload transactions going serially until nonce management or SDK events allow otherwise
-    // https://github.com/skalenetwork/filestorage-ui/issues/1
 
     for (let index = 0; index < files.length; index++) {
       let file = files[index];

@@ -19,6 +19,7 @@ import FileStorage, {
   FileStorageFile,
 } from '@skalenetwork/filestorage.js';
 
+//@ts-ignore
 import { BehaviorSubject, Observable, of, firstValueFrom } from 'rxjs';
 import { concatMap } from 'rxjs/operators';
 
@@ -158,11 +159,11 @@ export type FileOrDir = DeDirectory | DeFile;
 type OperationPayload = {
   key: string,
   promise: () => Promise<any>,
-  onSuccess?: () => OperationResponse['result'],
-  onError?: () => OperationResponse['result']
+  onSuccess?: () => OperationEvent['result'],
+  onError?: () => OperationEvent['result']
 }
 
-export type OperationResponse = {
+export type OperationEvent = {
   type: string;
   status: string;
   result?: any
@@ -184,7 +185,7 @@ class DeFileManager {
   cache: { [key: string]: (FileStorageDirectory | FileStorageFile)[] };
 
   store: BehaviorSubject<Observable<() => OperationPayload>>;
-  bus: Observable<any>;
+  bus: Observable<OperationEvent>;
 
   constructor(
     w3: Object,
@@ -251,8 +252,8 @@ class DeFileManager {
   private queueOp(
     key: string,
     taskPromise: () => Promise<any>,
-    onSuccess?: (res: any) => OperationResponse['result'],
-    onError?: (res: any) => OperationResponse['result']
+    onSuccess?: (res: any) => OperationEvent['result'],
+    onError?: (res: any) => OperationEvent['result']
   ) {
     this.store.next(of(() => (
       taskPromise()
