@@ -7,6 +7,7 @@ import nodePolyfills from "rollup-plugin-polyfill-node";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  envPrefix: "FS",
   plugins: [react()],
   resolve: {
     alias: {

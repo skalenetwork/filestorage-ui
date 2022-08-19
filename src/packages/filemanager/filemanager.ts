@@ -1,5 +1,5 @@
 // replace with already published or later published equivalent
-import { ContractContext } from '@/packages/types/abi/filestorage-1.0.1';
+import { ContractContext } from '../types/abi/filestorage-1.0.1';
 
 /**
  * @module
@@ -14,6 +14,7 @@ import { ContractContext } from '@/packages/types/abi/filestorage-1.0.1';
 // as well considering storage options with IndexDB, and advanced uploads management
 // pre-req: standardization of paths as spec from systems up to client-side, exported across SDKs
 
+//@ts-ignore
 import FileStorage, {
   FileStorageDirectory,
   FileStorageFile,
@@ -184,7 +185,7 @@ class DeFileManager {
   dirLastAction: Object;
   cache: { [key: string]: (FileStorageDirectory | FileStorageFile)[] };
 
-  store: BehaviorSubject<Observable<() => OperationPayload>>;
+  store: BehaviorSubject<Observable<() => Promise<OperationEvent>>>;
   bus: Observable<OperationEvent>;
 
   constructor(
@@ -204,7 +205,10 @@ class DeFileManager {
     this.dirLastAction = "";
     this.cache = {};
     this.store = new BehaviorSubject(of(
-      () => (Promise.resolve({ key: "INIT" }))
+      () => (Promise.resolve({
+        type: "INIT",
+        status: "success"
+      } as OperationEvent))
     ));
 
     this.bus = this.store.pipe(
@@ -262,13 +266,13 @@ class DeFileManager {
             type: key,
             status: 'success',
             result: onSuccess && onSuccess(res)
-          }
+          } as OperationEvent
         }).catch((err: any) => {
           return {
             type: key,
             status: 'error',
             result: onError && onError(err)
-          }
+          } as OperationEvent
         })
     )));
   }

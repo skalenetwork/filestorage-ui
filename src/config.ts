@@ -1,3 +1,6 @@
+const env = import.meta.env;
+console.log(env);
+
 export type ConfigType = {
   optimize: {
     prefetchEvent: string; // placeholder
@@ -24,26 +27,26 @@ export type ConfigType = {
 
 export default <ConfigType>{
   optimize: {
-    prefetchEvent: 'dirLoad',
-    prefetchDepth: Infinity
+    prefetchEvent: env.FS_OPTIMIZE_PREFETCH_EVENT,
+    prefetchDepth: Number(env.FS_OPTIMIZE_PREFETCH_DEPTH)
   },
   branding: {
-    logoUrl: "/logo.png"
+    logoUrl: env.FS_BRANDING_LOGO_URL
   },
   navigator: {
-    pageLimit: 10
+    pageLimit: Number(env.FS_NAVIGATOR_PAGE_LIMIT)
   },
   uploader: {
-    batchThreshold: 5,
-    maxFileDirNameLength: 255
+    batchThreshold: Number(env.FS_UPLOADER_BATCH_THRESHOLD),
+    maxFileDirNameLength: Number(env.FS_MAX_FILE_DIR_NAME_LENGTH)
   },
   chains: [
     {
-      protocol: "https",
-      nodeDomain: "staging-v2.skalenodes.com",
-      version: "v1",
-      sChainName: "roasted-thankful-unukalhai",
-      chainId: "0x1dc0981d"
+      protocol: env.FS_CHAIN_PROTOCOL,
+      nodeDomain: env.FS_CHAIN_NODE_DOMAIN,
+      version: env.FS_CHAIN_VERSION,
+      sChainName: env.FS_CHAIN_NAME,
+      chainId: env.FS_CHAIN_ID
     }
   ]
 }
