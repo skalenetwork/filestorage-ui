@@ -1,6 +1,6 @@
 //@ts-nocheck
 
-import { useState, useEffect, useRef, SyntheticEvent, useLayoutEffect } from 'react';
+import { useState, useEffect, useRef, SyntheticEvent, useLayoutEffect, useCallback } from 'react';
 import { useMount, useDebounce } from 'react-use';
 
 import { useFileManagerContext, ContextType } from '../context';
@@ -76,7 +76,7 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
 
   const {
     config,
-    fm, directory: currentDirectory, listing, searchListing, isLoadingDirectory,
+    fm, address, directory: currentDirectory, listing, searchListing, isLoadingDirectory,
     changeDirectory, deleteFile, deleteDirectory, loadAddress, getFileLink, isAuthorized
   }: ContextType = useFileManagerContext<ContextType>();
 
@@ -94,7 +94,7 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
 
   // table:pagination
   const [itemOffset, setItemOffset] = useState<number>(0);
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [currentPage, setCurrentPage] = useState<number>(0);
   const [pageListing, setPageListing] = useState<Array<DeFile | DeDirectory>>([]);
 
   // uploads
@@ -129,16 +129,27 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
   // dircrumb and pagination
   useEffect(() => {
     setTrail(makeDirTrail(currentDirectory));
+  }, [currentDirectory]);
+
+  // dircrumb and pagination
+  useEffect(() => {
+    console.log("what");
     setItemOffset(0);
-    setCurrentPage(1);
-  }, [currentDirectory?.path]);
+    setCurrentPage(0);
+  }, [currentDirectory]);
 
   // current page listing
   useLayoutEffect(() => {
     const endOffset = itemOffset + config.navigator.pageLimit;
     setPageListing(sortedListing.slice(itemOffset, endOffset));
-  }, [itemOffset, sortedListing])
+  }, [itemOffset, sortedListing]);
 
+  const onPageChange = useCallback((e) => {
+    console.log(e, sortedListing);
+    setCurrentPage(e.selected);
+    const newOffset = (e.selected * config.navigator.pageLimit) % sortedListing.length;
+    setItemOffset(newOffset);
+  }, [sortedListing]);
 
   const sortElement = (key: string) => (
     <span>
@@ -311,13 +322,12 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
             previousLabel={
               <ChevronLeftIcon className="h-8 w-8" />
             }
+            forcePage={currentPage}
             pageRangeDisplayed={2}
             marginPagesDisplayed={2}
             pageCount={Math.ceil(sortedListing.length / config.navigator.pageLimit)}
             onPageChange={(e) => {
-              setCurrentPage(e.selected);
-              const newOffset = (e.selected * config.navigator.pageLimit) % sortedListing.length;
-              setItemOffset(newOffset);
+              onPageChange(e);
             }}
           />
         </div>

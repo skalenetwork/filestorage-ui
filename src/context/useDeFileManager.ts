@@ -371,7 +371,7 @@ function useDeFileManager(
   // keep current directory synced to ref
   useEffect(() => {
     cwdRef.current = cwd;
-  }, [cwd?.path]);
+  }, [cwd]);
 
   // load listing based on current directory
   useLayoutEffect(() => {
@@ -381,7 +381,7 @@ function useDeFileManager(
       payload: []
     });
     loadCurrentDirectory();
-  }, [state.fm, cwd?.path]);
+  }, [state.fm, cwd]);
 
   // periodically fetch relevant directory listings, update active uploads with progress
   // tested for uploads under 1mb: file being uploaded not reflected in directory listing via node

@@ -1,24 +1,24 @@
 export type ConfigType = {
   optimize: {
-    prefetchEvent: string;
-    prefetchDepth: number;
+    prefetchEvent: string; // placeholder
+    prefetchDepth: number; // (0,Infinity)
   };
   branding: {
-    logoUrl: string;
+    logoUrl: string; // path relative too /public
   };
   navigator: {
-    pageLimit: number;
+    pageLimit: number; // max items on navigator page
   };
   uploader: {
-    batchThreshold: number;
-    maxFileDirNameLength: number;
+    batchThreshold: number; // max items where upload marked as batch
+    maxFileDirNameLength: number; // max characters count of directory name
   };
   chains: {
-    protocol: string;
-    nodeDomain: string;
-    version: string;
-    sChainName: string;
-    chainId: string;
+    protocol: string; // http or https
+    nodeDomain: string; // node host FQDN
+    version: string; // chain version 
+    sChainName: string; // chain name
+    chainId: string; // chain ID
   }[]
 }
 

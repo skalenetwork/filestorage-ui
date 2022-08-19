@@ -7,7 +7,6 @@ import { ContractContext } from '@/packages/types/abi/filestorage-1.0.1';
  * wrapping fs.js to serve as better isolation, type safety, reliability and intuitiveness
  * extendability to multi-fs and multi-contracts
  * consumable of stateful components in a similar manner as browser native APIs
- * @todo: rate limiting, cache management
  */
 
 // if searching remains delegated to client-side:
@@ -20,7 +19,7 @@ import FileStorage, {
   FileStorageFile,
 } from '@skalenetwork/filestorage.js';
 
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, of, firstValueFrom } from 'rxjs';
 import { concatMap } from 'rxjs/operators';
 
 import { Buffer } from 'buffer';
@@ -53,7 +52,7 @@ const OPERATION = {
   RESERVE_SPACE: 'RESERVE_SPACE'
 }
 
-// @todo: improve error coverage, segment some to state, extend with codes
+// @todo-enhancement: improve error coverage, segment some to state, extend with codes
 const ERROR = {
   NO_ACCOUNT: "File manager has no signer account",
   NOT_AUTHORIZED: "Signer not authorized to perform the operation",
@@ -169,12 +168,6 @@ export type OperationResponse = {
   result?: any
 };
 
-/**
- * Decentralized File Manager: Main high-level construct
- * @todo add path builder using this.address
- * @todo could possibly consider extending or melding with filestorage.js
- */
-
 class DeFileManager {
 
   address: Address;
@@ -210,34 +203,23 @@ class DeFileManager {
     this.dirLastAction = "";
     this.cache = {};
     this.store = new BehaviorSubject(of(
-      () => ({
-        promise: () => Promise.resolve("INIT")
-      } as OperationPayload)
+      () => (Promise.resolve({ key: "INIT" }))
     ));
 
     this.bus = this.store.pipe(
-      concatMap(async (event, index) => {
-        console.log("fm:bus:concatMap::event", event, index);
+      concatMap(async (taskObserver, index) => {
+        console.log("fm:bus:concatMap::taskObserver", taskObserver, index);
 
-        const obj = event && (await event.toPromise())();
-        console.log("fm:bus:concatMap::obj", obj);
+        const task = await firstValueFrom(taskObserver);
+        console.log("fm:bus:concatMap::task", task);
 
-        console.log(obj);
-
-        const { key, promise, onSuccess, onError } = obj;
-        if (!promise) {
-          console.log("fm:bus:concatMap::object.promise::: nothing");
-          return
-        };
-
-        let returnValue = await promise()
-          .then(onSuccess)
-          .catch(onError);
-
+        const returnValue = await task();
         console.log("fm:bus:concatMap::event:::returnValue", returnValue);
+
         returnValue.result &&
           returnValue.result.destDirectory &&
           this.purgeCache(returnValue.result.destDirectory);
+
         return returnValue;
       })
     );
@@ -268,25 +250,26 @@ class DeFileManager {
 
   private queueOp(
     key: string,
-    promise: () => Promise<any>,
+    taskPromise: () => Promise<any>,
     onSuccess?: (res: any) => OperationResponse['result'],
     onError?: (res: any) => OperationResponse['result']
   ) {
-    this.store.next(of(() => ({
-      key,
-      promise,
-      onSuccess: (res: any) => ({
-        type: key,
-        status: 'success',
-        result: onSuccess && onSuccess(res)
-      }),
-      onError: (err: any) => ({
-        type: key,
-        status: 'error',
-        result: onError && onError(err)
-      })
-    } as OperationPayload))
-    );
+    this.store.next(of(() => (
+      taskPromise()
+        .then((res: any) => {
+          return {
+            type: key,
+            status: 'success',
+            result: onSuccess && onSuccess(res)
+          }
+        }).catch((err: any) => {
+          return {
+            type: key,
+            status: 'error',
+            result: onError && onError(err)
+          }
+        })
+    )));
   }
 
   absolutePath(fileOrDir: FileOrDir): string {
