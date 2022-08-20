@@ -1,3 +1,4 @@
+import { FileLike } from './../packages/filemanager/filemanager';
 import { useEffect, useLayoutEffect, useReducer, useRef } from 'react';
 import { useInterval } from 'react-use';
 
@@ -283,7 +284,7 @@ function useDeFileManager(
     const fm = new DeFileManager(w3Provider, address, account, privateKey);
     fm.bus.subscribe((event: OperationEvent) => {
       console.log("event", event);
-      if (event.status === "success" && event.result.destDirectory) {
+      if (event.status === "success" && (event.result && event.result.destDirectory)) {
         maybeRefreshCwd(event.result.destDirectory);
       }
       switch (event.type) {
@@ -430,7 +431,8 @@ function useDeFileManager(
       throw Error("Not authorized");
     }
 
-    await fm.createDirectory(directory, name);
+    const result = await fm.createDirectory(directory, name);
+    console.log("queueOp: promise result", result);
     dispatch({
       type: ACTION.SET_DIRECTORY_OP, payload: true
     });
@@ -468,7 +470,7 @@ function useDeFileManager(
 
     for (let index = 0; index < files.length; index++) {
       let file = files[index];
-      await fm.uploadFile(directory, file);
+      fm.uploadFile(directory, file as FileLike);
     };
   };
 

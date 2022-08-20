@@ -20,6 +20,8 @@ import Fortmatic from "fortmatic";
 import { Button, Modal, Progress, Input } from '@/components/common';
 import CheckCircleIcon from '@heroicons/react/solid/CheckCircleIcon';
 
+import { getRpcEndpoint, getFsEndpoint } from '../utils';
+
 export type ContextType = State & Action & {
   connectWallet: Function;
   loadAddress: Function;
@@ -28,19 +30,6 @@ export type ContextType = State & Action & {
 };
 
 const FileManagerContext = createContext<ContextType | undefined>(undefined);
-
-const getRpcEndpoint = (data: ConfigType['chains'][0]) => {
-  return `${data.protocol}://${data.nodeDomain}/${data.version}/${data.sChainName}`
-}
-
-const getFsEndpoint = (
-  data: ConfigType['chains'][0],
-  address: string = "",
-  path: string = ""
-) => {
-  let root = sanitizeAddress(address, { prefix: false, checksum: false });
-  return `${data.protocol}://${data.nodeDomain}/fs/${data.sChainName}${(root) ? "/" + root : ""}${(path) ? "/" + path : ""}`;
-}
 
 const RPC_ENDPOINT = getRpcEndpoint(config.chains[0]);
 const CHAIN_ID = config.chains[0].chainId;

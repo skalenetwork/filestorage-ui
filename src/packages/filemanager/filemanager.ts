@@ -22,7 +22,7 @@ import FileStorage, {
 
 //@ts-ignore
 import { BehaviorSubject, Observable, of, firstValueFrom } from 'rxjs';
-import { concatMap } from 'rxjs/operators';
+import { concatMap, share } from 'rxjs/operators';
 
 import { Buffer } from 'buffer';
 //@ts-ignore
@@ -30,6 +30,7 @@ import sortBy from 'lodash/sortBy';
 //@ts-ignore
 import mime from 'mime/lite';
 import Fuse from 'fuse.js';
+import { nanoid } from 'nanoid';
 
 import utils from './utils';
 const { sanitizeAddress } = utils;
@@ -165,10 +166,18 @@ type OperationPayload = {
 }
 
 export type OperationEvent = {
+  id: string;
   type: string;
   status: string;
   result?: any
 };
+
+export type FileLike = {
+  name: string,
+  size?: number,
+  arrayBuffer?: () => Promise<ArrayBuffer>,
+  buffer?: () => Buffer,
+}
 
 class DeFileManager {
 
@@ -213,20 +222,21 @@ class DeFileManager {
 
     this.bus = this.store.pipe(
       concatMap(async (taskObserver, index) => {
-        console.log("fm:bus:concatMap::taskObserver", taskObserver, index);
+        // console.log("fm:bus:concatMap::taskObserver", taskObserver, index);
 
         const task = await firstValueFrom(taskObserver);
-        console.log("fm:bus:concatMap::task", task);
+        // console.log("fm:bus:concatMap::task", task);
 
         const returnValue = await task();
-        console.log("fm:bus:concatMap::event:::returnValue", returnValue);
+        // console.log("fm:bus:concatMap::event:::returnValue", returnValue);
 
         returnValue.result &&
           returnValue.result.destDirectory &&
           this.purgeCache(returnValue.result.destDirectory);
 
         return returnValue;
-      })
+      }),
+      share()
     );
 
     const addrWithoutPrefix = sanitizeAddress(address, {
@@ -250,31 +260,48 @@ class DeFileManager {
       this.cache = {};
       this.preloadDirectories(this.rootDir);
     }
-    console.log("filemanager::purgeCache:path", path);
+    // console.log("filemanager::purgeCache:path", path);
   }
 
-  private queueOp(
+  private async queueOp(
     key: string,
     taskPromise: () => Promise<any>,
     onSuccess?: (res: any) => OperationEvent['result'],
     onError?: (res: any) => OperationEvent['result']
-  ) {
+  ): Promise<OperationEvent> {
+    const id = nanoid();
     this.store.next(of(() => (
       taskPromise()
         .then((res: any) => {
           return {
+            id,
             type: key,
             status: 'success',
             result: onSuccess && onSuccess(res)
           } as OperationEvent
         }).catch((err: any) => {
           return {
+            id,
             type: key,
             status: 'error',
             result: onError && onError(err)
           } as OperationEvent
         })
     )));
+    return new Promise((resolve, reject) => {
+      const subscription = this.bus.subscribe((event: any) => {
+        if ((event.id === id)) {
+          if (event.status === 'success') {
+            subscription.unsubscribe();
+            return resolve(event);
+          }
+          if (event.status === 'error') {
+            subscription.unsubscribe();
+            return reject(event);
+          }
+        }
+      })
+    });
   }
 
   absolutePath(fileOrDir: FileOrDir): string {
@@ -340,7 +367,7 @@ class DeFileManager {
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
     const signer = this.account || "";
-    this.queueOp(
+    return this.queueOp(
       OPERATION.RESERVE_SPACE,
       () => this.fs.reserveSpace(signer, address, amount, this.accountPrivateKey),
     );
@@ -355,12 +382,14 @@ class DeFileManager {
     if (!(await this.accountIsAdmin())) {
       throw Error(ERROR.NOT_AUTHORIZED);
     }
-    if (role) {
-      this.queueOp(
-        OPERATION.GRANT_ROLE,
-        () => this.fs.grantAllocatorRole(signer, address, this.accountPrivateKey)
-      );
+    if (!role) {
+      throw Error(ERROR.UNKNOWN);
     }
+
+    return this.queueOp(
+      OPERATION.GRANT_ROLE,
+      () => this.fs.grantAllocatorRole(signer, address, this.accountPrivateKey)
+    );
   }
 
   /**
@@ -387,7 +416,11 @@ class DeFileManager {
    * @param destDirectory 
    * @param name 
    */
-  async createDirectory(destDirectory: DeDirectory, name: string): Promise<void> {
+  async createDirectory(
+    destDirectory: DeDirectory,
+    name: string
+  ): Promise<OperationEvent> {
+
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
     const signer = this.account || "";
@@ -395,13 +428,21 @@ class DeFileManager {
       ? name
       : `${destDirectory.path}/${name}`;
 
-    this.queueOp(
+    return this.queueOp(
       OPERATION.CREATE_DIRECTORY,
       () => this.fs.createDirectory(signer, path, this.accountPrivateKey),
       (storagePath) => ({
         destDirectory,
         directory: new DeDirectory({ storagePath, name, isFile: false }, this, destDirectory)
-      })
+      }),
+      (err) => ({
+        destDirectory,
+        directory: new DeDirectory({
+          storagePath: this.absolutePath(destDirectory) + "/" + name,
+          name,
+          isFile: false
+        }, this, destDirectory)
+      }),
     );
   }
 
@@ -410,11 +451,16 @@ class DeFileManager {
    * @param destDirectory 
    * @param file 
    */
-  async deleteFile(destDirectory: DeDirectory, file: DeFile): Promise<void> {
+  async deleteFile(
+    destDirectory: DeDirectory,
+    file: DeFile
+  ): Promise<OperationEvent> {
+
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
     const signer = this.account || "";
-    this.queueOp(
+
+    return this.queueOp(
       OPERATION.DELETE_FILE,
       () => this.fs.deleteFile(signer, file.path, this.accountPrivateKey),
       (res) => ({
@@ -431,14 +477,14 @@ class DeFileManager {
    * Delete a directory 
    * @param directory 
    */
-  async deleteDirectory(directory: DeDirectory): Promise<void> {
+  async deleteDirectory(directory: DeDirectory): Promise<OperationEvent> {
     if (directory.path === this.rootDir.path)
       throw Error(ERROR.UNKNOWN);
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
     const signer = this.account || "";
 
-    this.queueOp(
+    return this.queueOp(
       OPERATION.DELETE_DIRECTORY,
       () => this.fs.deleteDirectory(signer, directory.path, this.accountPrivateKey),
       (res) => ({
@@ -456,18 +502,33 @@ class DeFileManager {
    * @param destDirectory 
    * @param file 
    */
-  async uploadFile(destDirectory: DeDirectory, file: File) {
+  async uploadFile(
+    destDirectory: DeDirectory,
+    file: FileLike,
+  ): Promise<OperationEvent> {
+
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
     const signer = this.account || "";
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    let buffer: Buffer;
+
+    if (file.buffer) {
+      buffer = file.buffer();
+    }
+    else if (file.arrayBuffer) {
+      const arrayBuffer = await file.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+    }
+    else {
+      throw Error(ERROR.UNKNOWN);
+    }
+
     const uploadPath = (destDirectory.path === this.rootDir.path)
       ? file.name
       : `${destDirectory.path}/${file.name}`;
 
-    this.queueOp(
+    return this.queueOp(
       OPERATION.UPLOAD_FILE,
       () => this.fs.uploadFile(signer, uploadPath, buffer, this.accountPrivateKey),
       (storagePath) => ({
@@ -476,7 +537,7 @@ class DeFileManager {
           storagePath,
           name: file.name,
           isFile: true,
-          size: file.size,
+          size: file.size || 0,
           status: 2,
           uploadingProgress: 100
         }, this)
@@ -487,7 +548,6 @@ class DeFileManager {
         error: err,
       })
     );
-    this.dirLastAction = `${OPERATION.UPLOAD_FILE}`; // placeholder for events
   }
 
   /**
@@ -541,7 +601,7 @@ class DeFileManager {
       startDirectory,
       (entry) => { },
     );
-    console.log("filemanager::preloadDirectories: complete");
+    // console.log("filemanager::preloadDirectories: complete");
   }
 
   /**

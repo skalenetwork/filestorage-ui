@@ -38,7 +38,7 @@ export default <ConfigType>{
   },
   uploader: {
     batchThreshold: Number(env.FS_UPLOADER_BATCH_THRESHOLD),
-    maxFileDirNameLength: Number(env.FS_MAX_FILE_DIR_NAME_LENGTH)
+    maxFileDirNameLength: Number(env.FS_UPLOADER_MAX_FILE_DIR_NAME_LENGTH)
   },
   chains: [
     {

@@ -8,6 +8,11 @@ import PhotographIcon from "@heroicons/react/solid/PhotographIcon";
 import CubeIcon from "@heroicons/react/outline/CubeIcon";
 import Web3 from 'web3';
 
+import type { ConfigType } from './config';
+import { utils } from './packages/filemanager';
+
+const { sanitizeAddress } = utils;
+
 type MimeMetaData = {
   type: string;
   category: string;
@@ -80,7 +85,22 @@ function downloadUrl(url: string, filename: string) {
     });
 }
 
+const getRpcEndpoint = (data: ConfigType['chains'][0]) => {
+  return `${data.protocol}://${data.nodeDomain}/${data.version}/${data.sChainName}`
+}
+
+const getFsEndpoint = (
+  data: ConfigType['chains'][0],
+  address: string = "",
+  path: string = ""
+) => {
+  let root = sanitizeAddress(address, { prefix: false, checksum: false });
+  return `${data.protocol}://${data.nodeDomain}/fs/${data.sChainName}${(root) ? "/" + root : ""}${(path) ? "/" + path : ""}`;
+}
+
 export {
   mimeData,
-  downloadUrl
+  downloadUrl,
+  getRpcEndpoint,
+  getFsEndpoint,
 }
