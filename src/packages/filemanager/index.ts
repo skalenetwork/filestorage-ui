@@ -5,12 +5,12 @@ import utils from './utils';
 export {
   OPERATION,
   DeFileManager,
+  DeDirectory,
+  DeFile,
   utils
 }
 
 export type {
-  DeFile,
-  DeDirectory,
   FileOrDir,
   DePath
 };

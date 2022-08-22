@@ -1,5 +1,16 @@
 import Web3 from 'web3';
 
+function pathToRelative(storagePath: string) {
+  return storagePath.split("/").slice(1).join('/');
+}
+
+function pathToAbsolute(path: string, address: string) {
+  const home = sanitizeAddress(address, { prefix: false, checksum: false });
+  return (path === "")
+    ? home
+    : home + '/' + path;
+}
+
 function sanitizeAddress(
   addressLike: string = "",
   { prefix = true, checksum = true }: { prefix?: boolean, checksum?: boolean } = {}
@@ -31,6 +42,8 @@ function sanitizeAddress(
 }
 
 export default {
+  pathToRelative,
+  pathToAbsolute,
   sanitizeAddress
 }
 

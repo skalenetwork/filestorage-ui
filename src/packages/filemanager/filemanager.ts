@@ -18,6 +18,7 @@ import { ContractContext } from '../types/abi/filestorage-1.0.1';
 import FileStorage, {
   FileStorageDirectory,
   FileStorageFile,
+  StoragePath,
 } from '@skalenetwork/filestorage.js';
 
 //@ts-ignore
@@ -33,7 +34,7 @@ import Fuse from 'fuse.js';
 import { nanoid } from 'nanoid';
 
 import utils from './utils';
-const { sanitizeAddress } = utils;
+const { sanitizeAddress, pathToRelative } = utils;
 
 const KIND = {
   FILE: "file",
@@ -91,15 +92,6 @@ export interface IDeFile {
   arrayBuffer(): Promise<ArrayBuffer>;
 }
 
-// DePath start
-// path transforms to be replaced with new DePath prototype here
-
-function pathToRelative(storagePath: string) {
-  return storagePath.split("/").slice(1).join('/');
-}
-
-/// DePath end
-
 class DeDirectory implements IDeDirectory {
   kind: string;
   name: string;
@@ -117,6 +109,7 @@ class DeDirectory implements IDeDirectory {
     this.path = pathToRelative(data.storagePath);
     this.manager = manager;
     this.parent = parent;
+    this.manager.indexDirectory(this);
   }
 
   entries() {
@@ -189,9 +182,9 @@ class DeFileManager {
   fs: FileStorage;
   contract: ContractContext;
 
+  private index: { [path: string]: DeDirectory }
   private rootDir: DeDirectory;
 
-  dirLastAction: Object;
   cache: { [key: string]: (FileStorageDirectory | FileStorageFile)[] };
 
   store: BehaviorSubject<Observable<() => Promise<OperationEvent>>>;
@@ -211,8 +204,8 @@ class DeFileManager {
     this.fs = new FileStorage(w3, true);
     this.contract = (this.fs.contract.contract as unknown) as ContractContext;
 
-    this.dirLastAction = "";
     this.cache = {};
+
     this.store = new BehaviorSubject(of(
       () => (Promise.resolve({
         type: "INIT",
@@ -244,6 +237,8 @@ class DeFileManager {
       prefix: false
     });
 
+    this.index = {}
+
     this.rootDir = new DeDirectory({
       name: addrWithoutPrefix, // do-not-change: heavy dependency
       storagePath: addrWithoutPrefix,
@@ -251,8 +246,29 @@ class DeFileManager {
     }, this);
   }
 
+  isRootDir(directory: DeDirectory) {
+    return directory.path === "";
+  }
+
+  indexDirectory(directory: DeDirectory) {
+    this.index[directory.path] = directory;
+  }
+
+  absolutePath(fileOrDir: FileOrDir): string {
+
+    if (fileOrDir.kind === KIND.FILE) {
+      return this.rootDir.name + '/' + fileOrDir.path;
+    }
+    if (fileOrDir.kind === KIND.DIRECTORY) {
+      return this.isRootDir(fileOrDir as DeDirectory)
+        ? this.rootDir.name
+        : this.rootDir.name + '/' + fileOrDir.path;
+    }
+    return '';
+  }
+
   private purgeCache(directory?: DeDirectory, reload = true) {
-    let path = directory && ((directory.parent) ? this.rootDir.name + "/" + directory.path : this.rootDir.name);
+    let path = directory && this.absolutePath(directory);
     if (path) {
       delete this.cache[path];
       this.loadDirectory(path);
@@ -302,16 +318,6 @@ class DeFileManager {
         }
       })
     });
-  }
-
-  absolutePath(fileOrDir: FileOrDir): string {
-    if (fileOrDir.kind === KIND.FILE) {
-      return this.rootDir.name + '/' + fileOrDir.path;
-    }
-    if (fileOrDir.kind === KIND.DIRECTORY) {
-      return this.rootDir.name + (((fileOrDir as DeDirectory).parent) ? "/" + fileOrDir.path : "");
-    }
-    return '';
   }
 
   //@ts-ignore
@@ -424,9 +430,8 @@ class DeFileManager {
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
     const signer = this.account || "";
-    const path = (destDirectory.path === this.rootDir.path)
-      ? name
-      : `${destDirectory.path}/${name}`;
+
+    const path = this.isRootDir(destDirectory) ? name : `${destDirectory.path}/${name}`;
 
     return this.queueOp(
       OPERATION.CREATE_DIRECTORY,
@@ -436,6 +441,7 @@ class DeFileManager {
         directory: new DeDirectory({ storagePath, name, isFile: false }, this, destDirectory)
       }),
       (err) => ({
+        error: err,
         destDirectory,
         directory: new DeDirectory({
           storagePath: this.absolutePath(destDirectory) + "/" + name,
@@ -468,6 +474,7 @@ class DeFileManager {
         file
       }),
       (err) => ({
+        destDirectory,
         error: err
       })
     )
@@ -492,6 +499,7 @@ class DeFileManager {
         directory
       }),
       (err) => ({
+        destDirectory: directory.parent,
         error: err
       })
     );
@@ -567,28 +575,34 @@ class DeFileManager {
    */
   private async iterateDirectory(
     directory: DeDirectory,
-    onEntry: (entry: FileOrDir | Array<FileOrDir>) => any,
+    onEntry: (entry: FileOrDir | Array<FileOrDir>, stop: () => void) => any,
     asArray: boolean = false,
     depth: number = Infinity
   ): Promise<void> {
 
     let level = 0;
+    let flag = true;
+
+    const stop = () => {
+      flag = false;
+    }
 
     const iterator = async (
       directory: DeDirectory,
-      onEntry: (entry: FileOrDir | Array<FileOrDir>) => any,
+      onEntry: (entry: FileOrDir | Array<FileOrDir>, stop: () => void) => boolean,
       asArray: boolean = false
     ): Promise<void> => {
+      if (!flag) return;
       let all = [];
       //@ts-ignore
       for await (const entry of directory.entries()) {
-        if ((entry.kind === KIND.DIRECTORY) && (level < depth)) {
+        (asArray) ? all.push(entry) : (flag = onEntry(entry, stop));
+        if ((entry.kind === KIND.DIRECTORY) && (level < depth) && (flag === true)) {
           await iterator(entry, onEntry);
         }
-        (asArray) ? all.push(entry) : onEntry(entry);
       }
       if (asArray) {
-        onEntry(all);
+        flag = onEntry(all, stop);
       }
       level++;
     }
@@ -601,7 +615,30 @@ class DeFileManager {
       startDirectory,
       (entry) => { },
     );
+
     // console.log("filemanager::preloadDirectories: complete");
+  }
+
+  /**
+   * Resolve DeDirectory or DeFile from relative path
+   * @param path relative path
+   */
+  async resolvePath(path: FileOrDir['path']): Promise<FileOrDir | undefined> {
+    if (path === "") {
+      return this.rootDir;
+    }
+    let found: (FileOrDir | undefined) = this.index[path];
+
+    if (found) return found;
+
+    await this.iterateDirectory(this.rootDir, (entry, stop) => {
+      if ((entry as FileOrDir).path === path) {
+        found = entry as FileOrDir;
+        stop();
+      }
+    });
+
+    return found;
   }
 
   /**
