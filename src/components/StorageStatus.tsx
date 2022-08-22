@@ -11,7 +11,7 @@ const StorageStatus = (
   const [usedSpace, setUsedSpace] = useState(0);
 
   useEffect(() => {
-    setUsedSpace((occupiedSpace / reservedSpace) || 0);
+    setUsedSpace(((occupiedSpace / reservedSpace) * 100) || 0);
   }, [occupiedSpace, reservedSpace]);
 
   return (

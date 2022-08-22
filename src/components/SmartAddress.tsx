@@ -16,7 +16,7 @@ const SmartAddress = (
 
   const { control, setFocus, resetField, getValues, reset } = useForm({
     defaultValues: {
-      address: ""
+      address: address
     },
     mode: "onChange"
   });
@@ -43,7 +43,7 @@ const SmartAddress = (
     } else {
       setErrorMessage("");
     }
-  }, [fieldState.error])
+  }, [fieldState.error]);
 
   useLayoutEffect(() => {
     if (edit === false) {
