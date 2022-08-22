@@ -1,14 +1,79 @@
-```bash
+
+
+<!-- toc -->
+
+  * [Dev Guide](#dev-guide)
+  * [Build Guide](#build-guide)
+  * [Deploy on-chain](#deploy-on-chain)
+- [Features](#features)
+  * [UI Components](#ui-components)
+  * [To locate](#to-locate)
+- [Contribution](#contribution)
+  * [Codebase: Structure](#codebase-structure)
+    + [src/context](#srccontext)
+    + [src/pages](#srcpages)
+    + [src/components](#srccomponents)
+    + [src/partials](#srcpartials)
+    + [src/packages](#srcpackages)
+    + [src/styles](#srcstyles)
+    + [main.tsx](#maintsx)
+    + [src/config.ts](#srcconfigts)
+    + [polyfill.ts](#polyfillts)
+    + [utils.ts](#utilsts)
+  * [DApp Architecture](#dapp-architecture)
+    + [Styling](#styling)
+  * [Authorization UX](#authorization-ux)
+    + [Implicit Flow](#implicit-flow)
+    + [Wallet Flow](#wallet-flow)
+      - [Improvement](#improvement)
+- [Related Work](#related-work)
+
+<!-- tocstop -->
+
+## Dev Guide
+
+```sh
+cp .env.staging .env.local
 yarn
 yarn dev
 ```
 
 Start from: `pages/app.tsx` and `context/index.tsx`.
 
-![](https://i.imgur.com/ACfouYg.png)
+## Build Guide
 
+1. Configure
 
-## UI Components - Overview
+```sh
+cp .env.staging .env.production
+```
+
+2. Create static build
+
+```sh
+# output in /dist
+yarn && yarn build
+```
+
+## Deploy on-chain
+
+```sh
+yarn deploy -a <address> -k <private_key> -p <path>
+```
+
+OR
+
+```sh
+export SKL_DEPLOYER_ADDRESS=<address>
+export SKL_DEPLOYER_PRIVATE_KEY=<private_key>
+yarn deploy -p <path>
+```
+
+Default path: Same as local path
+
+# Features
+
+## UI Components
 
 - [x] Wallet picker
 - [x] Multi-file uploader
@@ -25,11 +90,7 @@ Start from: `pages/app.tsx` and `context/index.tsx`.
 - [x] Chain owner
 - [ ] Timestamps not found in contracts (possibility: history watch + cache / indexing-at-node)
 
-## Wallet provider DX
-
-- `wagmi` + `rainbowkit` is a neat choice but `rainbowkit` doesn't yet support many wallets.
-
-- `wagmi` doesn't easily interoperate with `web3modal`.
+# Contribution
 
 ## Codebase: Structure
 
@@ -73,7 +134,15 @@ Polyfills to non-browser-native libraries, vite does not automatically bundle th
 
 Utility functions usable across the app
 
-## Codebase: heads up for templating
+## DApp Architecture
+
+FileStorage UI builds on top of `filestorage.js`, extending it with `filemanager.tx` and react hooks.
+
+![](https://i.imgur.com/ACfouYg.png)
+
+Read further @ [Package Documentation](https://github.com/skalenetwork/filestorage-ui/blob/main/src/packages/filemanager/README.md).
+
+### Styling
 
 Project uses tailwind class-based styling.
 
@@ -81,11 +150,15 @@ Project uses tailwind class-based styling.
 
 - For backend devs doing minor template updates, come with a temporary counter-DRY mindset, and you'll find less friction.
 
-## UX: Wallet flows
+## Authorization UX
+
+### Implicit Flow
 
 Currently, a shortcut prompts for private key, prior to deployments, this must be restricted to session-only.
 
 Within the UI, a hotkey lets a prompt take in private key and use it against connected wallet. Not very friendly by design.
+
+### Wallet Flow
 
 Certain custodial wallets may naturally allow batching, but need to be identified and evaluated against contract functionality for integration.
 
@@ -96,9 +169,15 @@ Following is an EIP that opens better UX across all EVM ecosystems, it should be
 projection by metamask
 ![](https://pbs.twimg.com/media/EIKULr5XsAASISn?format=jpg)
 
+#### Improvement
+
+- `wagmi` + `rainbowkit` is a neat choice but `rainbowkit` doesn't yet support many wallets.
+
+- `wagmi` doesn't easily interoperate with `web3modal`.
+
 ----
 
-## Related
+# Related Work
 
 ![](https://lh4.googleusercontent.com/L7QDeVkbeC3ps2OIynXJCspjsrTUJHsEGIdL_0q0IjIVfoztd9T5dnGyEGvvJotH6dBrhr7czgMdpiWrmneYcwpBk8t2GULhl4FxdN2CAw6IkvGcUdGLiAix7uVes0dGR1tGNPC-)
 
