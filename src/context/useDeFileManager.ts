@@ -431,11 +431,10 @@ function useDeFileManager(
       throw Error("Not authorized");
     }
 
-    const result = await fm.createDirectory(directory, name);
-    console.log("queueOp: promise result", result);
     dispatch({
       type: ACTION.SET_DIRECTORY_OP, payload: true
     });
+    fm.createDirectory(directory, name);
   }
 
   const uploadFiles = async (
