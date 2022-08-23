@@ -11,7 +11,7 @@
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "test": "vitest",
     "coverage": "vitest run --coverage",
-    "abi-ts": "abi-types-generator ./abi/filestorage-1.0.1-abi.json  --output=./types/abi --name=filestorage-1.0.1 --provider=web3"
+    "typegen:abi": "abi-types-generator ./abi/filestorage-1.0.1-abi.json  --output=.src/packages/types/abi --name=filestorage-1.0.1 --provider=web3"
   },
   "dependencies": {
     "@heroicons/react": "^1.0.6",

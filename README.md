@@ -16,8 +16,9 @@
     + [src/partials](#srcpartials)
     + [src/packages](#srcpackages)
     + [src/styles](#srcstyles)
-    + [main.tsx](#maintsx)
     + [src/config.ts](#srcconfigts)
+    + [scripts/*](#scripts)
+    + [main.tsx](#maintsx)
     + [polyfill.ts](#polyfillts)
     + [utils.ts](#utilsts)
   * [DApp Architecture](#dapp-architecture)
@@ -58,18 +59,28 @@ yarn && yarn build
 ## Deploy on-chain
 
 ```sh
-yarn deploy -a <address> -k <private_key> -p <path>
+yarn deploy -a <address> -k <pvtKey> -s <sourcePath> -d <destinationPath> -m <mode>
 ```
 
 OR
 
 ```sh
 export SKL_DEPLOYER_ADDRESS=<address>
-export SKL_DEPLOYER_PRIVATE_KEY=<private_key>
-yarn deploy -p <path>
+export SKL_DEPLOYER_PRIVATE_KEY=<pvtKey>
+yarn deploy -s <path>
 ```
 
-Default path: Same as local path
+OR interactively
+
+```sh
+yarn deploy -s <sourcePath> -i
+```
+
+Check help for options and defaults.
+
+```sh
+yarn deploy --help
+```
 
 # Features
 
@@ -118,13 +129,17 @@ Modules prepared or being prepared to be published standalone.
 
 Contains global styling files, and tailwind imports, initially limited use for overrides.
 
-### main.tsx
-
-Main entry point that mounts the app with context.
-
 ### src/config.ts
 
 Global configuration file is loaded into app context, allowing use of static defaults declared client-side and types for extendability.
+
+### scripts/*
+
+Automation scripts, CLIs incl. deployment
+
+### main.tsx
+
+Main entry point that mounts the app with context.
 
 ### polyfill.ts
 

@@ -1,29 +1,29 @@
 import path from 'path';
 import fs from 'fs';
+import { program } from 'commander';
 
-require('dotenv').config({ path: path.join(__dirname, "../.env.staging") });
+program
+  .description('Use all paths relative to base which the CLI assumes to be ../ from itself')
+  .option('-a, --address <char>', 'SKALE address')
+  .option('-k, --key <char>', 'SKALE address private key')
+  .option('-s, --sourcePath <char>', 'Path to deploy from', 'dist')
+  .option('-d, --destinationPath <char>', 'Path to deploy to, relative to address ex: www/html (default: sourcePath directory name)')
+  .option('-m, --mode <char>', 'the postfix of .env file (typical: "staging", "production")')
+  .option('-i, --interactive', 'interactively set address and private key')
+  ;
+program.parse();
+const options = program.opts();
+program.showHelpAfterError();
+
+const envFilePath = `../.env${options.mode ? ('.' + options.mode) : ''}`;
+require('dotenv').config({ path: path.join(__dirname, envFilePath) });
 
 const { env } = process;
 
 import promptt from "password-prompt";
-import { program } from 'commander';
-
 import Web3 from "web3";
-import { DeDirectory, DeFileManager, OPERATION, utils } from "../src/packages/filemanager";
+import { DeDirectory, DeFileManager, OPERATION } from "../src/packages/filemanager";
 import { getRpcEndpoint } from "../src/utils";
-
-const { pathToAbsolute } = utils;
-
-program
-  .option('-a, --address <char>')
-  .option('-k, --key <char>')
-  .option('-p, --path <char>')
-  .option('-i, --interactive')
-  ;
-
-program.parse();
-
-const options = program.opts();
 
 const getKeys = async () => {
   let address;
@@ -48,8 +48,8 @@ const getKeys = async () => {
   const { address, pvtKey } = await getKeys();
 
   if (!(address && pvtKey)) {
-    console.error("Credentials missing. check --help for options");
-    return process.exit();
+    console.error("\nError: Credentials are invalid or missing.\n");
+    return program.help();
   }
 
   const provider = new Web3.providers.HttpProvider(getRpcEndpoint({
@@ -71,7 +71,7 @@ const getKeys = async () => {
         message = "[x] Failed to upload:";
       }
 
-      console.log(message, path.join(
+      console.info(message, path.join(
         (event.result.destDirectory as DeDirectory).path,
         event.result.file.name)
       );
@@ -112,9 +112,14 @@ const getKeys = async () => {
    * @todo make remotePath functional or auto-gen deployment directory and output path (need node-side resolver)
    */
   const uploadDirectory = async (
-    localPath: string = "dist",
-    remotePath: string = options.path
+    localPath: string = (options.sourcePath || "dist"),
+    remotePath: string = options.destinationPath
   ) => {
+
+    if (!fs.existsSync(localPath)) {
+      console.error("\nError: sourcePath is invalid, does not exist\n");
+      return process.exit();
+    }
 
     if (remotePath === undefined) {
       const localPathParts = localPath.split("/");
@@ -147,7 +152,7 @@ const getKeys = async () => {
     let directory: DeDirectory = (await fm.resolvePath(remotePath)) as DeDirectory;
 
     if (!directory) {
-      console.log(`[-] Creating directory @ ${remotePath}`);
+      console.info(`[-] Creating directory @ ${remotePath}`);
       let parts = remotePath.split("/");
       let name = parts.pop(); // folder name
       let path = parts.join(); // relative directory path
@@ -163,9 +168,11 @@ const getKeys = async () => {
       }
     }
 
-    console.log(`[/] Starting upload in directory: ${directory.path}`);
+    console.info(`[/] Starting upload in directory: ${directory.path}`);
     iterateLocalDirectory(localPath, handleDirEntry(directory));
   }
+
+  console.info(`[-] Attempting to deploy from ${options.sourcePath}`)
 
   uploadDirectory();
 
