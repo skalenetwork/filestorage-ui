@@ -61,7 +61,7 @@ const DirCrumb = (
               key={item.path}
             >
               <span onClick={(e) => onCrumbClick(item)}>
-                <FormattedName item={item} active={isActive(index)} maxLength={12} />
+                <FormattedName item={item} active={isActive(index)} maxLength={12} iconSize={6} />
               </span>
             </li>
           ) : (<li>...</li>))
@@ -284,6 +284,7 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
                   <FormattedName
                     item={{ name: '', kind: 'directory' }}
                     active={!currentDirectory.parent}
+                    iconSize={6}
                   />
                 </a>
                 <span className="font-mono px-1">/</span>

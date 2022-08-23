@@ -5,7 +5,7 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { ModalWidgetProps, FormProps } from 'partials';
 import WidgetModal from '@/components/WidgetModal';
 import { useFileManagerContext, ContextType } from '../context';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import FieldGroup from '@/components/FieldGroup';
 
 type Props = ModalWidgetProps & FormProps & {
@@ -27,31 +27,28 @@ const UploadWidget = (
     }
   });
 
-  const { handleSubmit, control, formState: { errors, isValid }, trigger, watch, reset, getValues } = form;
+  const { handleSubmit, control, formState: { errors, isValid }, trigger, reset, getValues } = form;
 
-  const { fields, append, prepend, remove, insert } = useFieldArray({
+  const { fields, append, prepend, remove } = useFieldArray({
     control,
     name: "uploads",
   });
 
-  // culprit for handleSubmit glitching out, replaced by reset()
-  const clearFields = useCallback(() => {
-    remove(fields.map((field, i) => i));
-  }, [fields]);
+  const untouchableFiles = useRef<File[]>([]);
 
   useEffect(() => {
     console.log("#error-change", errors['uploads']);
   }, [errors['uploads']]);
 
+  // validate when fields added
   useEffect(() => {
     trigger('uploads');
   }, [fields]);
 
   const isNameValid = useCallback((value: string) => {
     const existsOnRemote = listing.some(item => ((item.kind === "file") && item.name === value));
-    console.log(getValues("uploads"));
-    const existsOnUploads = getValues("uploads").filter(item => (item.name === value)).length > 1;
-    console.log(value, !(existsOnRemote || existsOnUploads) ? "VALID" : "INVALID");
+    const existsOnUploads = [...getValues("uploads"), ...untouchableFiles.current]
+      .filter(item => (item.name === value)).length > 1;
     return !(existsOnRemote || existsOnUploads);
   }, [listing, fields]);
 
@@ -68,42 +65,44 @@ const UploadWidget = (
         className="w-full"
         onSubmit={(e) => {
           handleSubmit((data) => {
+            let filesToUpload: File[] = data.uploads.map(({ name, file }) => {
+              return new File([file], name);
+            }).concat(untouchableFiles.current);
             // @ts-ignore
-            onSubmit(data, reset);
+            onSubmit({ uploads: filesToUpload }, reset);
           }, console.error)(e);
         }}
       >
         <Modal.Body className="w-full flex flex-col gap-1.5 justify-center items-center min-w-72">
           {
-            (fields.length > batchThreshold) ?
-              (
-                <div className="w-full">
-                  <p>You're batch uploading {fields.length} files.</p>
-                  <p>Batch uploads may take a while, files cannot be renamed.</p>
-                </div>
-              )
-              : (fields.length > 0) ?
-                (<div className="w-full flex flex-col">
-                  {
-                    fields
-                      .map((field, index) => (
-                        <FieldGroup
-                          key={field.id}
-                          form={form}
-                          name={`uploads.${index}.name`}
-                          label="Name"
-                          validate={isNameValid}
-                          errorMessage="File with name already exists"
-                        />
-                      ))
-                  }
-                </div>)
-                :
-                (<>
-                  <UploadIcon className="h-24 w-24 my-4" strokeWidth={1} />
-                  <p>Select files to upload.</p>
-                </>
-                )
+            (fields.length > 0) ?
+              <div className="w-full flex flex-col">
+                {
+                  ((fields.length + untouchableFiles.current.length) > batchThreshold) &&
+                  <div className="text-center">
+                    <p>You're batch uploading {fields.length + untouchableFiles.current.length} files.</p>
+                    <p>Batch uploads may take a while, only conflicted files can be renamed.</p>
+                  </div>
+                }
+                {
+                  fields
+                    .map((field, index) => (
+                      <FieldGroup
+                        key={field.id}
+                        form={form}
+                        name={`uploads.${index}.name`}
+                        label="Name"
+                        validate={isNameValid}
+                        errorMessage="File with name already exists"
+                      />
+                    ))
+                }
+              </div>
+              :
+              <>
+                <UploadIcon className="h-24 w-24 my-4" strokeWidth={1} />
+                <p>Select files to upload.</p>
+              </>
           }
         </Modal.Body>
         <Modal.Actions className="flex justify-center items-center gap-8">
@@ -125,13 +124,19 @@ const UploadWidget = (
                   id="file-upload"
                   className="hidden"
                   onChange={(e: any) => {
-                    const files: File[] = Array.from(e.target.files);
-                    files.forEach(file => {
-                      append({
-                        name: file.name,
-                        file
-                      });
+                    const allFiles: File[] = Array.from(e.target.files);
+                    let cleanFiles: File[] = [];
+                    allFiles.forEach(file => {
+                      if (!isNameValid(file.name) || (allFiles.length <= batchThreshold)) {
+                        append({
+                          name: file.name,
+                          file
+                        });
+                      } else {
+                        cleanFiles.push(file);
+                      }
                     });
+                    untouchableFiles.current = cleanFiles;
                   }}
                   multiple
                 />

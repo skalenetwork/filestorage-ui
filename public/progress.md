@@ -1,4 +1,4 @@
-## Week 6 + 7
+## Week 6 - 8
 
 priors
 
@@ -15,7 +15,7 @@ priors
 [ ] back-channel pvt key validation against connected account
 [x] watch on wallet address change etc.
 
-[ ] upload:edge: bulk upload: list conflicted names for editing
+[x] upload:edge: bulk upload: list conflicted names for editing
 [x] upload:edge: also detect conflicts within selected uploads (can happen due to renaming)
 
 [x] upload:edge: enable other cases (ex: upload on upload) by adding queues, isolate dequeue logic
