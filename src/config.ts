@@ -1,34 +1,55 @@
 const env = import.meta.env;
 
 //@ts-ignore
-const PRESETS = window.SKLUI_PRESETS;
+const PRESETS: ConfigType = window.SKLUI_PRESETS;
 
 export type ConfigType = {
   optimize: {
-    prefetchEvent: string; // placeholder
-    prefetchDepth: number; // (0,Infinity)
+    prefetchEvent: string; // placeholder (ignore)
+    prefetchDepth: number; // (0, Infinity) directory depth to prefetch during navigation
   };
   branding: {
-    logoUrl: string; // path relative too /public
-    logoText: string;
+    logoUrl: string; // URL to logo image
+    logoText: string; // Optional text placed next to logo
   };
   navigator: {
-    pageLimit: number; // max items on navigator page
+    pageLimit: number; // max items per navigator page
   };
   uploader: {
-    batchThreshold: number; // max items where upload marked as batch
+    batchThreshold: number; // max items where upload is marked as batch
     maxFileDirNameLength: number; // max characters count of directory name
   };
   chains: {
+    default?: boolean; // option to set as default
     protocol: string; // http or https
     nodeDomain: string; // node host FQDN
-    version: string; // chain version 
+    version: string; // chain version
     sChainName: string; // chain name
     chainId: string; // chain ID
   }[]
 }
 
-export default <ConfigType>{
+// pulling in chains from env and presets
+
+let presetChains = PRESETS.chains || [];
+let defaultChainIndex = presetChains.findIndex(chain => chain.default);
+let defaultChain;
+
+if (defaultChainIndex >= 0) {
+  [defaultChain] = presetChains.splice(defaultChainIndex, 1);
+} else {
+  defaultChain = {
+    protocol: env.FS_CHAIN_PROTOCOL,
+    nodeDomain: env.FS_CHAIN_NODE_DOMAIN,
+    version: env.FS_CHAIN_VERSION,
+    sChainName: env.FS_CHAIN_NAME,
+    chainId: env.FS_CHAIN_ID
+  }
+}
+
+console.log(defaultChain, presetChains);
+
+const finalConfig = {
   optimize: {
     ...PRESETS.optimize
   },
@@ -43,12 +64,10 @@ export default <ConfigType>{
   },
   chains: [
     {
-      protocol: env.FS_CHAIN_PROTOCOL,
-      nodeDomain: env.FS_CHAIN_NODE_DOMAIN,
-      version: env.FS_CHAIN_VERSION,
-      sChainName: env.FS_CHAIN_NAME,
-      chainId: env.FS_CHAIN_ID
+      ...defaultChain
     },
-    ...(PRESETS.chains || [])
+    ...presetChains
   ]
-}
+};
+
+export default <ConfigType>finalConfig;

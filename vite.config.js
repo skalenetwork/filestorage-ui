@@ -28,7 +28,8 @@ export default defineConfig({
     }
   },
   define: {
-    'import.meta.vitest': 'undefined'
+    'import.meta.vitest': 'undefined',
+    '__APP_VERSION__': JSON.stringify(process.env.npm_package_version),
   },
   test: {
     includeSource: ['src/**/*.{js,ts}'],

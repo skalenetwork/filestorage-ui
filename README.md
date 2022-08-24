@@ -2,6 +2,7 @@
 
 <!-- toc -->
 
+- [:window: FileStorage UI](#window-filestorage-ui)
   * [Dev Guide](#dev-guide)
   * [Build Guide](#build-guide)
   * [Deploy on-chain](#deploy-on-chain)
@@ -30,6 +31,20 @@
 - [Related Work](#related-work)
 
 <!-- tocstop -->
+
+# :window: FileStorage UI
+
+SKALE Chain File Storage DApp — Browse, navigate, upload and manage files.
+
+![UI Preview](https://staging-v2.skalenodes.com/fs/roasted-thankful-unukalhai/5a4ab05fbb140eb6a51e7d13a528a6aa35a5ef4a/fsui-preview.png)
+
+----
+
+**Build requirements:** Node v16, Git
+
+```
+git clone git@github.com:skalenetwork/filestorage-ui.git
+```
 
 ## Dev Guide
 
@@ -64,16 +79,16 @@ yarn && yarn build
 
 UI can be customized through global presets in `public/presets.js`. Following is its type definition and properties description.
 
-**Note:** Chains can be set in presets, however app currently supports one chain at a time which is loaded from pre-build env variables.
+**Note:** Chains can be set in presets. Default is set in env before build. It can be *overridden by preset* chain with default flag.
 
 ``` typescript
 export type ConfigType = {
   optimize: {
-    prefetchEvent: string; // placeholder
-    prefetchDepth: number; // (0,Infinity) directory depth to prefetch
+    prefetchEvent: string; // placeholder (ignore)
+    prefetchDepth: number; // (0, Infinity) directory depth to prefetch during navigation
   };
   branding: {
-    logoUrl: string; // URL to logo
+    logoUrl: string; // URL to logo image
     logoText: string; // Optional text placed next to logo
   };
   navigator: {
@@ -84,9 +99,10 @@ export type ConfigType = {
     maxFileDirNameLength: number; // max characters count of directory name
   };
   chains: {
+    default?: boolean; // option to set as default
     protocol: string; // http or https
     nodeDomain: string; // node host FQDN
-    version: string; // chain version 
+    version: string; // chain version
     sChainName: string; // chain name
     chainId: string; // chain ID
   }[]
