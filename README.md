@@ -43,7 +43,9 @@ Start from: `pages/app.tsx` and `context/index.tsx`.
 
 ## Build Guide
 
-1. Configure
+1. Configure default chain
+
+Default chain can be configured before static build. Copy the existing environment and update variables.
 
 ```sh
 cp .env.staging .env.production
@@ -51,9 +53,44 @@ cp .env.staging .env.production
 
 2. Create static build
 
+Static build is by default output in `/dist` directory.
+
 ```sh
 # output in /dist
 yarn && yarn build
+```
+
+3. Ongoing customization
+
+UI can be customized through global presets in `public/presets.js`. Following is its type definition and properties description.
+
+**Note:** Chains can be set in presets, however app currently supports one chain at a time which is loaded from pre-build env variables.
+
+``` typescript
+export type ConfigType = {
+  optimize: {
+    prefetchEvent: string; // placeholder
+    prefetchDepth: number; // (0,Infinity) directory depth to prefetch
+  };
+  branding: {
+    logoUrl: string; // URL to logo
+    logoText: string; // Optional text placed next to logo
+  };
+  navigator: {
+    pageLimit: number; // max items per navigator page
+  };
+  uploader: {
+    batchThreshold: number; // max items where upload is marked as batch
+    maxFileDirNameLength: number; // max characters count of directory name
+  };
+  chains: {
+    protocol: string; // http or https
+    nodeDomain: string; // node host FQDN
+    version: string; // chain version 
+    sChainName: string; // chain name
+    chainId: string; // chain ID
+  }[]
+}
 ```
 
 ## Deploy on-chain

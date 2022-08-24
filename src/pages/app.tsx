@@ -84,7 +84,10 @@ const App = () => {
         <section className="px-32" style={{ gridArea: 'frame' }}>
           <header className="header py-2 flex justify-between items-center">
             <Branding logoUrl={config.branding.logoUrl}>
-              <span className="text-xl font-bold">SKALE<sup className="font-medium">fs</sup></span>
+              {
+                config.branding.logoText &&
+                <span className="text-xl font-bold">{config.branding.logoText}</span>
+              }
             </Branding>
             <div className="flex flex-row gap-4">
               {

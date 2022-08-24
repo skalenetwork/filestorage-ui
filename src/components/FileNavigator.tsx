@@ -133,7 +133,6 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
 
   // dircrumb and pagination
   useEffect(() => {
-    console.log("what");
     setItemOffset(0);
     setCurrentPage(0);
   }, [currentDirectory]);
@@ -145,7 +144,6 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
   }, [itemOffset, sortedListing]);
 
   const onPageChange = useCallback((e) => {
-    console.log(e, sortedListing);
     setCurrentPage(e.selected);
     const newOffset = (e.selected * config.navigator.pageLimit) % sortedListing.length;
     setItemOffset(newOffset);

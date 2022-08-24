@@ -1,5 +1,7 @@
 const env = import.meta.env;
-console.log(env);
+
+//@ts-ignore
+const PRESETS = window.SKLUI_PRESETS;
 
 export type ConfigType = {
   optimize: {
@@ -8,6 +10,7 @@ export type ConfigType = {
   };
   branding: {
     logoUrl: string; // path relative too /public
+    logoText: string;
   };
   navigator: {
     pageLimit: number; // max items on navigator page
@@ -27,18 +30,16 @@ export type ConfigType = {
 
 export default <ConfigType>{
   optimize: {
-    prefetchEvent: env.FS_OPTIMIZE_PREFETCH_EVENT,
-    prefetchDepth: Number(env.FS_OPTIMIZE_PREFETCH_DEPTH)
+    ...PRESETS.optimize
   },
   branding: {
-    logoUrl: env.FS_BRANDING_LOGO_URL
+    ...PRESETS.branding
   },
   navigator: {
-    pageLimit: Number(env.FS_NAVIGATOR_PAGE_LIMIT)
+    ...PRESETS.navigator
   },
   uploader: {
-    batchThreshold: Number(env.FS_UPLOADER_BATCH_THRESHOLD),
-    maxFileDirNameLength: Number(env.FS_UPLOADER_MAX_FILE_DIR_NAME_LENGTH)
+    ...PRESETS.uploader
   },
   chains: [
     {
@@ -47,6 +48,7 @@ export default <ConfigType>{
       version: env.FS_CHAIN_VERSION,
       sChainName: env.FS_CHAIN_NAME,
       chainId: env.FS_CHAIN_ID
-    }
+    },
+    ...(PRESETS.chains || [])
   ]
 }

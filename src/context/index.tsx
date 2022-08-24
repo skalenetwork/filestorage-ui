@@ -9,7 +9,7 @@ import Web3 from 'web3';
 import Web3Modal from 'web3modal';
 
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { useMount, useKey, useLocalStorage } from 'react-use';
+import { useMount, useKey, useLocalStorage, useSessionStorage } from 'react-use';
 
 import { DeFileManager, DeDirectory, DeFile } from '@/packages/filemanager';
 import useDeFileManager, { Action, State } from '@/context/useDeFileManager';
@@ -30,6 +30,8 @@ export type ContextType = State & Action & {
 };
 
 const FileManagerContext = createContext<ContextType | undefined>(undefined);
+
+console.log(config);
 
 const RPC_ENDPOINT = getRpcEndpoint(config.chains[0]);
 const CHAIN_ID = config.chains[0].chainId;
@@ -107,7 +109,6 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
       loadAddress(web3Provider.selectedAddress);
       console.log('web3Provider', web3Provider, 'web3Instance', web3);
     }
-
     catch (e) {
       console.log("Connecting Wallet", e);
       if (!w3Provider) {
@@ -119,7 +120,7 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
   const getFileLink = useCallback((file: DeFile) => {
     let link = getFsEndpoint((config as ConfigType).chains[0], address, file.path);
     return link;
-  }, [config]);
+  }, [config, address]);
 
   useMount(() => {
     setConfig(appConfig);
@@ -159,7 +160,6 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (demoMode) {
       setW3Provider(new Web3.providers.HttpProvider(RPC_ENDPOINT));
-      setAddress(TEST_ADDRESS);
       return;
     }
     setW3Modal(new Web3Modal({
@@ -168,27 +168,21 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
     }));
   }, [demoMode]);
 
-  // for wallet connect on launch
+  // connect to wallet on launch
   useEffect(() => {
     if (!w3Modal) return;
     connectWallet();
   }, [w3Modal]);
 
-  /// DEV ZONE START ///
+  /// IMPLICIT PVT KEY SETTING START ///
 
-  // shadowy key management.. DTTAH
-  const [pk, setPk] = useLocalStorage<string>("SKL_pvtKey", undefined);
+  const [pk, setPk] = useSessionStorage<string>("SKL_pvtKey", undefined);
   useKey((e) => (e.ctrlKey && e.key === '.'), () => {
     let k = window.prompt("🙈");
     k && setPk(k);
   });
 
-  // demo mode shortcut
-  useKey((e) => (e.ctrlKey && e.key === ','), async () => {
-    setDemoMode(!demoMode);
-  });
-
-  /// DEV ZONE END ///
+  /// IMPLICIT PVT KEY SETTING END ///
 
   const [fm, fmState, fmAction]:
     [DeFileManager, State, any] = useDeFileManager(w3Provider, address, pk);
@@ -224,11 +218,6 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
             <CheckCircleIcon className="w-5 h-5" />
           </button>
         </div>
-        <small
-          className="text-gray-300 cursor-pointer focus:underline"
-          onClick={(e) => setDemoMode(true)}>
-          use demo
-        </small>
       </main>
     </div>
 }
