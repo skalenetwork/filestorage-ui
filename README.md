@@ -8,8 +8,13 @@
   * [Deploy on-chain](#deploy-on-chain)
 - [Features](#features)
   * [UI Components](#ui-components)
-  * [To locate](#to-locate)
 - [Contribution](#contribution)
+  * [DApp Architecture](#dapp-architecture)
+    + [Styling](#styling)
+  * [Authorization UX](#authorization-ux)
+    + [Implicit Flow](#implicit-flow)
+    + [Wallet Flow](#wallet-flow)
+      - [Improvement](#improvement)
   * [Codebase: Structure](#codebase-structure)
     + [src/context](#srccontext)
     + [src/pages](#srcpages)
@@ -22,12 +27,6 @@
     + [main.tsx](#maintsx)
     + [polyfill.ts](#polyfillts)
     + [utils.ts](#utilsts)
-  * [DApp Architecture](#dapp-architecture)
-    + [Styling](#styling)
-  * [Authorization UX](#authorization-ux)
-    + [Implicit Flow](#implicit-flow)
-    + [Wallet Flow](#wallet-flow)
-      - [Improvement](#improvement)
 - [Related Work](#related-work)
 
 <!-- tocstop -->
@@ -145,16 +144,53 @@ yarn deploy --help
 - [x] Role allocation
 - [x] Total usage metrics
 - [x] File Navigator: paginated + sortable + actionable
-- [x] Breadcrumb
+- [x] Navigation breadcrumb
 - [x] Address switch
 - [x] Search
 
-## To locate
-
-- [x] Chain owner
-- [ ] Timestamps not found in contracts (possibility: history watch + cache / indexing-at-node)
-
 # Contribution
+
+## DApp Architecture
+
+FileStorage UI builds on top of `filestorage.js`, extending it with `filemanager.tx` and react hooks.
+
+![](https://i.imgur.com/ACfouYg.png)
+
+Read further @ [DeFileManager Package Documentation](https://github.com/skalenetwork/filestorage-ui/blob/main/src/packages/filemanager/README.md).
+
+### Styling
+
+Project uses tailwind class-based styling.
+
+- For those not familiar but seasoned with CSS, you can pick pace in ~3h, after that it's intuitive with occasional doc-check.
+
+- For backend devs doing minor template updates, come with a temporary counter-DRY mindset, and you'll find less friction.
+
+## Authorization UX
+
+### Implicit Flow
+
+Currently, a shortcut prompts for private key, prior to deployments, this must be restricted to session-only.
+
+Within the UI, a hotkey lets a prompt take in private key and use it against connected wallet. Not very friendly by design.
+
+### Wallet Flow
+
+Certain custodial wallets may naturally allow batching, but need to be identified and evaluated against contract functionality for integration.
+
+Following is an EIP that opens better UX across all EVM ecosystems, it should be lobbied for at community level.
+
+[EIP-2255](https://eips.ethereum.org/EIPS/eip-2255)
+
+projection by metamask
+![](https://pbs.twimg.com/media/EIKULr5XsAASISn?format=jpg)
+
+#### Improvement
+
+- `wagmi` + `rainbowkit` is a neat choice but `rainbowkit` doesn't yet support many wallets.
+
+- `wagmi` doesn't easily interoperate with `web3modal`.
+
 
 ## Codebase: Structure
 
@@ -202,52 +238,9 @@ Polyfills to non-browser-native libraries, vite does not automatically bundle th
 
 Utility functions usable across the app
 
-## DApp Architecture
-
-FileStorage UI builds on top of `filestorage.js`, extending it with `filemanager.tx` and react hooks.
-
-![](https://i.imgur.com/ACfouYg.png)
-
-Read further @ [Package Documentation](https://github.com/skalenetwork/filestorage-ui/blob/main/src/packages/filemanager/README.md).
-
-### Styling
-
-Project uses tailwind class-based styling.
-
-- For those not familiar but seasoned with CSS, you can pick pace in ~3h, after that it's intuitive with occasional doc-check.
-
-- For backend devs doing minor template updates, come with a temporary counter-DRY mindset, and you'll find less friction.
-
-## Authorization UX
-
-### Implicit Flow
-
-Currently, a shortcut prompts for private key, prior to deployments, this must be restricted to session-only.
-
-Within the UI, a hotkey lets a prompt take in private key and use it against connected wallet. Not very friendly by design.
-
-### Wallet Flow
-
-Certain custodial wallets may naturally allow batching, but need to be identified and evaluated against contract functionality for integration.
-
-Following is an EIP that opens better UX across all EVM ecosystems, it should be lobbied for at community level.
-
-[EIP-2255](https://eips.ethereum.org/EIPS/eip-2255)
-
-projection by metamask
-![](https://pbs.twimg.com/media/EIKULr5XsAASISn?format=jpg)
-
-#### Improvement
-
-- `wagmi` + `rainbowkit` is a neat choice but `rainbowkit` doesn't yet support many wallets.
-
-- `wagmi` doesn't easily interoperate with `web3modal`.
-
 ----
 
 # Related Work
-
-![](https://lh4.googleusercontent.com/L7QDeVkbeC3ps2OIynXJCspjsrTUJHsEGIdL_0q0IjIVfoztd9T5dnGyEGvvJotH6dBrhr7czgMdpiWrmneYcwpBk8t2GULhl4FxdN2CAw6IkvGcUdGLiAix7uVes0dGR1tGNPC-)
 
 - [Filestorage.js](https://github.com/skalenetwork/filestorage.js/tree/1.0.1-develop.5)
 - [Filestorage.js examples](https://docs.skale.network/filestorage.js/1.0.x/) 

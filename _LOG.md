@@ -11,7 +11,7 @@ priors
 - [x] cwd reload: silent refresh without loading state
 
 - [x] toast when background errors / notifications (offline etc)
-- [ ] configure walletconnect and fortmatic
+- [x] configure walletconnect and fortmatic
 - [ ] back-channel pvt key validation against connected account
 - [x] watch on wallet address change etc.
 
