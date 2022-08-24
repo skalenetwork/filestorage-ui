@@ -4,8 +4,9 @@ window.SKLUI_PRESETS = {
         prefetchDepth: Infinity,
     },
     branding: {
-        logoUrl: '/logo.png',
-        logoText: 'SKALE'
+        logoUrl: 'logo.png',
+        logoText: 'SKALE',
+        greetingText: 'Filestorage'
     },
     navigator: {
         pageLimit: 10

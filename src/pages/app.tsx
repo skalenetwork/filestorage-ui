@@ -130,7 +130,7 @@ const App = () => {
             </div>
           </header>
           <div className="status-bar flex flex-row justify-between items-center">
-            <h1 className="text-3xl font-semibold">Filestorage</h1>
+            <h1 className="text-3xl font-semibold">{config.branding.greetingText}</h1>
             <div className="flex flex-col justify-end items-end">
               <StorageStatus
                 className="w-80"

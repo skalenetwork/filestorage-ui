@@ -11,6 +11,7 @@ export type ConfigType = {
   branding: {
     logoUrl: string; // URL to logo image
     logoText: string; // Optional text placed next to logo
+    greetingText: string;
   };
   navigator: {
     pageLimit: number; // max items per navigator page
@@ -19,6 +20,10 @@ export type ConfigType = {
     batchThreshold: number; // max items where upload is marked as batch
     maxFileDirNameLength: number; // max characters count of directory name
   };
+  keys: {
+    infuraId?: string;
+    fortmaticKey?: string;
+  },
   chains: {
     default?: boolean; // option to set as default
     protocol: string; // http or https
@@ -62,12 +67,16 @@ const finalConfig = {
   uploader: {
     ...PRESETS.uploader
   },
+  keys: {
+    infuraId: env.FS_INFURA_ID,
+    fortmaticKey: env.FS_FORTMATIC_KEY
+  },
   chains: [
     {
       ...defaultChain
     },
     ...presetChains
   ]
-};
+} as ConfigType;
 
-export default <ConfigType>finalConfig;
+export default finalConfig;

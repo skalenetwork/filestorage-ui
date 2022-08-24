@@ -6,18 +6,18 @@ import { utils } from '@/packages/filemanager';
 const { sanitizeAddress } = utils;
 
 import Web3 from 'web3';
-import Web3Modal from 'web3modal';
+import Web3Modal, { IProviderOptions } from 'web3modal';
 
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { useMount, useKey, useLocalStorage, useSessionStorage } from 'react-use';
+import { useMount, useKey, useSessionStorage } from 'react-use';
 
-import { DeFileManager, DeDirectory, DeFile } from '@/packages/filemanager';
+import { DeFileManager, DeFile } from '@/packages/filemanager';
 import useDeFileManager, { Action, State } from '@/context/useDeFileManager';
 
 import WalletConnectProvider from "@walletconnect/web3-provider";
 import Fortmatic from "fortmatic";
 
-import { Button, Modal, Progress, Input } from '@/components/common';
+import { Input } from '@/components/common';
 import CheckCircleIcon from '@heroicons/react/solid/CheckCircleIcon';
 
 import { getRpcEndpoint, getFsEndpoint } from '../utils';
@@ -31,11 +31,10 @@ export type ContextType = State & Action & {
 
 const FileManagerContext = createContext<ContextType | undefined>(undefined);
 
-console.log(config);
+const defaultChain = config.chains[0];
 
-const RPC_ENDPOINT = getRpcEndpoint(config.chains[0]);
-const CHAIN_ID = config.chains[0].chainId;
-const TEST_ADDRESS = '0x5A4AB05FBB140eb6A51e7D13a528A6Aa35a5ef4A';
+const RPC_ENDPOINT = getRpcEndpoint(defaultChain);
+const CHAIN_ID = defaultChain.chainId; config.chains[0]
 
 const baseProvider = new Web3.providers.HttpProvider(RPC_ENDPOINT);
 
@@ -53,21 +52,26 @@ const addNetwork = (web3: any, chain: ConfigType['chains'][0]) => {
   })
 }
 
-const providerOptions = {
-  walletconnect: {
-    package: WalletConnectProvider,
-    options: {
-      infuraId: "8f049459cf5b4f209b4fef05d08ffcf0"
-    }
-  },
-  fortmatic: {
+let providerOptions: IProviderOptions = {};
+
+if (config.keys.fortmaticKey) {
+  providerOptions['fortmatic'] = {
     package: Fortmatic,
     options: {
-      key: "pk_test_1064A1F97DFB9DC2",
+      key: config.keys.fortmaticKey,
       network: {
         rpcUrl: RPC_ENDPOINT,
         chainId: CHAIN_ID
       }
+    }
+  }
+}
+
+if (config.keys.infuraId) {
+  providerOptions['walletconnect'] = {
+    package: WalletConnectProvider,
+    options: config.keys.infuraId && {
+      infuraId: config.keys.infuraId
     }
   }
 }
@@ -164,7 +168,7 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
     }
     setW3Modal(new Web3Modal({
       disableInjectedProvider: false,
-      providerOptions: providerOptions// required
+      providerOptions: providerOptions // required
     }));
   }, [demoMode]);
 
