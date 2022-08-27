@@ -375,12 +375,11 @@ class DeFileManager {
     const signer = this.account || "";
     return this.queueOp(
       OPERATION.RESERVE_SPACE,
-      () => this.fs.reserveSpace(signer, address, amount, this.accountPrivateKey),
+      () => this.fs.reserveSpace(signer, sanitizeAddress(address), amount, this.accountPrivateKey),
     );
   }
 
   async grantRole(address: Address, role: string = ROLE.ALLOCATOR) {
-
     if (!this.account)
       throw Error(ERROR.NO_ACCOUNT);
     const signer = this.account || "";
@@ -394,7 +393,7 @@ class DeFileManager {
 
     return this.queueOp(
       OPERATION.GRANT_ROLE,
-      () => this.fs.grantAllocatorRole(signer, address, this.accountPrivateKey)
+      () => this.fs.grantAllocatorRole(signer, sanitizeAddress(address), this.accountPrivateKey)
     );
   }
 

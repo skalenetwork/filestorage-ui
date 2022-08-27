@@ -1,32 +1,28 @@
 // @ts-nocheck
 
 import { useState, useEffect, useLayoutEffect } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
 import { useFileManagerContext, ContextType } from '@/context/index';
 import { FileStatus, ROLE } from '@/context/useDeFileManager';
-
 import { Button } from '@/components/common';
 
 import FolderAddIcon from '@heroicons/react/solid/FolderAddIcon';
 import DocumentAddIcon from '@heroicons/react/solid/DocumentAddIcon';
+import CheckIcon from '@heroicons/react/solid/CheckIcon';
+import ArchiveIcon from '@heroicons/react/outline/ArchiveIcon';
 
 import Branding from '@/components/Branding';
 import Connect from '@/components/Connect';
 import StorageStatus from '@/components/StorageStatus';
-import Search from '@/components/Search';
 
+import Search from '@/components/Search';
 import FileNavigator from '@/components/FileNavigator';
 
+import ViewFileWidget from '../partials/ViewFileWidget';
 import UploadWidget from '../partials/UploadWidget';
 import UploadProgressWidget from '../partials/UploadProgressWidget';
-import UploadFailedWidget from '../partials/UploadFailedWidget';
 import CreateDirectoryWidget from '../partials/CreateDirectoryWidget';
 import ReserveSpaceWidget from '../partials/ReserveSpaceWidget';
 import GrantorWidget from '../partials/GrantorWidget';
-import ViewFileWidget from '../partials/ViewFileWidget';
-import CheckIcon from '@heroicons/react/solid/CheckIcon';
-import UploadIcon from '@heroicons/react/outline/UploadIcon';
-import ArchiveIcon from '@heroicons/react/outline/ArchiveIcon';
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
