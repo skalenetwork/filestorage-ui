@@ -211,13 +211,13 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
         <label htmlFor="address">To browse, enter address</label>
         <div className="flex justify-center items-center">
           <Input
-            className="px-4 py-2 w-96 m-0 rounded bg-gray-100 focus:border-0 focus:outline-none"
+            className="w-96 !rounded-r-none"
             type="text"
             placeholder="0x..."
             onChange={(e) => setInputAddress(e.target.value)}
           />
           <button
-            className="btn"
+            className="btn rounded-l-none"
             onClick={(e) => loadAddress(inputAddress)}
           >
             <CheckCircleIcon className="w-5 h-5" />

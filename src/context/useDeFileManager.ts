@@ -1,5 +1,5 @@
 import { FileLike } from './../packages/filemanager/filemanager';
-import { useEffect, useLayoutEffect, useReducer, useRef } from 'react';
+import { useEffect, useLayoutEffect, useReducer, useRef, useCallback } from 'react';
 import { useInterval } from 'react-use';
 
 import type { FileStorageDirectory, FileStorageFile } from '@skalenetwork/filestorage.js';
@@ -388,7 +388,7 @@ function useDeFileManager(
   // periodically fetch relevant directory listings, update active uploads with progress
   // tested for uploads under 1mb: file being uploaded not reflected in directory listing via node
   // @todo can be better managed after some restructure involving converging remote + local state vs lookup of remote
-  useInterval(async () => {
+  const refreshActiveUploads = useCallback(async () => {
     if (!fm) return;
     for (let dirPath of state.activeUploads.keys()) {
       // no in-progress uploads for directory, skip
@@ -420,7 +420,9 @@ function useDeFileManager(
         }
       });
     }
-  }, 2000);
+  }, [state.activeUploads, fm]);
+
+  useInterval(refreshActiveUploads, 2000);
 
   const createDirectory = async (
     name: string,

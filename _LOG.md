@@ -24,7 +24,7 @@ priors
 feedback
 
 - [ ] upload-progress: failed item -> click cross -> retry icon (hover::green) -> click to retry
-- [ ] reserve-widget: unit select for space and relevant validation
+- [x] reserve-widget: unit select for space and relevant validation
 - [x] widgets: where address input, confirm and correctly validate prefix 0x (make common validate and transform utils)
 - [x] neater file shortening
 - [ ] by mockups: upload list to bottom right (unfeasible / dropped)

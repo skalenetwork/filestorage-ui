@@ -3,7 +3,7 @@ import FolderIcon from '@heroicons/react/solid/FolderIcon';
 import FolderOpenIcon from '@heroicons/react/solid/FolderOpenIcon';
 import { mimeData } from '../utils';
 
-const FormattedName = ({ item, maxLength, active = false, iconSize = 5 }: { item: DeFile | DeDirectory, maxLength?: number, active?: boolean, iconSize: number }) => {
+const FormattedName = ({ item, maxLength, active = false, iconSize = 5 }: { item: DeFile | DeDirectory, maxLength?: number, active?: boolean, iconSize?: number }) => {
 
   if (!item) {
     return <></>
