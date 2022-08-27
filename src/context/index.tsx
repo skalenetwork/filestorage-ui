@@ -130,10 +130,11 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
     setConfig(appConfig);
   });
 
+  // handle wallet operations
   useEffect(() => {
     if (!(w3Provider && w3Provider.on)) return;
 
-    // Subscribe to accounts change
+    // subscribe to accounts change
     w3Provider.on("accountsChanged", (accounts: string[]) => {
       console.log("accountsChanged", accounts);
       if (accounts.length === 0) {
@@ -141,7 +142,7 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
       }
     });
 
-    // Subscribe to chainId change
+    // subscribe to chainId change
     w3Provider.on("chainChanged", (chainId: number) => {
       console.log("chainChanged", chainId.toString());
       if (chainId.toString() !== CHAIN_ID) {
@@ -149,18 +150,18 @@ export function ContextWrapper({ children }: { children: ReactNode }) {
       }
     });
 
-    // Subscribe to provider connection
+    // subscribe to provider connection
     w3Provider.on("connect", (info: { chainId: number }) => {
       console.log("connect", info);
     });
 
-    // Subscribe to provider disconnection
+    // subscribe to provider disconnection
     w3Provider.on("disconnect", (error: { code: number; message: string }) => {
       console.log("disconnect", error);
     });
   }, [w3Provider]);
 
-  // por demo
+  // deprecated demo mode
   useEffect(() => {
     if (demoMode) {
       setW3Provider(new Web3.providers.HttpProvider(RPC_ENDPOINT));

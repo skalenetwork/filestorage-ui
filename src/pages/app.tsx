@@ -220,11 +220,13 @@ const App = () => {
           setReserveSpaceModal(false);
         }}
         onSubmit={
-          async ({ reserveSpaceAddress, reserveSpaceAmount }) => {
+          async ({ reserveSpaceAddress, reserveSpaceAmount, reserveSpaceUnit: unit }) => {
             setReserveSpaceModal(false);
-            // @todo move to pichon
-            return reserveSpaceAddress && reserveSpaceAmount &&
-              fm?.fs.reserveSpace(fm.address, reserveSpaceAddress, Number(reserveSpaceAmount));
+            const multiplier = (unit === "kb") ? 1 : (unit === "mb") ? 2 : unit === "gb" ? 3 : 0;
+            const amount = Number(reserveSpaceAmount) * (Math.pow(1024, multiplier));
+            console.log(amount, multiplier, unit);
+            return reserveSpaceAddress && amount &&
+              fm?.fs.reserveSpace(fm.address, reserveSpaceAddress, amount);
           }
         }
       />
@@ -259,12 +261,6 @@ const App = () => {
         failedUploads={failedFiles}
         total={totalUploadCount}
         uploadStatus={uploadStatus}
-      />
-
-      <UploadFailedWidget
-        open={failedUploadsModal}
-        onClose={() => setFailedUploadsModal(false)}
-        failedUploads={failedFiles}
       />
 
       <ViewFileWidget

@@ -6,7 +6,7 @@ import { ModalWidgetProps, FormProps } from 'partials';
 import WidgetModal from '@/components/WidgetModal';
 import { useFileManagerContext, ContextType } from '../context';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import FieldGroup from '@/components/FieldGroup';
+import Field from '@/components/Field';
 
 type Props = ModalWidgetProps & FormProps & {
   batchThreshold: number
@@ -87,14 +87,17 @@ const UploadWidget = (
                 {
                   fields
                     .map((field, index) => (
-                      <FieldGroup
+                      <Field
                         key={field.id}
                         form={form}
-                        name={`uploads.${index}.name`}
                         label="Name"
-                        validate={isNameValid}
                         errorMessage="File with name already exists"
-                      />
+                      >
+                        <Field.Input
+                          name={`uploads.${index}.name`}
+                          validate={isNameValid}
+                        />
+                      </Field>
                     ))
                 }
               </div>

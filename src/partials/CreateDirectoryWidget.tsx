@@ -4,7 +4,7 @@ import { Button, Input, Modal } from "react-daisyui";
 import { useForm } from "react-hook-form";
 
 import config from '../config';
-import FieldGroup from "@/components/FieldGroup";
+import Field from "@/components/Field";
 
 type Props = ModalWidgetProps & FormProps;
 
@@ -46,15 +46,18 @@ const CreateDirectoryWidget = ({
             Give your folder a name.
           </p>
           <div className="relative w-full flex flex-col flex-grow">
-            <FieldGroup
+            <Field
               form={form}
-              name="directoryName"
               label="Name"
-              validate={(value) => {
-                return (value.length <= config.uploader.maxFileDirNameLength) ? true : false;
-              }}
-              errorMessage="Directory name is invalid"
-            />
+              errorMessage="Directory name is invalid">
+              <Field.Input
+                name="directoryName"
+                placeholder="Directory name"
+                validate={(value) => {
+                  return (value.length <= config.uploader.maxFileDirNameLength) ? true : false;
+                }}
+              />
+            </Field>
           </div>
         </Modal.Body>
         <Modal.Actions className="flex justify-center items-center gap-8">

@@ -5,7 +5,7 @@ import ArchiveIcon from "@heroicons/react/outline/ArchiveIcon";
 import { useForm, UseFormRegisterReturn, UseFormReturn } from "react-hook-form";
 import Web3 from "web3";
 import { ContextType, useFileManagerContext } from "../context";
-import FieldGroup from "@/components/FieldGroup";
+import Field from "@/components/Field";
 
 type Props = ModalWidgetProps & FormProps;
 
@@ -17,7 +17,8 @@ const ReserveSpaceWidget = ({
     mode: 'onChange',
     defaultValues: {
       reserveSpaceAddress: '',
-      reserveSpaceAmount: ''
+      reserveSpaceAmount: '',
+      reserveSpaceUnit: 'kb'
     }
   });
 
@@ -26,6 +27,7 @@ const ReserveSpaceWidget = ({
   const reset = () => {
     resetField('reserveSpaceAddress');
     resetField('reserveSpaceAmount');
+    resetField('reserveSpaceUnit');
   }
 
   const close = () => {
@@ -49,22 +51,39 @@ const ReserveSpaceWidget = ({
             Enter the address to which the space will be allocated.
           </p>
           <div className="w-full flex flex-col flex-grow">
-            <FieldGroup
+            <Field
               form={form}
-              name="reserveSpaceAddress"
               label="Address"
-              placeholder="0x..."
-              validate={(val) => Web3.utils.isAddress(val)}
               errorMessage="Address is invalid"
-            />
-            <FieldGroup
+            >
+              <Field.Input
+                name="reserveSpaceAddress"
+                placeholder="0x..."
+                validate={(val) => Web3.utils.isAddress(val)}
+              />
+            </Field>
+            <Field
               form={form}
-              name="reserveSpaceAmount"
               label="Space to reserve"
-              placeholder="1337"
-              validate={(val) => !isNaN(Number(val))}
               errorMessage="Space amount is invalid"
-            />
+            >
+              <div className="flex flex-row">
+                <Field.Input
+                  className="!rounded-r-none"
+                  name="reserveSpaceAmount"
+                  placeholder="1337"
+                  validate={(val) => !isNaN(Number(val))}
+                />
+                <Field.Select
+                  className="!rounded-l-none"
+                  name="reserveSpaceUnit"
+                >
+                  <option value="kb">kB</option>
+                  <option value="mb">MB</option>
+                  <option value="gb">GB</option>
+                </Field.Select>
+              </div>
+            </Field>
           </div>
         </Modal.Body>
         <Modal.Actions className="flex justify-center items-center gap-8">

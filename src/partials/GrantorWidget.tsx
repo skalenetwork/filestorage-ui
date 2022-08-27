@@ -1,7 +1,7 @@
 import WidgetModal from "@/components/WidgetModal";
 import type { FormProps, ModalWidgetProps } from "partials";
 import { useForm } from "react-hook-form";
-import FieldGroup from "@/components/FieldGroup";
+import Field from "@/components/Field";
 import Web3 from "web3";
 import { Button, Modal } from "@/components/common";
 
@@ -34,14 +34,17 @@ const GrantorWidget = ({
       })}>
         <Modal.Body className="w-full flex flex-col gap-4 justify-center items-center">
           <div className="relative w-full flex flex-col flex-grow">
-            <FieldGroup
+            <Field
               form={form}
-              name="granteeAddress"
               label="Address"
-              placeholder="0x.."
-              validate={(val) => Web3.utils.isAddress(val)}
               errorMessage="Address is invalid"
-            />
+            >
+              <Field.Input
+                name="granteeAddress"
+                placeholder="0x.."
+                validate={(val) => Web3.utils.isAddress(val)}
+              />
+            </Field>
           </div>
         </Modal.Body>
         <Modal.Actions className="flex justify-center items-center gap-8">

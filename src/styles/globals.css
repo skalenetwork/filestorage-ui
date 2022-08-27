@@ -67,6 +67,13 @@ img {
   @apply border-gray-500 focus:border-gray-500 focus:outline-none;
 }
 
+.select {
+  @apply pl-4 py-2 m-0;
+  @apply rounded;
+  @apply bg-base-100;
+  @apply border-gray-500 focus:border-gray-500 focus:outline-none;
+}
+
 .label {
   @apply p-1;
 }
