@@ -124,10 +124,12 @@ class DeFile implements IDeFile {
   size: number;
   type: string;
   manager: DeFileManager;
+  parent?: DeDirectory;
 
   constructor(
     data: FileStorageFile,
-    manager: DeFileManager
+    manager: DeFileManager,
+    parent?: DeDirectory
   ) {
     this.kind = KIND.FILE;
     this.name = data.name;
@@ -135,6 +137,7 @@ class DeFile implements IDeFile {
     this.size = data.size;
     this.type = mime.getType(data.name);
     this.manager = manager;
+    this.parent = parent;
   }
 
   async arrayBuffer(): Promise<ArrayBuffer> {
@@ -333,7 +336,7 @@ class DeFileManager {
       // make DeFile
       if (item.isFile) {
         item = <FileStorageFile>item;
-        yield new DeFile(item as FileStorageFile, this);
+        yield new DeFile(item as FileStorageFile, this, directory);
       }
       // recursive: make DeDirectory with entries()
       else {
@@ -482,6 +485,8 @@ class DeFileManager {
   /**
    * Delete a directory 
    * @param directory 
+   * refactor this if queueing is extended with non-sequential options
+   * or when network supports nested deletion
    */
   async deleteDirectory(directory: DeDirectory): Promise<OperationEvent> {
     if (directory.path === this.rootDir.path)
@@ -490,7 +495,9 @@ class DeFileManager {
       throw Error(ERROR.NO_ACCOUNT);
     const signer = this.account || "";
 
-    return this.queueOp(
+    let task: Promise<OperationEvent>;
+
+    const op = (directory: DeDirectory) => this.queueOp(
       OPERATION.DELETE_DIRECTORY,
       () => this.fs.deleteDirectory(signer, directory.path, this.accountPrivateKey),
       (res) => ({
@@ -501,7 +508,24 @@ class DeFileManager {
         destDirectory: directory.parent,
         error: err
       })
-    );
+    )
+
+    return new Promise(async (resolve, reject) => {
+      let promises: Promise<OperationEvent>[] = [];
+      await this.iterateDirectory(directory, (entry: DeFile | DeDirectory) => {
+        task = (
+          entry.kind === "directory" ?
+            op(entry as DeDirectory)
+            :
+            this.deleteFile(entry.parent as DeDirectory, entry as DeFile)
+        );
+        promises.push(task);
+      });
+      Promise.all(promises)
+        .then(res => {
+          resolve(op(directory))
+        });
+    });
   }
 
   /**
@@ -586,24 +610,26 @@ class DeFileManager {
       flag = false;
     }
 
+    // Depth-first
     const iterator = async (
       directory: DeDirectory,
-      onEntry: (entry: FileOrDir | Array<FileOrDir>, stop: () => void) => boolean,
+      onEntry: (entry: FileOrDir | Array<FileOrDir>, stop: () => void, level: number) => boolean,
       asArray: boolean = false
     ): Promise<void> => {
-      if (!flag) return;
+
+      if (flag == false) return;
       let all = [];
       //@ts-ignore
       for await (const entry of directory.entries()) {
-        (asArray) ? all.push(entry) : (flag = onEntry(entry, stop));
         if ((entry.kind === KIND.DIRECTORY) && (level < depth) && (flag === true)) {
+          level++;
           await iterator(entry, onEntry);
         }
+        (asArray) ? all.push(entry) : onEntry(entry, stop, level);
       }
       if (asArray) {
-        flag = onEntry(all, stop);
+        onEntry(all, stop, level);
       }
-      level++;
     }
 
     return iterator(directory, onEntry, asArray);

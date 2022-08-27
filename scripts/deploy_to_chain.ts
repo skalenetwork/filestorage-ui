@@ -151,21 +151,23 @@ const getKeys = async () => {
 
     let directory: DeDirectory = (await fm.resolvePath(remotePath)) as DeDirectory;
 
-    if (!directory) {
-      console.info(`[-] Creating directory @ ${remotePath}`);
-      let parts = remotePath.split("/");
-      let name = parts.pop(); // folder name
-      let path = parts.join(); // relative directory path
-      console.log("[?] params", path, name);
-      try {
-        const destDirectory = (await fm.resolvePath(path)) as DeDirectory;
-        console.log("[?] destDirectory", destDirectory.path);
-        const { result } = await fm.createDirectory(destDirectory, name);
-        directory = result.directory;
-      } catch (err) {
-        console.error("[x] Target directory path is missing:", err);
-        process.exit();
-      }
+    if (directory) {
+      await fm.deleteDirectory(directory);
+    }
+
+    console.info(`[-] Creating directory @ ${remotePath}`);
+    let parts = remotePath.split("/");
+    let name = parts.pop(); // folder name
+    let path = parts.join(); // relative directory path
+    console.log("[?] params", path, name);
+    try {
+      const destDirectory = (await fm.resolvePath(path)) as DeDirectory;
+      console.log("[?] destDirectory", destDirectory.path);
+      const { result } = await fm.createDirectory(destDirectory, name);
+      directory = result.directory;
+    } catch (err) {
+      console.error("[x] Target directory path is missing:", err);
+      process.exit();
     }
 
     console.info(`[/] Starting upload in directory: ${directory.path}`);
