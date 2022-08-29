@@ -1,10 +1,10 @@
 //@ts-nocheck
 
-import { useState, useEffect, useRef, SyntheticEvent, useLayoutEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, SyntheticEvent, useLayoutEffect, useCallback, createContext, useContext } from 'react';
 import { useMount, useDebounce } from 'react-use';
 
 import { useFileManagerContext, ContextType } from '../context';
-import { DeFile, DeDirectory } from '@/packages/filemanager';
+import { DeFile, DeDirectory, FileOrDir } from '@/packages/filemanager';
 
 import orderBy from 'lodash/orderBy';
 
@@ -17,7 +17,6 @@ import ChevronRightIcon from '@heroicons/react/solid/ChevronRightIcon';
 import ChevronLeftIcon from '@heroicons/react/solid/ChevronLeftIcon';
 import HomeIcon from '@heroicons/react/outline/HomeIcon';
 import ReceiptRefundIcon from '@heroicons/react/outline/ReceiptRefundIcon';
-import FolderIcon from '@heroicons/react/solid/FolderIcon';
 
 import Pagination from 'react-paginate';
 import FormattedName from './FormattedName';
@@ -26,6 +25,21 @@ import SmartAddress from './SmartAddress';
 import { SpinnerIcon } from './common';
 
 import { toast } from 'react-toastify';
+
+type FNContextType = {
+  currentDirectory: DeDirectory,
+  tableElement: any,
+  sortByKey: string,
+  setSortByKey(key: string): void,
+  sortByOrder: string,
+  setSortByOrder(order: string): void,
+  listing: FileOrDir[],
+  sortedListing: FileOrDir[],
+  onSelectFile(file: DeFile): void,
+  handleRowClick(item: FileOrDir): void
+}
+
+const FileNavigatorContext = createContext({} as FNContextType);
 
 const makeDirTrail = (directory: DeDirectory) => {
   let trail = [];
@@ -40,15 +54,16 @@ const makeDirTrail = (directory: DeDirectory) => {
 const DirCrumb = (
   { trail, preLimit, postLimit, onCrumbClick }:
     { trail: DeDirectory[], preLimit?: number, postLimit?: number, onCrumbClick: Function }) => {
-  const isActive = (index) => (index === trail.length - 1);
+  const isActive = (index: number) => (index === trail.length - 1);
 
   let maxLimit;
   if (preLimit && postLimit) {
     maxLimit = preLimit + postLimit;
   }
 
-  let crumbs = (maxLimit && trail.length > maxLimit) ?
-    [...trail.slice(0, preLimit), {}, ...trail.slice(trail.length - postLimit)]
+  //@ts-ignore
+  let crumbs: DeDirectory[] = (maxLimit && (trail.length > maxLimit)) ?
+    [...trail.slice(0, preLimit), {}, ...trail.slice(trail.length - (postLimit as number))]
     : trail;
 
   return (
@@ -72,13 +87,138 @@ const DirCrumb = (
   );
 }
 
-const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => void }) => {
+const sortElement = (key: string) => {
+
+  const { sortByOrder, sortByKey } = useContext(FileNavigatorContext);
+  return (
+    <span>
+      {(((sortByOrder === "asc") && (sortByKey === key)) ?
+        <ArrowSmUpIcon className="h-5 w-5 inline-block" /> :
+        <ArrowSmDownIcon className="h-5 w-5 inline-block" />
+      )}
+    </span>
+  );
+}
+
+const ColumnLabel = ({ columnKey, children }: { columnKey: string; children: any }) => {
+
+  const { sortByOrder, setSortByKey, setSortByOrder } = useContext(FileNavigatorContext);
+  return (
+    <p className="p-0 cursor-pointer" onClick={
+      (e) => {
+        setSortByKey(columnKey);
+        setSortByOrder((sortByOrder === "asc") ? "desc" : "asc");
+      }}>
+      {children} {columnKey ? sortElement(columnKey) : null}
+    </p>
+  )
+}
+
+const Item = ({ item, skeleton }: { item: DeFile | DeDirectory, skeleton: boolean }) => {
+
+  const { handleRowClick, onSelectFile } = useContext(FileNavigatorContext);
+  return (skeleton) ?
+    <tr className="animate-pulse">
+      <td><p className="w-16 h-2 rounded bg-base-300"></p></td>
+      <td></td>
+      <td><p className="w-5 h-2 rounded bg-base-300"></p></td>
+      <td><DotsVerticalIcon className="h-5 w-5 text-primary-content" /></td>
+    </tr>
+    :
+    (
+      <tr className="focus:bg-slate-100 hover:bg-base-200" onClick={
+        (e) => {
+          item.kind === "directory"
+            ? handleRowClick(item as DeDirectory)
+            : onSelectFile(item as DeFile);
+          e.stopPropagation();
+        }
+      }>
+        <td className="border-slate-800 bg-transparent"><FormattedName item={item} /></td>
+        <td className="border-slate-800 bg-transparent"></td>
+        <td className="border-slate-800 bg-transparent"><FormattedSize item={item} /></td>
+        <td className="border-slate-800 bg-transparent"><ItemActions item={item} /></td>
+      </tr>
+    )
+}
+
+const BackItem = () => {
+  const { currentDirectory, handleRowClick } = useContext(FileNavigatorContext);
+  return (
+    currentDirectory?.parent ?
+      <tr
+        className="focus:bg-slate-100 hover:bg-base-200"
+        onClick={(e) => {
+          handleRowClick(currentDirectory.parent as DeDirectory);
+          e.stopPropagation();
+        }}
+      >
+        <td className="border-slate-800 bg-transparent">
+          <FormattedName item={{ kind: "directory", name: ".." } as DeDirectory} />
+        </td>
+        <td className="border-slate-800 bg-transparent"></td>
+        <td className="border-slate-800 bg-transparent"></td>
+        <td className="border-slate-800 bg-transparent"></td>
+      </tr> : <></>
+  )
+};
+
+const ItemActions = ({ item }: { item: DeFile | DeDirectory }) => {
+  const { fm, deleteDirectory, deleteFile } = useFileManagerContext();
+  const { tableElement, currentDirectory } = useContext(FileNavigatorContext);
+
+  return (
+    <div className="dropdown dropdown-left h-full flex items-center" onClick={(e) => e.stopPropagation()}>
+      <label tabIndex={0} className="cursor-pointer">
+        <DotsVerticalIcon className="h-6 w-6" />
+      </label>
+      <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
+        {
+          fm && (item.kind === "file") ?
+            <li
+              onClick={(e) => {
+                toast.promise(fm?.downloadFile(item as DeFile), {
+                  pending: `Preparing file - ${item.name}`,
+                  success: `Downloading file - ${item.name}`,
+                  error: `Failed to fetch file - ${item.name}`
+                });
+                (tableElement.current?.querySelector(":focus") as HTMLElement).blur();
+              }}
+            >
+              <a><DocumentDownloadIcon className="h-5 w-5 text-blue-500" /> Download</a>
+            </li>
+            : <></>
+        }
+        {
+          (item.kind === "file" ? deleteFile : deleteDirectory) ?
+            <li
+              onClick={(e: SyntheticEvent) => {
+                if (item.kind === "file") {
+                  deleteFile(item as DeFile, currentDirectory);
+                } else {
+                  deleteDirectory(item as DeDirectory);
+                }
+                (tableElement.current?.querySelector(":focus") as HTMLElement).blur();
+              }}
+            >
+              <a><DocumentRemoveIcon className="h-5 w-5 text-red-500" /> Delete</a>
+            </li>
+            : <></>
+        }
+      </ul>
+    </div >
+  )
+};
+
+// Wrapper Start
+
+const FileManagerView = ({ onSelectFile }: { onSelectFile: FNContextType['onSelectFile'] }) => {
 
   const {
     config,
-    fm, address, directory: currentDirectory, listing, searchListing, isLoadingDirectory,
-    changeDirectory, deleteFile, deleteDirectory, loadAddress, getFileLink, isAuthorized
-  }: ContextType = useFileManagerContext<ContextType>();
+    fm, directory: currentDirectory, listing, isLoadingDirectory,
+    changeDirectory, loadAddress, isAuthorized
+  }: ContextType = useFileManagerContext();
 
   const tableElement = useRef<HTMLTableElement>();
 
@@ -104,7 +244,6 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
   const [isAddressEditing, setIsAddressEditing] = useState<boolean>(false);
 
   useDebounce(() => {
-    console.log("debounce:addressInput", addressInput);
     if (!addressInput) return;
     loadAddress(addressInput);
   }, 500, [addressInput]);
@@ -128,7 +267,7 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
 
   // dircrumb and pagination
   useEffect(() => {
-    setTrail(makeDirTrail(currentDirectory));
+    currentDirectory && setTrail(makeDirTrail(currentDirectory));
   }, [currentDirectory]);
 
   // dircrumb and pagination
@@ -149,218 +288,128 @@ const FileManagerView = ({ onSelectFile }: { onSelectFile: (file: DeFile) => voi
     setItemOffset(newOffset);
   }, [sortedListing]);
 
-  const sortElement = (key: string) => (
-    <span>
-      {(((sortByOrder === "asc") && (sortByKey === key)) ?
-        <ArrowSmUpIcon className="h-5 w-5 inline-block" /> :
-        <ArrowSmDownIcon className="h-5 w-5 inline-block" />
-      )}
-    </span>
-  );
-
-  const ColumnLabel = ({ columnKey, children }: { columnKey: string; children: any }) => (
-    <p className="p-0 cursor-pointer" onClick={
-      (e) => {
-        setSortByKey(columnKey);
-        setSortByOrder((sortByOrder === "asc") ? "desc" : "asc");
-      }}>
-      {children} {columnKey ? sortElement(columnKey) : null}
-    </p>
-  );
-
-  const BackItem = () => (
-    currentDirectory?.parent ?
-      <tr
-        className="focus:bg-slate-100 hover:bg-base-200"
-        onClick={(e) => {
-          handleRowClick(currentDirectory.parent as DeDirectory);
-          e.stopPropagation();
-        }}
-      >
-        <td className="border-slate-800 bg-transparent">
-          <FormattedName item={{ kind: "directory", name: ".." } as DeDirectory} />
-        </td>
-        <td className="border-slate-800 bg-transparent"></td>
-        <td className="border-slate-800 bg-transparent"></td>
-        <td className="border-slate-800 bg-transparent"></td>
-      </tr> : <></>
-  );
-
-  const ItemActions = ({ item }: { item: DeFile | DeDirectory }) => (
-    <div className="dropdown dropdown-left h-full flex items-center" onClick={(e) => e.stopPropagation()}>
-      <label tabIndex={0} className="cursor-pointer">
-        <DotsVerticalIcon className="h-6 w-6" />
-      </label>
-      <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
-        {
-          (item.kind === "file") ?
-            <li
-              onClick={(e) => {
-                toast.promise(fm?.downloadFile(item as DeFile), {
-                  pending: `Preparing file - ${item.name}`,
-                  success: `Downloading file - ${item.name}`,
-                  error: `Failed to fetch file - ${item.name}`
-                });
-                (tableElement.current?.querySelector(":focus") as HTMLElement).blur();
-              }}
-            >
-              <a><DocumentDownloadIcon className="h-5 w-5 text-blue-500" /> Download</a>
-            </li>
-            : <></>
-        }
-        {
-          (item.kind === "file" ? deleteFile : deleteDirectory) ?
-            <li
-              onClick={(e: SyntheticEvent) => {
-                if (item.kind === "file") {
-                  deleteFile(item as DeFile);
-                } else {
-                  deleteDirectory(item as DeDirectory);
-                }
-                (tableElement.current?.querySelector(":focus") as HTMLElement).blur();
-              }}
-            >
-              <a><DocumentRemoveIcon className="h-5 w-5 text-red-500" /> Delete</a>
-            </li>
-            : <></>
-        }
-      </ul>
-    </div >
-  );
-
-  const Item = ({ item, skeleton }: { item: DeFile | DeDirectory, skeleton: boolean }) => (skeleton) ?
-    <tr className="animate-pulse">
-      <td><p className="w-16 h-2 rounded bg-base-300"></p></td>
-      <td></td>
-      <td><p className="w-5 h-2 rounded bg-base-300"></p></td>
-      <td><DotsVerticalIcon className="h-5 w-5 text-primary-content" /></td>
-    </tr>
-    :
-    (
-      <tr className="focus:bg-slate-100 hover:bg-base-200" onClick={
-        (e) => {
-          item.kind === "directory"
-            ? handleRowClick(item as DeDirectory)
-            : onSelectFile(item as DeFile);
-          e.stopPropagation();
-        }
-      }>
-        <td className="border-slate-800 bg-transparent"><FormattedName item={item} /></td>
-        <td className="border-slate-800 bg-transparent"></td>
-        <td className="border-slate-800 bg-transparent"><FormattedSize item={item} /></td>
-        <td className="border-slate-800 bg-transparent"><ItemActions item={item} /></td>
-      </tr>
-    );
-
   return (
-    <div>
-      <div className="flex flex-row justify-between items-center border-y border-slate-800 py-4 sticky top-0 bg-base-100 z-[998]">
-        <div className="h-8 flex flex-row items-center gap-2 px-4">
-          {
-            fm.account &&
-            <HomeIcon
-              className={`w-6 h-6 ${!isAuthorized ? 'cursor-pointer hover:text-blue-500' : 'text-blue-500'}`}
-              onClick={(e) => (!isAuthorized && loadAddress(fm.account))}
-            />
-          }
-          <ReceiptRefundIcon
-            className="w-6 h-6 cursor-pointer hover:text-blue-500"
-            onClick={(e) => loadAddress("", true)}
-          />
-          <SmartAddress
-            className="cursor-cell"
-            address={fm?.rootDirectory().name || ""}
-            onEdit={() => setIsAddressEditing(true)}
-            offEdit={() => setIsAddressEditing(false)}
-            onConfirm={loadAddress}
-          />
-          {
-            (isAddressEditing === false) ?
-              <>
-                &emsp;
-                <a onClick={(e) => changeDirectory(fm?.rootDirectory())}>
-                  <FormattedName
-                    item={{ name: '', kind: 'directory' }}
-                    active={!currentDirectory.parent}
-                    iconSize={6}
-                  />
-                </a>
-                <span className="font-mono px-1">/</span>
-                <DirCrumb
-                  trail={trail}
-                  onCrumbClick={changeDirectory}
-                  preLimit={1}
-                  postLimit={4}
-                />
-              </>
-              :
-              <></>
-          }
-        </div>
-        <div className="flex justify-center items-center gap-8">
-          <span className="text-gray-500 text-sm font-medium">
+    <FileNavigatorContext.Provider value={{
+      currentDirectory,
+      tableElement,
+      sortByKey,
+      setSortByKey,
+      sortByOrder,
+      setSortByOrder,
+      listing,
+      sortedListing,
+      onSelectFile,
+      handleRowClick
+    }}>
+      <div>
+        <div className="flex flex-row justify-between items-center border-y border-slate-800 py-4 sticky top-0 bg-base-100 z-[998]">
+          <div className="h-8 flex flex-row items-center gap-2 px-4">
             {
-              (isLoadingDirectory) ?
-                <SpinnerIcon className="w-5 h-5 px-4" /> :
-                (sortedListing.length === 0) ?
-                  <>No results found</> :
-                  <>Showing files {itemOffset + pageListing.length}/{sortedListing.length}</>
+              fm.account &&
+              <HomeIcon
+                className={`w-6 h-6 ${!isAuthorized ? 'cursor-pointer hover:text-blue-500' : 'text-blue-500'}`}
+                onClick={(e) => (!isAuthorized && loadAddress(fm.account))}
+              />
             }
-          </span>
-          <Pagination
-            className="flex justify-center items-center gap-2"
-            pageLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border border-gray-300 rounded text-sm font-medium"
-            activeLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border border-gray-500 rounded text-sm font-medium"
-            nextLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border text-gray-400 border-gray-300 rounded text-sm"
-            previousLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center font-medium border text-gray-400 border-gray-300 rounded text-sm"
-            disabledClassName="flex items-center justify-center p-2 w-8 h-8 text-center font-medium border text-gray-200 border-gray-300 rounded text-sm bg-base-300 cursor-pointer"
-            breakClassName="flex items-center justify-center p-2 w-8 h-8 text-center border border-gray-300 rounded text-sm font-medium"
-            breakLabel="..."
-            nextLabel={
-              <ChevronRightIcon className="h-8 w-8" />}
-            previousLabel={
-              <ChevronLeftIcon className="h-8 w-8" />
-            }
-            forcePage={currentPage}
-            pageRangeDisplayed={2}
-            marginPagesDisplayed={2}
-            pageCount={Math.ceil(sortedListing.length / config.navigator.pageLimit)}
-            onPageChange={(e) => {
-              onPageChange(e);
-            }}
-          />
-        </div>
-      </div>
-      <table className="table w-full select-none relative" ref={tableElement}>
-        <thead>
-          <tr>
-            <th className="w-[40%] border-b border-slate-800 bg-inherit normal-case font-medium text-base">
-              <ColumnLabel columnKey="name">Name</ColumnLabel>
-            </th>
-            <th className="w-[35%] border-b border-slate-800 bg-inherit normal-case font-medium text-base">
-              {/* <ColumnLabel columnKey="timestamp">Timestamp</ColumnLabel> */}
-            </th>
-            <th className="w-[20%] border-b border-slate-800 bg-inherit normal-case font-medium text-base">
-              <ColumnLabel columnKey="size">File size</ColumnLabel>
-            </th>
-            <th className="border-b border-slate-800 bg-inherit normal-case font-medium text-base"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <BackItem />
-          {
-            isLoadingDirectory ?
-              [...Array(10).keys()].map((item, index) => <Item key={index} skeleton />)
-              :
-              (pageListing.length)
-                ?
-                pageListing.map((item) => <Item item={item} key={item.path} />)
+            <ReceiptRefundIcon
+              className="w-6 h-6 cursor-pointer hover:text-blue-500"
+              onClick={(e) => loadAddress("", true)}
+            />
+            <SmartAddress
+              className="cursor-cell"
+              address={fm?.rootDirectory().name || ""}
+              onEdit={() => setIsAddressEditing(true)}
+              offEdit={() => setIsAddressEditing(false)}
+              onConfirm={loadAddress}
+            />
+            {
+              (fm && isAddressEditing === false) ?
+                <>
+                  &emsp;
+                <a onClick={(e) => changeDirectory(fm?.rootDirectory())}>
+                    <FormattedName
+                      item={{ name: '', kind: 'directory' } as FileOrDir}
+                      active={!currentDirectory.parent}
+                      iconSize={6}
+                    />
+                  </a>
+                  <span className="font-mono px-1">/</span>
+                  <DirCrumb
+                    trail={trail}
+                    onCrumbClick={changeDirectory}
+                    preLimit={1}
+                    postLimit={4}
+                  />
+                </>
                 :
                 <></>
-          }
-        </tbody>
-      </table>
-    </div >
+            }
+          </div>
+          <div className="flex justify-center items-center gap-8">
+            <span className="text-gray-500 text-sm font-medium">
+              {
+                (isLoadingDirectory) ?
+                  <SpinnerIcon className="w-5 h-5 px-4" /> :
+                  (sortedListing.length === 0) ?
+                    <>No results found</> :
+                    <>Showing files {itemOffset + pageListing.length}/{sortedListing.length}</>
+              }
+            </span>
+            <Pagination
+              className="flex justify-center items-center gap-2"
+              pageLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border border-gray-300 rounded text-sm font-medium"
+              activeLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border border-gray-500 rounded text-sm font-medium"
+              nextLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center border text-gray-400 border-gray-300 rounded text-sm"
+              previousLinkClassName="flex items-center justify-center p-2 w-8 h-8 text-center font-medium border text-gray-400 border-gray-300 rounded text-sm"
+              disabledClassName="flex items-center justify-center p-2 w-8 h-8 text-center font-medium border text-gray-200 border-gray-300 rounded text-sm bg-base-300 cursor-pointer"
+              breakClassName="flex items-center justify-center p-2 w-8 h-8 text-center border border-gray-300 rounded text-sm font-medium"
+              breakLabel="..."
+              nextLabel={
+                <ChevronRightIcon className="h-8 w-8" />}
+              previousLabel={
+                <ChevronLeftIcon className="h-8 w-8" />
+              }
+              forcePage={currentPage}
+              pageRangeDisplayed={2}
+              marginPagesDisplayed={2}
+              pageCount={Math.ceil(sortedListing.length / config.navigator.pageLimit)}
+              onPageChange={(e) => {
+                onPageChange(e);
+              }}
+            />
+          </div>
+        </div>
+        <table className="table w-full select-none relative" ref={tableElement}>
+          <thead>
+            <tr>
+              <th className="w-[40%] border-b border-slate-800 bg-inherit normal-case font-medium text-base">
+                <ColumnLabel columnKey="name">Name</ColumnLabel>
+              </th>
+              <th className="w-[35%] border-b border-slate-800 bg-inherit normal-case font-medium text-base">
+                {/* <ColumnLabel columnKey="timestamp">Timestamp</ColumnLabel> */}
+              </th>
+              <th className="w-[20%] border-b border-slate-800 bg-inherit normal-case font-medium text-base">
+                <ColumnLabel columnKey="size">File size</ColumnLabel>
+              </th>
+              <th className="border-b border-slate-800 bg-inherit normal-case font-medium text-base"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <BackItem />
+            {
+              isLoadingDirectory ?
+                [...Array(10).keys()].map((item, index) => <Item key={index} skeleton />)
+                :
+                (pageListing.length)
+                  ?
+                  pageListing.map((item) => <Item item={item} key={item.path} />)
+                  :
+                  <></>
+            }
+          </tbody>
+        </table>
+      </div>
+    </FileNavigatorContext.Provider>
   );
 }
 

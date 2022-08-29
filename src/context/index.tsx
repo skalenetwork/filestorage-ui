@@ -29,7 +29,7 @@ export type ContextType = State & Action & {
   config: ConfigType;
 };
 
-const FileManagerContext = createContext<ContextType | undefined>(undefined);
+const FileManagerContext = createContext<ContextType>({} as ContextType);
 
 const defaultChain = config.chains[0];
 

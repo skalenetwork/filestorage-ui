@@ -512,12 +512,12 @@ class DeFileManager {
 
     return new Promise(async (resolve, reject) => {
       let promises: Promise<OperationEvent>[] = [];
-      await this.iterateDirectory(directory, (entry: DeFile | DeDirectory) => {
+      await this.iterateDirectory(directory, (entry) => {
         task = (
-          entry.kind === "directory" ?
+          (entry as FileOrDir).kind === "directory" ?
             op(entry as DeDirectory)
             :
-            this.deleteFile(entry.parent as DeDirectory, entry as DeFile)
+            this.deleteFile((entry as FileOrDir).parent as DeDirectory, entry as DeFile)
         );
         promises.push(task);
       });
